@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>aspnet-MyApp-7b2ab71a-0b50-423f-969d-e35a9402b1b5</UserSecretsId>
+        <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
+        <PublishProfile>DefaultContainer</PublishProfile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Using Include="MyApp" />
+        <Using Include="ServiceStack" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.*" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.*" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.*" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.*" />
+        <PackageReference Include="Markdig" Version="0.34.*" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.*" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
+        <PackageReference Include="ServiceStack.AspNetCore.OpenApi" Version="8.*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ServiceStack" Version="8.*" />
+        <PackageReference Include="ServiceStack.Blazor" Version="8.*" />
+        <PackageReference Include="ServiceStack.OrmLite.Sqlite.Data" Version="8.*" />
+        <PackageReference Include="ServiceStack.Extensions" Version="8.*" />
+        <PackageReference Include="ServiceStack.Server" Version="8.*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MyApp.ServiceInterface\MyApp.ServiceInterface.csproj" />
+        <ProjectReference Include="..\MyApp.ServiceModel\MyApp.ServiceModel.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="_includes\**" CopyToPublishDirectory="PreserveNewest"/>
+        <Content Include="_pages\**" CopyToPublishDirectory="PreserveNewest"/>
+        <Content Include="_posts\*.md" CopyToPublishDirectory="PreserveNewest"/>
+        <Content Include="_videos\**" CopyToPublishDirectory="PreserveNewest"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="App_Data\" />
+    </ItemGroup>
+
+    <Target Name="tailwind" BeforeTargets="Publish">
+        <Exec Command="npm run ui:build" WorkingDirectory="./" />
+    </Target>
+
+</Project>

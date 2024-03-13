@@ -1,0 +1,113 @@
+﻿@inherits AppAuthComponentBase
+@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<header class="border-b border-gray-200 dark:border-gray-800 pr-3">
+    <div class="flex flex-wrap items-center">
+        <div class="absolute z-10 top-2 left-2 sm:static flex-shrink flex-grow-0">
+            <div class="cursor-pointer">
+                <NavLink class="navbar-brand flex items-center" href="/">
+                    <img class="w-8 h-8 sm:ml-2 sm:w-12 sm:h-12" src="/img/logo.svg" alt="MyApp logo">
+                    <span class="hidden ml-2 sm:block text-2xl font-semibold">My App</span>
+                </NavLink>
+            </div>
+        </div>
+        <div class="flex flex-grow flex-shrink flex-nowrap justify-end items-center">
+            <nav class="relative flex flex-grow leading-6 font-semibold text-slate-700 dark:text-slate-200">
+                <ul class="flex flex-wrap items-center justify-end w-full m-0">
+
+                    <li class="relative flex flex-wrap just-fu-start m-0">
+                        <NavLink href="counter" class="p-4 flex items-center justify-start mw-full hover:text-sky-500 dark:hover:text-sky-400" ActiveClass="text-blue-700 dark:text-blue-300">Counter</NavLink>
+                    </li>
+                    <li class="relative flex flex-wrap just-fu-start m-0">
+                        <NavLink href="weather" class="p-4 flex items-center justify-start mw-full hover:text-sky-500 dark:hover:text-sky-400" ActiveClass="text-blue-700 dark:text-blue-300">Weather</NavLink>
+                    </li>
+                    <li class="relative flex flex-wrap just-fu-start m-0">
+                        <NavLink href="secure/bookings" class="p-4 flex items-center justify-start mw-full hover:text-sky-500 dark:hover:text-sky-400" ActiveClass="text-blue-700 dark:text-blue-300">Bookings</NavLink>
+                    </li>
+                    <li class="relative flex flex-wrap just-fu-start m-0">
+                        <NavLink href="blog" class="p-4 flex items-center justify-start mw-full hover:text-sky-500 dark:hover:text-sky-400" ActiveClass="text-blue-700 dark:text-blue-300">Blog</NavLink>
+                    </li>
+                    <li class="relative flex flex-wrap just-fu-start m-0">
+                        <NavLink href="videos" class="p-4 flex items-center justify-start mw-full hover:text-sky-500 dark:hover:text-sky-400" ActiveClass="text-blue-700 dark:text-blue-300">Videos</NavLink>
+                    </li>
+                    <AuthorizeView Roles="Admin">
+                        <Authorized>
+                            <li class="relative flex flex-wrap just-fu-start m-0">
+                                <NavLink href="admin/" class="p-4 flex items-center justify-start mw-full hover:text-sky-500 dark:hover:text-sky-400" ActiveClass="text-blue-700 dark:text-blue-300">Admin</NavLink>
+                            </li>
+                        </Authorized>
+                    </AuthorizeView>
+                    <AuthorizeView>
+                        <Authorized>
+                            <li>
+                                <div class="mx-3 relative">
+                                    <div>
+                                        <a href="Account/Manage"
+                                            class="max-w-xs bg-white dark:bg-black rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 lg:p-2 lg:rounded-md lg:hover:bg-gray-50 dark:lg:hover:bg-gray-900 dark:ring-offset-black" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                            <img class="h-8 w-8 rounded-full" src="@User.GetPicture()" alt="">
+                                            <span class="hidden ml-3 text-gray-700 dark:text-gray-300 text-sm font-medium lg:block">
+                                                <span class="sr-only">Open user menu for </span>
+                                                @User.GetDisplayName()
+                                            </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="mr-3 relative flex flex-wrap just-fu-start m-0">
+                                <form action="Account/Logout" method="post">
+                                    <AntiforgeryToken />
+                                    <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                                    <SecondaryButton type="submit">
+                                        Sign Out
+                                    </SecondaryButton>
+                                </form>
+                            </li>
+                        </Authorized>
+                        <Authorizing>
+                            <li class="relative flex flex-wrap just-fu-start m-0">
+                                Authorizing...
+                            </li>
+                        </Authorizing>
+                        <NotAuthorized>
+                            <li class="relative flex flex-wrap just-fu-start m-0">
+                                <NavLink href="Account/Login" class="m-2 mr-4">
+                                    <SecondaryButton>
+                                        Sign In
+                                    </SecondaryButton>
+                                </NavLink>
+                            </li>
+                        </NotAuthorized>
+                    </AuthorizeView>
+
+                    <li class="relative flex flex-wrap just-fu-start m-0">
+                        <DarkModeToggleLite />
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}
+
