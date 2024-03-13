@@ -11,9 +11,9 @@ public class ConfigureMarkdown : IHostingStartup
         {
             services.AddSingleton<MarkdownIncludes>();
             services.AddSingleton<MarkdownPages>();
-            services.AddSingleton<MarkdownVideos>();
             services.AddSingleton<MarkdownBlog>();
             services.AddSingleton<MarkdownMeta>();
+            services.AddSingleton<MarkdownQuestions>();
         })
         .ConfigureAppHost(
             appHost => appHost.Plugins.Add(new CleanUrlsFeature()),
@@ -34,15 +34,13 @@ public class ConfigureMarkdown : IHostingStartup
 
                 var includes = appHost.Resolve<MarkdownIncludes>();
                 var pages = appHost.Resolve<MarkdownPages>();
-                var videos = appHost.Resolve<MarkdownVideos>();
                 var blogPosts = appHost.Resolve<MarkdownBlog>();
                 var meta = appHost.Resolve<MarkdownMeta>();
 
-                meta.Features = [pages, videos, blogPosts];
+                meta.Features = [pages, blogPosts];
                 
                 includes.LoadFrom("_includes");
                 pages.LoadFrom("_pages");
-                videos.LoadFrom("_videos");
                 blogPosts.LoadFrom("_posts");
             });
 }

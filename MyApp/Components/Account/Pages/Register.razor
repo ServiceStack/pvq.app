@@ -29,9 +29,16 @@
                 <ValidationSummary class="mb-3 text-danger text-center font-semibold" />
                 <div class="flex flex-col gap-y-4">
                     <div>
+                        <label for="email" class="@TextInput.LabelClasses">Username</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <InputText id="user-name" type="text" @bind-Value="Input.UserName" class="@TextInput.InputClasses" autocomplete="username" aria-required="true" placeholder="username" />
+                        </div>
+                        <ValidationMessage For="() => Input.UserName" class="mt-2 text-danger text-sm" />
+                    </div>
+                    <div>
                         <label for="email" class="@TextInput.LabelClasses">Email</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
-                            <InputText id="email" type="text" @bind-Value="Input.Email" class="@TextInput.InputClasses" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                            <InputText id="email" type="text" @bind-Value="Input.Email" class="@TextInput.InputClasses" autocomplete="email" aria-required="true" placeholder="name@example.com" />
                         </div>
                         <ValidationMessage For="() => Input.Email" class="mt-2 text-danger text-sm" />
                     </div>
@@ -43,7 +50,7 @@
                         <ValidationMessage For="() => Input.Password" class="mt-2 text-danger text-sm" />
                     </div>
                     <div>
-                        <label for="confirm-password">Confirm Password</label>
+                        <label for="confirm-password" class="@TextInput.LabelClasses">Confirm Password</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
                             <InputText id="confirm-password" type="password" @bind-Value="Input.ConfirmPassword" class="@TextInput.InputClasses" autocomplete="new-password" aria-required="true" placeholder="password" />
                         </div>
@@ -55,12 +62,6 @@
                 </div>
             </EditForm>
         </div>
-    </div>
-    <div class="mt-8">
-        <section>
-            <Heading3>Use another service to register.</Heading3>
-            <ExternalLoginPicker />
-        </section>
     </div>
 </div>
 
@@ -79,9 +80,10 @@
     {
         var user = CreateUser();
 
-        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+        await UserStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+        
         var result = await UserManager.CreateAsync(user, Input.Password);
 
         if (!result.Succeeded)
@@ -136,6 +138,11 @@
 
     private sealed class InputModel
     {
+        [Required]
+        [StringLength(20, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 3)]
+        [Display(Name = "User Name")]
+        public string UserName { get; set; } = "";
+
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]

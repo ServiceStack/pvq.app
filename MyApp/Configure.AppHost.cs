@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Amazon.S3;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using MyApp.Data;
 using ServiceStack.IO;
+using ServiceStack.OrmLite;
 
 [assembly: HostingStartup(typeof(MyApp.AppHost))]
 
@@ -12,11 +15,26 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             // Configure ASP.NET Core IOC Dependencies
             context.Configuration.GetSection(nameof(AppConfig)).Bind(AppConfig.Instance);
             services.AddSingleton(AppConfig.Instance);
+            
+            var r2AccountId = Environment.GetEnvironmentVariable("R2_ACCOUNT_ID");
+            var r2AccessId = Environment.GetEnvironmentVariable("R2_ACCESS_KEY_ID");
+            var r2AccessKey = Environment.GetEnvironmentVariable("R2_SECRET_ACCESS_KEY");
+            var s3Client = new AmazonS3Client(r2AccessId, r2AccessKey, new AmazonS3Config
+            {
+                ServiceURL = $"https://{r2AccountId}.r2.cloudflarestorage.com"
+            });
+            services.AddSingleton(s3Client);
+            services.AddSingleton(new R2VirtualFiles(s3Client, "stackoverflow-shootout"));
         });
 
     public override void Configure()
     {
         AppConfig.Instance.GitPagesBaseUrl ??= ResolveGitBlobBaseUrl(ContentRootDirectory);
+        
+        FileSystemVirtualFiles.AssertDirectory(HostingEnvironment.ContentRootPath.CombineWith(AppConfig.Instance.CacheDir));
+        
+        using var db = GetDbConnection();
+        AppConfig.Instance.ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null));
     }
     
     private string? ResolveGitBlobBaseUrl(IVirtualDirectory contentDir)
@@ -36,14 +54,6 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         }
         return null;
     }
-}
-
-public class AppConfig
-{
-    public static AppConfig Instance { get; } = new();
-    public string LocalBaseUrl { get; set; }
-    public string PublicBaseUrl { get; set; }
-    public string? GitPagesBaseUrl { get; set; }
 }
 
 public static class HtmlHelpers

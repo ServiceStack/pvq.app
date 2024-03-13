@@ -1,5 +1,4 @@
 using ServiceStack.Messaging;
-using MyApp.ServiceInterface;
 using MyApp.ServiceModel;
 using Microsoft.AspNetCore.Identity;
 using MyApp.Data;
@@ -22,12 +21,14 @@ public class ConfigureMq : IHostingStartup
                 services.AddSingleton(smtpConfig);
             }
             services.AddSingleton<IMessageService>(c => new BackgroundMqService());
+            services.AddSingleton<IMessageProducer>(c => c.GetRequiredService<IMessageService>().MessageFactory.CreateMessageProducer());
         })
         .ConfigureAppHost(afterAppHostInit: appHost => {
             var mqService = appHost.Resolve<IMessageService>();
 
             //Register ServiceStack APIs you want to be able to invoke via MQ
             mqService.RegisterHandler<SendEmail>(appHost.ExecuteMessage);
+            mqService.RegisterHandler<RenderComponent>(appHost.ExecuteMessage);
             mqService.Start();
         });
 }

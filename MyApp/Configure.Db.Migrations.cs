@@ -82,45 +82,109 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
-            DisplayName = "Test User",
-            Email = "test@email.com",
-            UserName = "test@email.com",
-            FirstName = "Test",
-            LastName = "User",
-            EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/user1.svg",
-        }, "p@55wOrd");
-
-        await EnsureUserAsync(new ApplicationUser
-        {
-            DisplayName = "Test Employee",
-            Email = "employee@email.com",
-            UserName = "employee@email.com",
-            FirstName = "Test",
-            LastName = "Employee",
-            EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/user2.svg",
-        }, "p@55wOrd", [Roles.Employee]);
-
-        await EnsureUserAsync(new ApplicationUser
-        {
-            DisplayName = "Test Manager",
-            Email = "manager@email.com",
-            UserName = "manager@email.com",
-            FirstName = "Test",
-            LastName = "Manager",
-            EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/user3.svg",
-        }, "p@55wOrd", [Roles.Manager, Roles.Employee]);
-
-        await EnsureUserAsync(new ApplicationUser
-        {
-            DisplayName = "Admin User",
+            UserName = "admin",
             Email = "admin@email.com",
-            UserName = "admin@email.com",
             FirstName = "Admin",
             LastName = "User",
             EmailConfirmed = true,
         }, "p@55wOrd", allRoles);
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "human",
+            Email = "human@email.com",
+            FirstName = "Human",
+            LastName = "User",
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/user1.svg",
+        }, "p@55wOrd");
+        
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "phi",
+            Email = "phi@email.com",
+            FirstName = "Phi-2",
+            LastName = "2.7B",
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/phi-2.svg",
+            Model = "phi", //3B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "gemma-2b",
+            Email = "gemma-2b@email.com",
+            FirstName = "Gemma",
+            LastName = "2B",
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/gemma-2b.svg",
+            Model = "gemma:2b", //3B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "starcoder2-3b",
+            Email = "starcoder2-3b@email.com",
+            FirstName = "StarCoder2",
+            LastName = "3B",
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/starcoder-3b.png",
+            Model = "starcoder2:3b", //3B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "gemma",
+            Email = "gemma@email.com",
+            FirstName = "Gemma",
+            LastName = "7B",
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/gemma-7b.svg",
+            Model = "gemma", //9B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "codellama",
+            Email = "codellama-13B@email.com",
+            FirstName = "Code Llama",
+            LastName = "7B",
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/codellama.svg",
+            Model = "codellama", //7B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "mistral",
+            Email = "mistral-7B@email.com",
+            FirstName = "Mistral",
+            LastName = "7B", 
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/mistral.svg",
+            Model = "mistral", //7B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "starcoder2-15b",
+            Email = "starcoder2-15b@email.com",
+            FirstName = "StarCoder2",
+            LastName = "15B",
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/starcoder2-15b.png",
+            Model = "starcoder2:15b", //16B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "mixtral",
+            Email = "mixtral-8x7b@email.com",
+            FirstName = "Mixtral",
+            LastName = "8x7B",
+            EmailConfirmed = true,
+            ProfileUrl = "/img/profiles/mixtral.jpg",
+            Model = "mixtral", //47B
+        }, "p@55wOrd");
     }
 }

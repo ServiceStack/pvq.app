@@ -2,7 +2,7 @@
 using MyApp.ServiceModel;
 using ServiceStack.OrmLite;
 
-namespace MyApp.ServiceInterface;
+namespace MyApp.Data;
 
 public class MyServices : Service
 {
@@ -15,8 +15,7 @@ public class MyServices : Service
     {
         var tables = new (string Label, Type Type)[] 
         {
-            ("Bookings", typeof(Booking)),
-            ("Coupons",  typeof(Coupon)),
+            ("Posts", typeof(Post)),
         };
         var dialect = Db.GetDialectProvider();
         var totalSql = tables.Map(x => $"SELECT '{x.Label}', COUNT(*) FROM {dialect.GetQuotedTableName(x.Type.GetModelMetadata())}")

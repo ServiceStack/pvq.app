@@ -1,0 +1,52 @@
+﻿@using ServiceStack.Text
+<div>
+    @foreach (var post in Posts)
+    {
+        <div class="flex space-x-6 border-b border-gray-200 dark:border-gray-700 py-4">
+            <div class="flex flex-col text-right align-middle">
+                <div class="text-gray-600 dark:text-gray-300 whitespace-nowrap">@post.Score votes</div>
+                @if (post.AcceptedAnswerId != null)
+                {
+                    <div class="my-2 text-center items-center rounded-md bg-green-600 px-2 py-1 text-sm font-medium text-white whitespace-nowrap">
+                        <svg class="w-5 h-5 inline-block align-middle" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M21 7L9 19l-5.5-5.5l1.41-1.41L9 16.17L19.59 5.59z"/></svg>
+                        8 answers
+                    </div>
+                }
+                else
+                {
+                    <div class="my-2 text-center items-center rounded-md bg-green-50 px-2 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20 whitespace-nowrap">8 answers</div>
+                }
+                <div class="text-gray-600 dark:text-gray-300 whitespace-nowrap">@post.ViewCount.ToHumanReadable() views</div>
+            </div>
+            <div class="flex flex-auto flex-col">
+                <div>
+                    <h4 class="font-medium text-indigo-700 dark:text-indigo-300 hover:text-indigo-500 text-lg">
+                        <a href="questions/@post.Id/@post.Slug.GenerateSlug()">@post.Title</a>
+                    </h4>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">@post.Summary</p>
+                </div>
+                <div class="mt-6 flex flex-1 items-end">
+                    <dl class="flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
+                        <div class="flex flex-wrap justify-center gap-x-2 gap-y-2">
+                            @foreach (var tag in post.Tags.Safe())
+                            {
+                                <a href="questions/tagged/@tag.UrlEncode()" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">@tag</a>
+                            }
+                        </div>
+                        <div class="flex flex-grow px-4 sm:px-6 text-xs justify-end">
+                            <dt class="font-medium text-gray-600 dark:text-gray-300">Modified</dt>
+                            <dd class="ml-2 text-gray-600 dark:text-gray-300">
+                                @((post.LastEditDate ?? post.CreationDate).ToString("dd MMMM yyyy h:mm:ss tt"))
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public required List<Post> Posts { get; set; }
+}

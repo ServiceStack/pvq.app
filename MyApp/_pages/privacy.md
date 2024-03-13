@@ -2,7 +2,7 @@
 title: Privacy Policy 
 ---
 
-[Your business name] is committed to providing quality services to you and this policy outlines our ongoing obligations to you in respect of how we manage your Personal Information.
+pvq is committed to providing quality services to you and this policy outlines our ongoing obligations to you in respect of how we manage your Personal Information.
 
 We have adopted the Australian Privacy Principles (APPs) contained in the Privacy Act 1988 (Cth) (the Privacy Act). The NPPs govern the way in which we collect, use, disclose, store, secure and dispose of your Personal Information.
 
@@ -11,7 +11,7 @@ A copy of the Australian Privacy Principles may be obtained from the website of 
 What is Personal Information and why do we collect it?
 Personal Information is information or an opinion that identifies an individual. Examples of Personal Information we collect includes names, addresses, email addresses, phone and facsimile numbers.
 
-This Personal Information is obtained in many ways including [interviews, correspondence, by telephone and facsimile, by email, via our website www.yourbusinessname.com.au, from your website, from media and publications, from other publicly available sources, from cookies- delete all that aren’t applicable] and from third parties. We don’t guarantee website links or policy of authorised third parties.
+This Personal Information is obtained in many ways including [interviews, correspondence, by telephone and facsimile, by email, via our website pvq.app, from your website, from media and publications, from other publicly available sources, from cookies- delete all that aren’t applicable] and from third parties. We don’t guarantee website links or policy of authorised third parties.
 
 We collect your Personal Information for the primary purpose of providing our services to you, providing information to our clients and marketing. We may also use your Personal Information for secondary purposes closely related to the primary purpose, in circumstances where you would reasonably expect such use or disclosure. You may unsubscribe from our mailing/marketing lists at any time by contacting us in writing.
 
@@ -46,7 +46,7 @@ When your Personal Information is no longer needed for the purpose for which it 
 Access to your Personal Information
 You may access the Personal Information we hold about you and to update and/or correct it, subject to certain exceptions. If you wish to access your Personal Information, please contact us in writing.
 
-[Your business name] will not charge any fee for your access request, but may charge an administrative fee for providing a copy of your Personal Information.
+pvq will not charge any fee for your access request, but may charge an administrative fee for providing a copy of your Personal Information.
 
 In order to protect your Personal Information we may require identification from you before releasing the requested information.
 
@@ -59,11 +59,4 @@ This Policy may change from time to time and is available on our website.
 Privacy Policy Complaints and Enquiries
 If you have any queries or complaints about our Privacy Policy please contact us at:
 
-
-[Your business address]
-
-[Your business email address]
-
-[Your business phone number]
-
- 
+team@pvq.app

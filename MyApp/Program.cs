@@ -8,7 +8,6 @@ using ServiceStack.Blazor;
 using MyApp.Components;
 using MyApp.Data;
 using MyApp.Components.Account;
-using MyApp.ServiceInterface;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +34,11 @@ services.AddDataProtection()
 
 services.AddDatabaseDeveloperPageExceptionFilter();
 
-services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+services.AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = true;
+        options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._";
+    })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()

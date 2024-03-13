@@ -23,9 +23,9 @@
                     <div class="flex flex-col gap-y-4">
                         <div>
                             <div>
-                                <label for="Email" class="@TextInput.LabelClasses">Email</label>
+                                <label for="Email" class="@TextInput.LabelClasses">Username</label>
                                 <div class="mt-1 relative rounded-md shadow-sm">
-                                    <InputText id="email" type="text" @bind-Value="Input.Email" class="@TextInput.InputClasses" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                                    <InputText id="user-name" type="text" @bind-Value="Input.UserName" class="@TextInput.InputClasses" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                                 </div>
                             </div>
                         </div>
@@ -64,12 +64,6 @@
                 </div>
             </EditForm>
         </section>
-        <div class="mt-8">
-            <section>
-                <Heading3>Use another service to log in.</Heading3>
-                <ExternalLoginPicker />
-            </section>
-        </div>
     </div>
 </div>
 
@@ -98,7 +92,7 @@
     {
         // This doesn't count login failures towards account lockout
         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await SignInManager.PasswordSignInAsync(Input.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
@@ -124,8 +118,7 @@
     private sealed class InputModel
     {
         [Required]
-        [EmailAddress]
-        public string Email { get; set; } = "";
+        public string UserName { get; set; } = "";
 
         [Required]
         [DataType(DataType.Password)]
