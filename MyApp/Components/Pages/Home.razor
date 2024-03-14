@@ -19,9 +19,8 @@
     protected override void OnInitialized()
     {
         using var db = HostContext.AppHost.GetDbConnection();
-        Posts = db.Select<Post>()
+        Posts = db.Select(db.From<Post>()
             .OrderByDescending(x => x.Score)
-            .Take(25)
-            .ToList();
+            .Take(50));
     }
 }
