@@ -21,7 +21,7 @@
             <div class="flex flex-auto flex-col">
                 <div>
                     <h4 class="font-medium text-indigo-700 dark:text-indigo-300 hover:text-indigo-500 text-lg">
-                        <a href="questions/@post.Id/@post.Slug.GenerateSlug()">@post.Title</a>
+                        <a href=@($"questions/{post.Id}/{post.Slug.GenerateSlug()}")>@post.Title</a>
                     </h4>
                     <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">@post.Summary</p>
                 </div>
@@ -30,7 +30,7 @@
                         <div class="flex flex-wrap justify-center gap-x-2 gap-y-2">
                             @foreach (var tag in post.Tags.Safe())
                             {
-                                <a href="questions/tagged/@tag.UrlEncode()" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">@tag</a>
+                                <a href=@($"questions/tagged/{tag.UrlEncode()}") class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">@tag</a>
                             }
                         </div>
                         <div class="flex flex-grow px-4 sm:px-6 text-xs justify-end">

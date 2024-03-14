@@ -1,7 +1,14 @@
 ﻿namespace MyApp;
 
-public static class UiExtensions
+public static class UiUtils
 {
+    public const int MaxPageSize = 50;
+    public const int DefaultPageSize = 25;
+
+    public static int ToPageSize(this int? pageSize) => pageSize != null
+        ? Math.Min(MaxPageSize, pageSize.Value)
+        : DefaultPageSize;
+    
     public static string ToHumanReadable(this int? number) => number == null ? "0" : number.Value.ToHumanReadable();
     public static string ToHumanReadable(this int number)
     {

@@ -1,10 +1,8 @@
 ﻿@page "/questions/{Id:int}/{*Slug}"
-@using ServiceStack.IO
-@using MyApp.Data
 @inject R2VirtualFiles R2
 @inject RendererCache RendererCache
 @inject NavigationManager NavigationManager
-@inject ServiceStack.Messaging.IMessageProducer MessageProducer
+@inject IMessageProducer MessageProducer
 
 <PageTitle>@title</PageTitle>
 
@@ -42,7 +40,7 @@ else
     AuthorInfo? author;
 
     string title = "";
-    string? Html = null;
+    string? Html;
     
     async Task load()
     {
@@ -51,11 +49,22 @@ else
 
         if (!string.IsNullOrEmpty(Html))
         {
-            var attrPrefix = "data-title=\"";
-            title = Html.IndexOf(attrPrefix, StringComparison.Ordinal) >= 0 
-                ? Html.RightPart(attrPrefix).LeftPart('"') 
-                : title;
+            var attrPrefix = "<template id=\"Post\">";
+            var json = Html.IndexOf(attrPrefix, StringComparison.Ordinal) >= 0 
+                ? Html.RightPart(attrPrefix).LeftPart("</template>") 
+                : null;
 
+            if (json != null)
+            {
+                var post = json.FromJson<Post>();
+                var slug = post.Slug.GenerateSlug(200);
+                if (slug != Slug)
+                {
+                    NavigationManager.NavigateTo($"/questions/{Id}/{slug}");
+                    return;
+                }
+            }
+            
             MessageProducer.Publish(new RenderComponent {
                 IfQuestionModified = Id
             });
@@ -77,7 +86,7 @@ else
             
             MessageProducer.Publish(new RenderComponent { Question = question });
             
-            var slug = question.Post.Slug.GenerateSlug();
+            var slug = question.Post.Slug.GenerateSlug(200);
             if (slug != Slug)
             {
                 NavigationManager.NavigateTo($"/questions/{Id}/{slug}");

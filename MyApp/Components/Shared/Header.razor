@@ -17,7 +17,13 @@
                 <ul class="flex flex-wrap items-center justify-end w-full m-0">
 
                     <li class="relative flex flex-wrap just-fu-start m-0 w-96 pr-4">
-                        <input type="text" class="@TextInput.InputClasses" placeholder="Search..." />
+                        <form class="w-full" method="get" action="questions">
+                            <input type="text" name="q" class="@TextInput.InputClasses" placeholder="Search..." value=@Q />
+                            <input type="submit" class="hidden" />
+                        </form>
+                    </li>
+                    <li class="relative flex flex-wrap just-fu-start m-0">
+                        <NavLink href="questions" class="p-4 flex items-center justify-start mw-full hover:text-sky-500 dark:hover:text-sky-400" ActiveClass="text-blue-700 dark:text-blue-300">Questions</NavLink>
                     </li>
                     <li class="relative flex flex-wrap just-fu-start m-0">
                         <NavLink href="leaderboard" class="p-4 flex items-center justify-start mw-full hover:text-sky-500 dark:hover:text-sky-400" ActiveClass="text-blue-700 dark:text-blue-300">Leaderboard</NavLink>
@@ -37,14 +43,14 @@
                             <li>
                                 <div class="mx-3 relative">
                                     <div>
-                                        <a href="Account/Manage"
+                                        <NavLink href="Account/Manage"
                                             class="max-w-xs bg-white dark:bg-black rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 lg:p-2 lg:rounded-md lg:hover:bg-gray-50 dark:lg:hover:bg-gray-900 dark:ring-offset-black" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
                                             <img class="h-8 w-8 rounded-full" src="@User.GetPicture()" alt="">
                                             <span class="hidden ml-3 text-gray-700 dark:text-gray-300 text-sm font-medium lg:block">
                                                 <span class="sr-only">Open user menu for </span>
                                                 @User.GetDisplayName()
                                             </span>
-                                        </a>
+                                        </NavLink>
                                     </div>
                                 </div>
                             </li>
@@ -86,6 +92,9 @@
 
 @code {
     private string? currentUrl;
+
+    [SupplyParameterFromQuery] 
+    string? Q { get; set; }
 
     protected override void OnInitialized()
     {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
+using MyApp.Components.Pages;
 using MyApp.Components.Shared;
 using MyApp.Data;
 using MyApp.ServiceInterface;
@@ -50,6 +51,40 @@ public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
         var filePath = GetCachedQuestionPostPath(id);
         await File.WriteAllTextAsync(filePath, html);
     }
+
+    private string GetHtmlTabFilePath(string? tab)
+    {
+        var partialName = string.IsNullOrEmpty(tab) 
+            ? "" 
+            : $".{tab}";
+        var filePath = appConfig.CacheDir.CombineWith($"HomeTab{partialName}.html");
+        return filePath;
+    }
+
+    static TimeSpan HomeTabValidDuration = TimeSpan.FromMinutes(5);
+
+    public async Task SetHomeTabHtmlAsync(string? tab, string html)
+    {
+        appConfig.CacheDir.AssertDir();
+        var filePath = GetHtmlTabFilePath(tab);
+        await File.WriteAllTextAsync(filePath, html);
+    }
+
+    public async Task<string?> GetHomeTabHtmlAsync(string? tab)
+    {
+        var filePath = GetHtmlTabFilePath(tab);
+        var fileInfo = new FileInfo(filePath);
+        if (fileInfo.Exists)
+        {
+            if (DateTime.UtcNow - fileInfo.LastWriteTimeUtc > HomeTabValidDuration)
+                return null;
+            
+            var html = await fileInfo.ReadAllTextAsync();
+            if (!string.IsNullOrEmpty(html))
+                return html;
+        }
+        return null;
+    }
 }
 
 public class RenderServices(R2VirtualFiles r2, BlazorRenderer renderer, RendererCache cache) : Service
@@ -70,10 +105,21 @@ public class RenderServices(R2VirtualFiles r2, BlazorRenderer renderer, Renderer
                 }
             }
         }
+        
         if (request.Question != null)
         {
             var html = await renderer.RenderComponent<QuestionPost>(new() { ["Question"] = request.Question });
             await cache.SetQuestionPostHtmlAsync(request.Question.Id, html);
+        }
+
+        if (request.Home != null)
+        {
+            var html = await renderer.RenderComponent<HomeTab>(new()
+            {
+                ["Tab"] = request.Home.Tab,
+                ["Posts"] = request.Home.Posts,
+            });
+            await cache.SetHomeTabHtmlAsync(request.Home.Tab, html);
         }
     }
 }
