@@ -1201,10 +1201,6 @@ select{
   margin-top: auto;
 }
 
-.-mt-12 {
-  margin-top: -3rem;
-}
-
 .block {
   display: block;
 }
@@ -1441,6 +1437,18 @@ select{
   width: 100vw;
 }
 
+.w-44 {
+  width: 11rem;
+}
+
+.w-48 {
+  width: 12rem;
+}
+
+.w-72 {
+  width: 18rem;
+}
+
 .min-w-0 {
   min-width: 0px;
 }
@@ -1455,6 +1463,10 @@ select{
 
 .max-w-3xl {
   max-width: 48rem;
+}
+
+.max-w-4xl {
+  max-width: 56rem;
 }
 
 .max-w-5xl {
@@ -1822,6 +1834,24 @@ select{
   --tw-space-y-reverse: 0;
   margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+}
+
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+}
+
+.-space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(-1rem * var(--tw-space-x-reverse));
+  margin-left: calc(-1rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
 .divide-x > :not([hidden]) ~ :not([hidden]) {
@@ -2504,6 +2534,10 @@ select{
 
 .pt-8 {
   padding-top: 2rem;
+}
+
+.pt-12 {
+  padding-top: 3rem;
 }
 
 .text-left {
@@ -4454,6 +4488,10 @@ select{
     max-width: 65ch;
   }
 
+  .sm\:max-w-4xl {
+    max-width: 56rem;
+  }
+
   .sm\:flex-1 {
     flex: 1 1 0%;
   }
@@ -4545,6 +4583,11 @@ select{
   .sm\:px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+  }
+
+  .sm\:px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
   .sm\:pb-0 {
@@ -4796,6 +4839,11 @@ select{
     padding-right: 2rem;
   }
 
+  .lg\:px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
   .lg\:pb-28 {
     padding-bottom: 7rem;
   }
@@ -4852,6 +4900,10 @@ select{
 
   .xl\:max-w-screen-lg {
     max-width: 1024px;
+  }
+
+  .xl\:max-w-5xl {
+    max-width: 64rem;
   }
 }
 

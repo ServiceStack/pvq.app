@@ -5,15 +5,20 @@
 
 <PageTitle>pvq.app</PageTitle>
 
-@if (Html != null)
-{
-    @BlazorHtml.Raw(Html)
-}
-else
-{
-    <HomeTab Tab=@Tab Posts=@Posts />
-}
-    
+<div class="flex flex-wrap justify-center">
+    <div>
+        @if (Html != null)
+        {
+            @BlazorHtml.Raw(Html)
+        }
+        else
+        {
+            <HomeTab Tab=@Tab Posts=@Posts />
+        }
+    </div>
+    <Aside />
+</div>
+
 @code {
     string? Html;
 

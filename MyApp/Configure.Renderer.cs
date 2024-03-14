@@ -26,6 +26,8 @@ public class ConfigureRenderer : IHostingStartup
 
 public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
 {
+    private static bool DisableCache = false;
+    
     public string GetCachedQuestionPostPath(int id) => appConfig.CacheDir.CombineWith(GetQuestionPostVirtualPath(id)); 
     public string GetQuestionPostVirtualPath(int id)
     {
@@ -38,6 +40,8 @@ public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
 
     public async Task<string?> GetQuestionPostHtmlAsync(int id)
     {
+        if (DisableCache)
+            return null;
         var filePath = GetCachedQuestionPostPath(id);
         if (File.Exists(filePath))
             return await File.ReadAllTextAsync(filePath);
@@ -46,6 +50,8 @@ public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
 
     public async Task SetQuestionPostHtmlAsync(int id, string html)
     {
+        if (DisableCache)
+            return;
         var (dir1, dir2, fileId) = id.ToFileParts();
         appConfig.CacheDir.CombineWith($"{dir1}/{dir2}").AssertDir();
         var filePath = GetCachedQuestionPostPath(id);
@@ -65,6 +71,8 @@ public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
 
     public async Task SetHomeTabHtmlAsync(string? tab, string html)
     {
+        if (DisableCache)
+            return;
         appConfig.CacheDir.AssertDir();
         var filePath = GetHtmlTabFilePath(tab);
         await File.WriteAllTextAsync(filePath, html);
@@ -72,6 +80,8 @@ public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
 
     public async Task<string?> GetHomeTabHtmlAsync(string? tab)
     {
+        if (DisableCache)
+            return null;
         var filePath = GetHtmlTabFilePath(tab);
         var fileInfo = new FileInfo(filePath);
         if (fileInfo.Exists)

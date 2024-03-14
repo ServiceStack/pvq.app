@@ -29,7 +29,8 @@
             </div>
         </div>
         <div class="flex">
-            <div class="w-32">
+
+            <div class="w-20">
                 <div class="flex flex-col items-center">
                     <svg class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
                     <b class="text-xl">@Question.Post.Score</b>
@@ -42,7 +43,7 @@
         </div>
         <div class="py-6 flex flex-1 items-end border-b border-gray-200 dark:border-gray-700">
             <dl class="flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
-                <div class="flex flex-wrap justify-center gap-x-2 gap-y-2">
+                <div class="flex flex-wrap gap-x-2 gap-y-2">
                     @foreach (var tag in Question.Post.Tags.Safe())
                     {
                         <a href="questions/tagged/@tag.UrlEncode()" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">@tag</a>
