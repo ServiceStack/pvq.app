@@ -49,7 +49,7 @@ public class ConfigureDbMigrations : IHostingStartup
         //initializing custom roles 
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        string[] allRoles = [Roles.Admin, Roles.Manager, Roles.Employee];
+        string[] allRoles = Roles.All;
 
         void assertResult(IdentityResult result)
         {
