@@ -10,6 +10,7 @@ blog/
 package-lock.json
 App_Data/
 *.patch
+Configure.Secrets.cs
 
 # User-specific files
 *.suo
