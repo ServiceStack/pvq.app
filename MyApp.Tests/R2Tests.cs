@@ -7,6 +7,7 @@ using ServiceStack.Text;
 
 namespace MyApp.Tests;
 
+[TestFixture, Explicit]
 public class R2Tests
 {
     AmazonS3Client CreateS3Client() => new(
