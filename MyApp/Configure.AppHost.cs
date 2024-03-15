@@ -16,9 +16,9 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             context.Configuration.GetSection(nameof(AppConfig)).Bind(AppConfig.Instance);
             services.AddSingleton(AppConfig.Instance);
             
-            var r2AccountId = Environment.GetEnvironmentVariable("R2_ACCOUNT_ID");
-            var r2AccessId = Environment.GetEnvironmentVariable("R2_ACCESS_KEY_ID");
-            var r2AccessKey = Environment.GetEnvironmentVariable("R2_SECRET_ACCESS_KEY");
+            var r2AccountId = context.Configuration.GetValue("R2AccountId", Environment.GetEnvironmentVariable("R2_ACCOUNT_ID"));
+            var r2AccessId = context.Configuration.GetValue("R2AccessKeyId", Environment.GetEnvironmentVariable("R2_ACCESS_KEY_ID"));
+            var r2AccessKey = context.Configuration.GetValue("R2SecretAccessKey", Environment.GetEnvironmentVariable("R2_SECRET_ACCESS_KEY"));
             var s3Client = new AmazonS3Client(r2AccessId, r2AccessKey, new AmazonS3Config
             {
                 ServiceURL = $"https://{r2AccountId}.r2.cloudflarestorage.com"
