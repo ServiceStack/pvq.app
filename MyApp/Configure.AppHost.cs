@@ -34,7 +34,7 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         FileSystemVirtualFiles.AssertDirectory(HostingEnvironment.ContentRootPath.CombineWith(AppConfig.Instance.CacheDir));
         
         using var db = GetDbConnection();
-        AppConfig.Instance.ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null));
+        AppConfig.Instance.ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null || x.UserName == "human"));
     }
     
     private string? ResolveGitBlobBaseUrl(IVirtualDirectory contentDir)

@@ -17,7 +17,7 @@ public class AppConfig
 
     public ApplicationUser GetApplicationUser(string model)
     {
-        var user = ModelUsers.FirstOrDefault(x => x.Model == model);
+        var user = ModelUsers.FirstOrDefault(x => x.Model == model || x.UserName == model);
         return user ?? DefaultUser;
     }
 }

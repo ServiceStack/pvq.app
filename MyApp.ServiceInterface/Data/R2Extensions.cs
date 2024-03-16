@@ -6,6 +6,8 @@ namespace MyApp.Data;
 
 public static class R2Extensions
 {
+    public const int MostVotedScore = 10;
+    public const int AcceptedScore = 9;
     public static Dictionary<string,int> ModelScores = new()
     {
         ["starcoder2:3b"] = 1, //3B
@@ -56,12 +58,31 @@ public static class R2Extensions
             {
                 to.Answers.Add(entry.Value.FromJson<Answer>());
             }
+            else if (entry.Key.StartsWith(idFiles.FileId + ".h."))
+            {
+                var post = entry.Value.FromJson<Post>();
+                var answer = new Answer
+                {
+                    Id = $"{post.Id}",
+                    Model = "human",
+                    UpVotes = entry.Key.Contains("h.most-voted") ? MostVotedScore : AcceptedScore,
+                    Choices = [
+                        new()
+                        {
+                            Index = 1,
+                            Message = new() { Role = "human", Content = post.Body ?? "" }
+                        }
+                    ]
+                };
+                if (to.Answers.All(x => x.Id != answer.Id))
+                    to.Answers.Add(answer);
+            }
         }
 
         if (to.Post == null)
             return null;
 
-        to.Answers.Each(x => x.UpVotes = ModelScores.GetValueOrDefault(x.Model, 1));
+        to.Answers.Each(x => x.UpVotes = x.UpVotes == 0 ? ModelScores.GetValueOrDefault(x.Model, 1) : x.UpVotes);
         to.Answers.Sort((a, b) => b.Votes - a.Votes);
         return to;
     }
