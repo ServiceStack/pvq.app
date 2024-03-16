@@ -29,6 +29,7 @@ public class ConfigureMq : IHostingStartup
             //Register ServiceStack APIs you want to be able to invoke via MQ
             mqService.RegisterHandler<SendEmail>(appHost.ExecuteMessage);
             mqService.RegisterHandler<RenderComponent>(appHost.ExecuteMessage);
+            mqService.RegisterHandler<DiskTasks>(appHost.ExecuteMessage);
             mqService.Start();
         });
 }

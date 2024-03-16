@@ -50,7 +50,7 @@ public class SmtpConfig
 /// </summary>
 public class EmailServices(SmtpConfig config, ILogger<EmailServices> log) 
     // TODO: Uncomment to enable sending emails with SMTP
-    // : Service
+    : Service
 {
     public object Any(SendEmail request)
     {

@@ -1,0 +1,85 @@
+﻿using MyApp.Data;
+using ServiceStack;
+using MyApp.ServiceModel;
+using ServiceStack.IO;
+using ServiceStack.OrmLite;
+using SixLabors.ImageSharp.Formats.Png;
+
+namespace MyApp.ServiceInterface;
+
+public class UserServices(R2VirtualFiles r2) : Service
+{
+    private const string AppData = "/App_Data";
+    
+    public async Task<object> Any(UpdateUserProfile request)
+    {
+        var userName = Request.GetClaimsPrincipal().Identity!.Name!;
+        var file = base.Request!.Files.FirstOrDefault();
+
+        if (file != null)
+        {
+            var userProfileDir = $"/profiles/{userName[..2]}/{userName}"; 
+            var origPath = userProfileDir.CombineWith(file.FileName);
+            var fileName = $"{file.FileName.LastLeftPart('.')}_128.{file.FileName.LastRightPart('.')}";
+            var profilePath = userProfileDir.CombineWith(fileName);
+            var originalMs = await file.InputStream.CopyToNewMemoryStreamAsync();
+            var resizedMs = await ImageUtils.CropAndResizeAsync(originalMs, 128, 128, PngFormat.Instance);
+            
+            await VirtualFiles.WriteFileAsync(AppData.CombineWith(origPath), originalMs);
+            await VirtualFiles.WriteFileAsync(AppData.CombineWith(profilePath), resizedMs);
+
+            await Db.UpdateOnlyAsync(() => new ApplicationUser {
+                ProfilePath = profilePath,
+            }, x => x.UserName == userName);
+            
+            PublishMessage(new DiskTasks {
+                SaveFile = new() {
+                    FilePath = origPath,
+                    Stream = originalMs,
+                }
+            });
+            PublishMessage(new DiskTasks {
+                SaveFile = new() {
+                    FilePath = profilePath,
+                    Stream = resizedMs,
+                }
+            });
+        }
+        
+        return new UpdateUserProfileResponse();
+    }
+
+    public async Task<object> Any(GetUserAvatar request)
+    {
+        if (!string.IsNullOrEmpty(request.UserName))
+        {
+            var profilePath = Db.Scalar<string>(Db.From<ApplicationUser>()
+                .Where(x => x.UserName == request.UserName)
+                .Select(x => x.ProfilePath));
+            if (!string.IsNullOrEmpty(profilePath))
+            {
+                if (profilePath.StartsWith("data:"))
+                {
+                    return new HttpResult(profilePath, MimeTypes.ImageSvg);
+                }
+                if (profilePath.StartsWith('/'))
+                {
+                    var localProfilePath = AppData.CombineWith(profilePath);
+                    var file = VirtualFiles.GetFile(localProfilePath);
+                    if (file != null)
+                    {
+                        return new HttpResult(file, MimeTypes.GetMimeType(file.Extension));
+                    }
+                    file = r2.GetFile(profilePath);
+                    var bytes = file != null ? await file.ReadAllBytesAsync() : null;
+                    if (bytes is { Length: > 0 })
+                    {
+                        await VirtualFiles.WriteFileAsync(localProfilePath, bytes);
+                        return new HttpResult(bytes, MimeTypes.GetMimeType(file!.Extension));
+                    }
+                }
+            }
+        }
+        return new HttpResult(Svg.GetImage(Svg.Icons.Users), MimeTypes.ImageSvg);
+    }
+}

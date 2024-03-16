@@ -1,8 +1,9 @@
 ﻿using Amazon.S3;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using MyApp.Data;
 using ServiceStack.IO;
 using ServiceStack.OrmLite;
+using MyApp.Data;
+using MyApp.ServiceInterface;
 
 [assembly: HostingStartup(typeof(MyApp.AppHost))]
 
@@ -24,7 +25,20 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
                 ServiceURL = $"https://{r2AccountId}.r2.cloudflarestorage.com"
             });
             services.AddSingleton(s3Client);
-            services.AddSingleton(new R2VirtualFiles(s3Client, "stackoverflow-shootout"));
+            var appFs = new R2VirtualFiles(s3Client, "stackoverflow-shootout");
+            services.AddSingleton(appFs);
+
+            services.AddPlugin(new FilesUploadFeature(
+                new UploadLocation("profiles", appFs, allowExtensions: FileExt.WebImages,
+                    // Use unique URL to invalidate CDN caches
+                    resolvePath: ctx =>
+                    {
+                        var userName = ctx.Session.UserName;
+                        return $"/profiles/{userName[..2]}/{userName}/{ctx.FileName}";
+                    },
+                    maxFileBytes: ImageUtils.MaxAvatarSize,
+                    transformFile: ImageUtils.TransformAvatarAsync)
+            ));
         });
 
     public override void Configure()
@@ -32,6 +46,7 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         AppConfig.Instance.GitPagesBaseUrl ??= ResolveGitBlobBaseUrl(ContentRootDirectory);
         
         FileSystemVirtualFiles.AssertDirectory(HostingEnvironment.ContentRootPath.CombineWith(AppConfig.Instance.CacheDir));
+        FileSystemVirtualFiles.AssertDirectory(HostingEnvironment.ContentRootPath.CombineWith(AppConfig.Instance.ProfilesDir));
         
         using var db = GetDbConnection();
         AppConfig.Instance.ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null || x.UserName == "human"));

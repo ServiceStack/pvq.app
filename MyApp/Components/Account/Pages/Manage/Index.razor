@@ -17,28 +17,23 @@
 <div class="max-w-xl">
     <div class="shadow overflow-hidden sm:rounded-md">
         <EditForm id="profile-form" Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post"
-                  class="px-4 bg-white dark:bg-black sm:p-6">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="mb-3 text-danger text-center font-semibold" />
+                  class="bg-white dark:bg-black">
 
-            <div class="flex flex-col gap-y-4">
-                <div>
-                    <label for="username" class="@TextInput.LabelClasses">Username</label>
-                    <div class="mt-1 relative rounded-md shadow-sm">
-                        <input id="username" type="text" value="@username" class="@TextInput.InputClasses" placeholder="Please choose your username." disabled />
+            <div class="px-4 sm:p-6">
+                <DataAnnotationsValidator/>
+                <ValidationSummary class="mb-3 text-danger text-center font-semibold"/>
+
+                <div class="flex flex-col gap-y-4">
+                    <div>
+                        <label for="username" class="@TextInput.LabelClasses">Username</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <input id="username" type="text" value="@username" class="@TextInput.InputClasses" placeholder="Please choose your username." disabled/>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <label for="phone-number" class="@TextInput.LabelClasses">Phone number</label>
-                    <div class="mt-1 relative rounded-md shadow-sm">
-                        <InputText id="phone-number" type="text" @bind-Value="Input.PhoneNumber" class="@TextInput.InputClasses" placeholder="Please enter your phone number." />
-                    </div>
-                    <ValidationMessage For="() => Input.PhoneNumber" class="mt-2 text-danger text-sm" />
-                </div>
-                <div>
-                    <PrimaryButton id="update-profile-button" type="submit">Save</PrimaryButton>
                 </div>
             </div>
+
+            <div data-component="pages/components/EditProfile.mjs"></div>
         </EditForm>
     </div>
 </div>
@@ -83,5 +78,8 @@
         [Phone]
         [Display(Name = "Phone number")]
         public string? PhoneNumber { get; set; }
+
+        [Display(Name = "Avatar")]
+        public string? ProfileUrl { get; set; }
     }
 }
