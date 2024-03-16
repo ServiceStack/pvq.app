@@ -93,7 +93,7 @@
                             var user = AppConfig.GetApplicationUser(answer.Model);
                         }
                         <div class="mt-8 flex flex-col items-center">
-                            <img class="w-20 h-20 inline-block" src="@user.ProfileUrl">
+                            <img class="w-20 h-20 inline-block" src="@user.UserName.GetAvatarUrl()">
                             <div class="text-center whitespace-nowrap text-sm font-semibold">@user.UserName</div>
                         </div>
                     </div>

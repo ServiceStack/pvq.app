@@ -11,7 +11,7 @@ using MyApp.Data;
 namespace MyApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240313164420_CreateIdentitySchema")]
+    [Migration("20240316165946_CreateIdentitySchema")]
     partial class CreateIdentitySchema
     {
         /// <inheritdoc />
@@ -160,18 +160,15 @@ namespace MyApp.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("FirstName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("LastName")
-                        .HasColumnType("TEXT");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("INTEGER");
@@ -199,7 +196,7 @@ namespace MyApp.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ProfileUrl")
+                    b.Property<string>("ProfilePath")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SecurityStamp")

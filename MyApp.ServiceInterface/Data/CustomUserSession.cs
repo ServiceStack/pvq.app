@@ -31,9 +31,9 @@ public class AdditionalUserClaimsPrincipalFactory(
 
         var claims = new List<Claim>();
         // Add additional claims here
-        if (user.ProfileUrl != null)
+        if (user.ProfilePath != null)
         {
-            claims.Add(new Claim(JwtClaimTypes.Picture, user.ProfileUrl));
+            claims.Add(new Claim(JwtClaimTypes.Picture, user.ProfilePath));
         }
 
         identity.AddClaims(claims);

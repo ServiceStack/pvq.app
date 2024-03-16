@@ -84,8 +84,7 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "admin",
             Email = "admin@email.com",
-            FirstName = "Admin",
-            LastName = "User",
+            DisplayName = "Administrator",
             EmailConfirmed = true,
         }, "p@55wOrd", allRoles);
 
@@ -93,20 +92,18 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "human",
             Email = "human@email.com",
-            FirstName = "Human",
-            LastName = "User",
+            DisplayName = "Human",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/user1.svg",
+            ProfilePath = "/profiles/hu/human.svg",
         }, "p@55wOrd");
         
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "phi",
             Email = "phi@email.com",
-            FirstName = "Phi-2",
-            LastName = "2.7B",
+            DisplayName = "Phi-2 2.7B",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/phi-2.svg",
+            ProfilePath = "/profiles/ph/phi-2.svg",
             Model = "phi", //3B
         }, "p@55wOrd");
 
@@ -114,10 +111,9 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "gemma-2b",
             Email = "gemma-2b@email.com",
-            FirstName = "Gemma",
-            LastName = "2B",
+            DisplayName = "Gemma 2B",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/gemma-2b.svg",
+            ProfilePath = "/profiles/ge/gemma-2b.svg",
             Model = "gemma:2b", //3B
         }, "p@55wOrd");
 
@@ -125,10 +121,9 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "starcoder2-3b",
             Email = "starcoder2-3b@email.com",
-            FirstName = "StarCoder2",
-            LastName = "3B",
+            DisplayName = "StarCoder2 3B",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/starcoder-3b.png",
+            ProfilePath = "/profiles/st/starcoder-3b.png",
             Model = "starcoder2:3b", //3B
         }, "p@55wOrd");
 
@@ -136,10 +131,9 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "gemma",
             Email = "gemma@email.com",
-            FirstName = "Gemma",
-            LastName = "7B",
+            DisplayName = "Gemma 7B",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/gemma-7b.svg",
+            ProfilePath = "/profiles/ge/gemma-7b.svg",
             Model = "gemma", //9B
         }, "p@55wOrd");
 
@@ -147,10 +141,9 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "codellama",
             Email = "codellama-13B@email.com",
-            FirstName = "Code Llama",
-            LastName = "7B",
+            DisplayName = "Code Llama 7B",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/codellama.svg",
+            ProfilePath = "/profiles/co/codellama.svg",
             Model = "codellama", //7B
         }, "p@55wOrd");
 
@@ -158,10 +151,9 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "mistral",
             Email = "mistral-7B@email.com",
-            FirstName = "Mistral",
-            LastName = "7B", 
+            DisplayName = "Mistral 7B",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/mistral.svg",
+            ProfilePath = "/profiles/mi/mistral.svg",
             Model = "mistral", //7B
         }, "p@55wOrd");
 
@@ -169,10 +161,9 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "starcoder2-15b",
             Email = "starcoder2-15b@email.com",
-            FirstName = "StarCoder2",
-            LastName = "15B",
+            DisplayName = "StarCoder2 15B",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/starcoder2-15b.png",
+            ProfilePath = "/profiles/st/starcoder2-15b.png",
             Model = "starcoder2:15b", //16B
         }, "p@55wOrd");
 
@@ -180,10 +171,9 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "mixtral",
             Email = "mixtral-8x7b@email.com",
-            FirstName = "Mixtral",
-            LastName = "8x7B",
+            DisplayName = "Mixtral 8x7B",
             EmailConfirmed = true,
-            ProfileUrl = "/img/profiles/mixtral.jpg",
+            ProfilePath = "/profiles/mi/mixtral.jpg",
             Model = "mixtral", //47B
         }, "p@55wOrd");
     }
