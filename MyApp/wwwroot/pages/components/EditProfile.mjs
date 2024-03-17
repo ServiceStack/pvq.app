@@ -11,7 +11,7 @@ export default {
             <div class="flex justify-between space-x-3">
                 <div></div>
                 <div>
-                    <PrimaryButton>Save</PrimaryButton>
+                    <PrimaryButton :disabled="!client.loading">Save</PrimaryButton>
                 </div>
             </div>
         </div>        
@@ -31,6 +31,6 @@ export default {
                 if (el) el.src = user.value.profileUrl 
             }
         }
-        return { user, submit }
+        return { user, submit, client }
     }
 }
