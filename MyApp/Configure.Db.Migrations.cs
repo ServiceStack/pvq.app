@@ -90,11 +90,20 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
-            UserName = "human",
-            Email = "human@email.com",
-            DisplayName = "Human",
+            UserName = "most-voted",
+            Email = "most-voted@email.com",
+            DisplayName = "Most Voted",
             EmailConfirmed = true,
             ProfilePath = "/profiles/hu/human.svg",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "accepted",
+            Email = "accepted@email.com",
+            DisplayName = "Accepted",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/hu/human-accepted.svg",
         }, "p@55wOrd");
         
         await EnsureUserAsync(new ApplicationUser
@@ -119,22 +128,12 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
-            UserName = "starcoder2-3b",
-            Email = "starcoder2-3b@email.com",
-            DisplayName = "StarCoder2 3B",
+            UserName = "qwen-4b",
+            Email = "qwen@email.com",
+            DisplayName = "Qwen 1.5",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/st/starcoder-3b.png",
-            Model = "starcoder2:3b", //3B
-        }, "p@55wOrd");
-
-        await EnsureUserAsync(new ApplicationUser
-        {
-            UserName = "gemma",
-            Email = "gemma@email.com",
-            DisplayName = "Gemma 7B",
-            EmailConfirmed = true,
-            ProfilePath = "/profiles/ge/gemma-7b.svg",
-            Model = "gemma", //9B
+            ProfilePath = "/profiles/qw/qwen.svg",
+            Model = "qwen:4b", //4B
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -149,22 +148,32 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "gemma",
+            Email = "gemma@email.com",
+            DisplayName = "Gemma 7B",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ge/gemma-7b.svg",
+            Model = "gemma", //9B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "deepseek-coder",
+            Email = "deepseek-coder@email.com",
+            DisplayName = "DeepSeek Coder 6.7b",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/de/deepseek-coder.jpg",
+            Model = "deepseek-coder:6.7b", //16B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "mistral",
             Email = "mistral-7B@email.com",
             DisplayName = "Mistral 7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/mi/mistral.svg",
             Model = "mistral", //7B
-        }, "p@55wOrd");
-
-        await EnsureUserAsync(new ApplicationUser
-        {
-            UserName = "starcoder2-15b",
-            Email = "starcoder2-15b@email.com",
-            DisplayName = "StarCoder2 15B",
-            EmailConfirmed = true,
-            ProfilePath = "/profiles/st/starcoder2-15b.png",
-            Model = "starcoder2:15b", //16B
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
