@@ -12,9 +12,8 @@ namespace MyApp.ServiceModel;
 public class Post
 {
     public int Id { get; set; }
-        
-    [Required]
-    public int PostTypeId { get; set; }
+
+    [Required] public int PostTypeId { get; set; }
 
     public int? AcceptedAnswerId { get; set; }
 
@@ -45,17 +44,46 @@ public class Post
     public string Slug { get; set; }
 
     public string Summary { get; set; }
-    
-    [Ignore]
-    public string? Body { get; set; }
+
+    [Ignore] public string? Body { get; set; }
 }
 
-public class QueryPosts : QueryDb<Post> {}
+public class PostJob
+{
+    public int JobId { get; set; }
+    public int PostId { get; set; }
+    public string Title { get; set; }
+    public string Body { get; set; }
+    public List<string> Tags { get; set; }
+}
+
+public class CheckPostJobs : IGet, IReturn<CheckPostJobsResponse>
+{
+    public string WorkerId { get; set; }
+    public List<string> Models { get; set; }
+}
+public class CheckPostJobsResponse
+{
+    public List<PostJob> Results { get; set; }
+}
+
+public class CreateAnswer : IReturnVoid
+{
+    public int PostId { get; set; }
+    public string Model { get; set; }
+    public string Body { get; set; }
+    public string UserName { get; set; }
+    public int? JobId { get; set; }
+    public string? WorkerId { get; set; }
+}
+
+public class QueryPosts : QueryDb<Post>
+{
+}
 
 public class PostFts
 {
-    [Alias("rowid")]
-    public int Id { get; set; }
+    [Alias("rowid")] public int Id { get; set; }
     public string RefId { get; set; }
     public string UserName { get; set; }
     public string Body { get; set; }
@@ -67,11 +95,13 @@ public class Choice
     public int Index { get; set; }
     public ChoiceMessage Message { get; set; }
 }
+
 public class ChoiceMessage
 {
     public string Role { get; set; }
     public string Content { get; set; }
 }
+
 public class Answer
 {
     public string Id { get; set; }
@@ -79,19 +109,21 @@ public class Answer
     public long Created { get; set; }
     public string Model { get; set; }
     public List<Choice> Choices { get; set; }
-    public Dictionary<string,int> Usage { get; set; }
+    public Dictionary<string, int> Usage { get; set; }
     public decimal Temperature { get; set; }
     public List<Comment> Comments { get; set; } = [];
     public int Votes => UpVotes - DownVotes;
     public int UpVotes { get; set; }
     public int DownVotes { get; set; }
 }
+
 public class Comment
 {
     public string Body { get; set; }
     public string CreatedBy { get; set; }
     public DateTime CreatedDate { get; set; }
 }
+
 public class QuestionAndAnswers
 {
     public int Id => Post.Id;
@@ -101,7 +133,9 @@ public class QuestionAndAnswers
     public List<Answer> Answers { get; set; } = [];
 }
 
-public class AdminData : IGet, IReturn<AdminDataResponse> {}
+public class AdminData : IGet, IReturn<AdminDataResponse>
+{
+}
 
 public class PageStats
 {
