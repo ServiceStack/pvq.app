@@ -42,6 +42,10 @@ public class Post
     public string Slug { get; set; }
 
     public string Summary { get; set; }
+    
+    public DateTime? RankDate { get; set; }
+    
+    public int? AnswerCount { get; set; }
 
     [Ignore] public string? Body { get; set; }
 }
