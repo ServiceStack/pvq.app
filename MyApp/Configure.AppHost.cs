@@ -4,6 +4,7 @@ using ServiceStack.IO;
 using ServiceStack.OrmLite;
 using MyApp.Data;
 using MyApp.ServiceInterface;
+using ServiceStack.Messaging;
 
 [assembly: HostingStartup(typeof(MyApp.AppHost))]
 
@@ -27,6 +28,17 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             services.AddSingleton(s3Client);
             var appFs = new R2VirtualFiles(s3Client, "stackoverflow-shootout");
             services.AddSingleton(appFs);
+            
+            var questionsDir = context.HostingEnvironment.ContentRootPath.CombineWith("App_Data/questions");
+#if DEBUG
+            questionsDir = Path.GetFullPath(
+                Path.Combine(context.HostingEnvironment.ContentRootPath, "../../pvq/questions"));
+#endif
+            services.AddSingleton(c => new QuestionsProvider(
+                c.GetRequiredService<ILogger<QuestionsProvider>>(),
+                c.GetRequiredService<IMessageProducer>(),
+                new FileSystemVirtualFiles(questionsDir),
+                appFs));
 
             services.AddPlugin(new FilesUploadFeature(
                 new UploadLocation("profiles", appFs, allowExtensions: FileExt.WebImages,
@@ -49,7 +61,8 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         FileSystemVirtualFiles.AssertDirectory(HostingEnvironment.ContentRootPath.CombineWith(AppConfig.Instance.ProfilesDir));
         
         using var db = GetDbConnection();
-        AppConfig.Instance.ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null || x.UserName == "human"));
+        AppConfig.Instance.ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null
+            || x.UserName == "most-voted" || x.UserName == "accepted"));
     }
     
     private string? ResolveGitBlobBaseUrl(IVirtualDirectory contentDir)

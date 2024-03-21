@@ -1,4 +1,5 @@
 ﻿@page "/questions/{Id:int}/{*Slug}"
+@inject QuestionsProvider QuestionsProvider
 @inject R2VirtualFiles R2
 @inject RendererCache RendererCache
 @inject NavigationManager NavigationManager
@@ -34,6 +35,9 @@
 </div>
 
 @code {
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+    
     [Parameter] public required int Id { get; set; }
 
     [Parameter] public required string Slug { get; set; }
@@ -47,6 +51,10 @@
 
     async Task load()
     {
+        MessageProducer.Publish(new AnalyticsTasks {
+            RecordPostStat = new PostStat { PostId = Id }.WithRequest(HttpContext)
+        });
+        
         title = Slug.Replace("-", " ").ToTitleCase();
         Html = await RendererCache.GetQuestionPostHtmlAsync(Id);
 
@@ -74,9 +82,9 @@
             });
             return;
         }
-
-        var questionFiles = await R2.GetQuestionFilesAsync(Id);
-        question = await questionFiles.ToQuestionAndAnswers();
+        
+        var questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
+        question = questionFiles.Question;
         if (question?.Post?.Body != null)
         {
             title = question.Post.Title;
@@ -110,6 +118,4 @@
     }
 
     protected override Task OnInitializedAsync() => load();
-
-    protected override Task OnParametersSetAsync() => load();
 }

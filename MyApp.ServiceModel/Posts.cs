@@ -6,7 +6,7 @@ using ServiceStack.DataAnnotations;
 
 namespace MyApp.ServiceModel;
 
-[Icon(Svg = Icons.Booking)]
+[Icon(Svg = Icons.Post)]
 [Description("StackOverflow Question")]
 [Notes("A StackOverflow Question Post")]
 public class Post
@@ -51,6 +51,16 @@ public class Post
 }
 
 public class QueryPosts : QueryDb<Post> {}
+
+public class PostFts
+{
+    [Alias("rowid")]
+    public int Id { get; set; }
+    public string RefId { get; set; }
+    public string UserName { get; set; }
+    public string Body { get; set; }
+    public string? Tags { get; set; }
+}
 
 public class Choice
 {

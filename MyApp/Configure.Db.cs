@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
 using MyApp.Data;
+using MyApp.ServiceModel;
 
 [assembly: HostingStartup(typeof(MyApp.ConfigureDb))]
 
@@ -9,13 +10,20 @@ namespace MyApp;
 
 public class ConfigureDb : IHostingStartup
 {
+    public const string AnalyticsDbPath = "App_Data/analytics.db";
+    public const string SearchDbPath = "../../pvq/dist/search.db";
+    
     public void Configure(IWebHostBuilder builder) => builder
         .ConfigureServices((context, services) => {
             var connectionString = context.Configuration.GetConnectionString("DefaultConnection")
                 ?? "DataSource=App_Data/app.db;Cache=Shared";
-            
-            services.AddSingleton<IDbConnectionFactory>(new OrmLiteConnectionFactory(
-                connectionString, SqliteDialect.Provider));
+
+            var dbFactory = new OrmLiteConnectionFactory(connectionString, SqliteDialect.Provider);
+            dbFactory.RegisterConnection(Databases.Analytics, 
+                $"DataSource={AnalyticsDbPath};Cache=Shared", SqliteDialect.Provider);
+            dbFactory.RegisterConnection(Databases.Search, 
+                $"DataSource={SearchDbPath};Cache=Shared", SqliteDialect.Provider);
+            services.AddSingleton<IDbConnectionFactory>(dbFactory);
 
             // $ dotnet ef migrations add CreateIdentitySchema
             // $ dotnet ef database update

@@ -30,6 +30,7 @@ public class ConfigureMq : IHostingStartup
             mqService.RegisterHandler<SendEmail>(appHost.ExecuteMessage);
             mqService.RegisterHandler<RenderComponent>(appHost.ExecuteMessage);
             mqService.RegisterHandler<DiskTasks>(appHost.ExecuteMessage);
+            mqService.RegisterHandler<AnalyticsTasks>(appHost.ExecuteMessage);
             mqService.Start();
         });
 }

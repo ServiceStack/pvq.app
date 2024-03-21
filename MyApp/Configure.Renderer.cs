@@ -97,7 +97,7 @@ public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
     }
 }
 
-public class RenderServices(R2VirtualFiles r2, BlazorRenderer renderer, RendererCache cache) : Service
+public class RenderServices(QuestionsProvider questions, BlazorRenderer renderer, RendererCache cache) : Service
 {
     public async Task Any(RenderComponent request)
     {
@@ -108,10 +108,10 @@ public class RenderServices(R2VirtualFiles r2, BlazorRenderer renderer, Renderer
             var fileInfo = new FileInfo(filePath);
             if (fileInfo.Exists)
             {
-                var questionFiles = await r2.GetQuestionFilesAsync(id);
+                var questionFiles = await questions.GetQuestionAsync(id);
                 if (questionFiles.Files.FirstOrDefault()?.LastModified > fileInfo.LastWriteTime)
                 {
-                    request.Question = await questionFiles.ToQuestionAndAnswers();
+                    request.Question = questionFiles.Question;
                 }
             }
         }

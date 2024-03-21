@@ -1,5 +1,6 @@
 ﻿@page "/questions"
 @inject IDbConnectionFactory DbFactory
+@inject IMessageProducer MessageProducer
 
 <PageTitle>@Title</PageTitle>
 <div class="flex flex-wrap justify-center">
@@ -58,6 +59,9 @@
 </div>
 
 @code {
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+    
     string Path => "/questions".AddQueryParam("q", Q);
     int? Skip => Page > 1 ? (Page - 1) * PageSize : 0;
     string Title => "All Questions" + (!string.IsNullOrEmpty(Q) ? $" with '{Q}'" : "");
@@ -80,26 +84,86 @@
     {
         try
         {
+            if (Q != null)
+            {
+                MessageProducer.Publish(new AnalyticsTasks
+                {
+                    RecordSearchStat = new SearchStat { Query = Q }.WithRequest(HttpContext)
+                });
+            }
+
             if (Tab == null || !Tabs.Contains(Tab))
                 Tab = Tabs[0];
             if (PageSize is null or <= 0)
                 PageSize = 25;
 
-            using var db = await DbFactory.OpenAsync();
-            var q = db.From<Post>();
+            var skip = Page > 1 ? (Page - 1) * PageSize : 0;
+            var take = PageSize.ToPageSize();
 
-            q.OrderByView(Tab);
             if (!string.IsNullOrEmpty(Q))
             {
-                q.WhereSearch(Q);
+                using var dbSearch = await DbFactory.OpenAsync(Databases.Search);
+                var q = dbSearch.From<PostFts>();
+            
+                var search = Q.Trim();
+                if (search.StartsWith('[') && search.EndsWith(']'))
+                {
+                    q.WhereContainsTag(search.TrimStart('[').TrimEnd(']'));
+                }
+                else
+                {
+                    q.Where("Body match {0}", search);
+                }
+
+                List<PostFts> postsFts = await dbSearch.SelectAsync(q
+                    .Select("RefId, substring(Body,0,400) as Body")
+                    .OrderBy("Rank")
+                    .Skip(skip)
+                    .Take(take));
+
+                posts = postsFts.Select(x => new Post
+                {
+                    Id = x.RefId.LeftPart('-').ToInt(),
+                    PostTypeId = x.RefId.Contains('-') ? 2 : 1,
+                    Summary = x.Body.StripHtml().SubstringWithEllipsis(0,200),
+                }).ToList();
+
+                var postIds = posts.Select(x => x.Id).ToSet();
+                
+                using var db = await DbFactory.OpenAsync();
+                var fullPosts = await db.SelectAsync(db.From<Post>().Where(x => postIds.Contains(x.Id)));
+                var fullPostsMap = fullPosts.ToDictionary(x => x.Id);
+
+                foreach (var post in posts)
+                {
+                    if (fullPostsMap.TryGetValue(post.Id, out var fullPost))
+                    {
+                        post.Title = fullPost.Title;
+                        post.Slug = fullPost.Slug;
+                        if (post.PostTypeId == 1)
+                        {
+                            post.Tags = fullPost.Tags;
+                            post.Score = fullPost.Score;
+                            post.ViewCount = fullPost.ViewCount;
+                            post.CreationDate = fullPost.CreationDate;
+                        }
+                    }
+                }
+
+                total = dbSearch.Count(q);
             }
+            else
+            {
+                using var db = await DbFactory.OpenAsync();
+                var q = db.From<Post>();
+            
+                posts = await db.SelectAsync(q
+                    .OrderByView(Tab)
+                    .Skip(skip)
+                    .Take(take));
 
-            posts = await db.SelectAsync(q
-                .OrderByView(Tab)
-                .Skip(Page > 1 ? (Page - 1) * PageSize : 0)
-                .Take(PageSize.ToPageSize()));
-
-            total = db.Count(q);
+                total = db.Count(q);
+            }
         }
         catch (Exception ex)
         {
@@ -108,6 +172,4 @@
     }
 
     protected override Task OnInitializedAsync() => Load();
-
-    protected override Task OnParametersSetAsync() => Load();
 }

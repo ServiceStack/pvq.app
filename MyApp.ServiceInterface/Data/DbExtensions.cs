@@ -12,34 +12,25 @@ public static class DbExtensions
         if (tag != null)
         {
             tag = tag.UrlDecode().Replace("'","").Replace("\\","").SqlVerifyFragment();
-            q.UnsafeWhere("',' || tags || ',' like '%," + tag + ",%'");
+            q.UnsafeWhere("',' || Tags || ',' LIKE '%," + tag + ",%'");
         }
         return q;
     }
     
-    public static SqlExpression<Post> WhereSearch(this SqlExpression<Post> q, string? search)
+    public static SqlExpression<PostFts> WhereContainsTag(this SqlExpression<PostFts> q, string? tag)
+    {
+        if (tag != null)
+        {
+            tag = tag.UrlDecode().Replace("'","").Replace("\\","").SqlVerifyFragment();
+            q.UnsafeWhere($"Tags match '\"{tag}\"'");
+        }
+        return q;
+    }
+    
+    public static SqlExpression<Post> WhereSearch(this SqlExpression<Post> q, string? search, int? skip, int take)
     {
         if (!string.IsNullOrEmpty(search))
         {
-            search = search.Trim();
-            if (search.StartsWith('[') && search.EndsWith(']'))
-            {
-                q.WhereContainsTag(search.TrimStart('[').TrimEnd(']'));
-            }
-            else
-            {
-                var sb = StringBuilderCache.Allocate();
-                var words = search.Split(' ');
-                for (var i = 0; i < words.Length; i++)
-                {
-                    if (sb.Length > 0)
-                        sb.Append(" AND ");
-                    sb.AppendLine("(title like '%' || {" + i + "} || '%' or summary like '%' || {" + i + "} || '%' or tags like '%' || {" + i + "} || '%')");
-                }
-
-                var sql = StringBuilderCache.ReturnAndFree(sb);
-                q.UnsafeWhere(sql, words.Cast<object>().ToArray());
-            }
         }
         return q;
     }

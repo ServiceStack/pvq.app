@@ -5,51 +5,53 @@ namespace MyApp.Migrations;
 
 public class Migration1000 : MigrationBase
 {
-    public class Post
+    [UniqueConstraint(nameof(UserId), nameof(AnswerId))]
+    public class Vote
     {
+        [AutoIncrement]
         public int Id { get; set; }
         
+        public int UserId { get; set; }
+        
+        public int PostId { get; set; }
+        
         [Required]
-        public int PostTypeId { get; set; }
-
-        public int? AcceptedAnswerId { get; set; }
-
-        public int? ParentId { get; set; }
+        public string AnswerId { get; set; }
 
         public int Score { get; set; }
-
-        public int? ViewCount { get; set; }
-
-        public string Title { get; set; }
-
-        public string ContentLicense { get; set; }
-
-        public int? FavoriteCount { get; set; }
-
-        public DateTime CreationDate { get; set; }
-
-        public DateTime LastActivityDate { get; set; }
-
-        public DateTime? LastEditDate { get; set; }
-
-        public int? LastEditorUserId { get; set; }
-
-        public int? OwnerUserId { get; set; }
-
-        public List<string> Tags { get; set; }
-        
-        public string Slug { get; set; }
+    }
     
-        public string Summary { get; set; }
+    public class Job
+    {
+        [AutoIncrement]
+        public int Id { get; set; }
+        
+        public int PostId { get; set; }
+
+        public string Model { get; set; }
+        
+        public DateTime CreatedDate { get; set; }
+        
+        public DateTime? StartedDate { get; set; }
+        
+        public string? WorkerId { get; set; }
+
+        public string? WorkerIp { get; set; }
+        
+        public DateTime? CompletedDate { get; set; }
+        
+        public string? Response { get; set; }
     }
     
     public override void Up()
     {
-        // Db.CreateTable<Post>();
+        Db.CreateTable<Vote>();
+        Db.CreateTable<Job>();
     }
 
     public override void Down()
     {
-        // Db.DropTable<Post>();
+        Db.DropTable<Vote>();
+        Db.DropTable<Job>();
     }
 }
