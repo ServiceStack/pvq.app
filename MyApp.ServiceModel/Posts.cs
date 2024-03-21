@@ -25,8 +25,6 @@ public class Post
 
     public string Title { get; set; }
 
-    public string ContentLicense { get; set; }
-
     public int? FavoriteCount { get; set; }
 
     public DateTime CreationDate { get; set; }
