@@ -122,6 +122,10 @@ public class Answer
 
 public class Comment
 {
+    /// <summary>
+    /// `Post.Id` or `${Post.Id}-{UserName}` (Answer)
+    /// </summary>
+    public string Id { get; set; }
     public string Body { get; set; }
     public string CreatedBy { get; set; }
     public DateTime CreatedDate { get; set; }
