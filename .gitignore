@@ -11,6 +11,7 @@ package-lock.json
 App_Data/
 *.patch
 Configure.Secrets.cs
+.env
 
 # User-specific files
 *.suo
