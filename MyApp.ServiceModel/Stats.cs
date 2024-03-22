@@ -16,6 +16,18 @@ public static class Databases
     public const string Search = nameof(Search);
 }
 
+public class StatTotals
+{
+    public required string Id { get; set; } // PostId or PostId-UserName (Answer)
+    public int PostId { get; set; }
+    public int FavoriteCount { get; set; }
+    public int ViewCount { get; set; }
+    public int UpVotes { get; set; }
+    public int DownVotes { get; set; }
+    public int StartingUpVotes { get; set; }
+    public DateTime ModifiedDate { get; set; }
+}
+
 [NamedConnection(Databases.Analytics)]
 public class StatBase
 {
@@ -26,7 +38,7 @@ public class StatBase
 }
 
 [Icon(Svg = Icons.Stats)]
-public class PostStat : StatBase
+public class PostView : StatBase
 {
     [AutoIncrement]
     public int Id { get; set; }
@@ -34,7 +46,7 @@ public class PostStat : StatBase
 }
 
 [Icon(Svg = Icons.Stats)]
-public class SearchStat : StatBase
+public class SearchView : StatBase
 {
     [AutoIncrement]
     public int Id { get; set; }
@@ -46,7 +58,7 @@ public class SearchStat : StatBase
 [Restrict(InternalOnly = true)]
 public class AnalyticsTasks
 {
-    public SearchStat? RecordSearchStat { get; set; }
-    public PostStat? RecordPostStat { get; set; }
+    public SearchView? RecordSearchStat { get; set; }
+    public PostView? RecordPostStat { get; set; }
 }
 

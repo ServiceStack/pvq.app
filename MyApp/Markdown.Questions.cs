@@ -15,7 +15,7 @@ public class MarkdownQuestions(ILogger<MarkdownPages> log, IWebHostEnvironment e
         if (string.IsNullOrEmpty(markdown))
             return string.Empty;
 
-        markdown = markdown.Replace("```", "\n```"); //fix for starcoder2:3b
+        // markdown = markdown.Replace("```", "\n```"); //fix for starcoder2:3b
         var writer = new StringWriter();
         CreateMarkdownFile(markdown, writer);
         var html = writer.ToString();

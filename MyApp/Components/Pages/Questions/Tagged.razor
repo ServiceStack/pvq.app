@@ -56,7 +56,7 @@
 </div>
 
 @code {
-    string Path => $"/questions/tagged/{selectedTag}";
+    string Path => $"/questions/tagged/{selectedTag.UrlEncode()}";
     int? Skip => Page > 1 ? (Page - 1) * PageSize : 0;
 
     [Parameter] public required string Slug { get; set; }
