@@ -128,6 +128,7 @@ public class Comment
     public string Id { get; set; }
     public string Body { get; set; }
     public string CreatedBy { get; set; }
+    public int? UpVotes { get; set; }
     public DateTime CreatedDate { get; set; }
 }
 
