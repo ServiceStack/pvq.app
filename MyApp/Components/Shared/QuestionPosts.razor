@@ -3,11 +3,11 @@
     @foreach (var post in Posts)
     {
         <div class="flex sm:space-x-6 border-b border-gray-200 dark:border-gray-700 py-4">
-            <div class="hidden sm:flex flex-col text-center align-middle w-28">
+            <div class="hidden sm:flex flex-col text-center align-middle shrink-0 w-28">
                 @if (post.PostTypeId == 2)
                 {
                     <div class="pt-4 w-full flex justify-center">
-                        <a href=@GetHref(post)>
+                        <a href=@GetHref(post) title="Answer">
                             <svg class="w-10 h-10 text-green-700" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm8 2a2 2 0 0 0-2 2v8h2v-4h2v4h2V9a2 2 0 0 0-2-2zm0 2h2v2h-2z"/></svg>
                         </a>
                     </div>
@@ -20,13 +20,17 @@
                         <div class="my-2 text-center items-center rounded-md bg-green-600 px-2 py-1 text-sm font-medium text-white whitespace-nowrap">
                             <a href=@GetHref(post)>
                                 <svg class="w-5 h-5 inline-block align-middle" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M21 7L9 19l-5.5-5.5l1.41-1.41L9 16.17L19.59 5.59z"/></svg>
-                                8 answers
+                                @(post.AnswerCount != 1 ? $"{post.AnswerCount} answers" : "1 answer")
                             </a>
                         </div>
                     }
                     else
                     {
-                        <div class="my-2 text-center items-center rounded-md bg-green-50 px-2 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20 whitespace-nowrap">8 answers</div>
+                        <div class="my-2 text-center items-center rounded-md bg-green-50 px-2 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20 whitespace-nowrap">
+                            <a href=@GetHref(post)>
+                                @(post.AnswerCount != 1 ? $"{post.AnswerCount ?? 0} answers" : "1 answer")
+                            </a>
+                        </div>
                     }
                     <div class="text-gray-600 dark:text-gray-300 whitespace-nowrap">@post.ViewCount.ToHumanReadable() views</div>
                 }
@@ -49,7 +53,7 @@
                         <div class="flex flex-grow px-4 sm:px-6 text-xs justify-end">
                             <dt class="font-medium text-gray-600 dark:text-gray-300">Modified</dt>
                             <dd class="ml-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                @((post.LastEditDate ?? post.CreationDate).ToString("dd MMMM yyyy h:mm:ss tt"))
+                                @(post.GetModifiedDate().ToString("dd MMMM yyyy h:mm:ss tt"))
                             </dd>
                         </div>
                     </dl>

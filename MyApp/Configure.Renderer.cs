@@ -26,7 +26,7 @@ public class ConfigureRenderer : IHostingStartup
 
 public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
 {
-    private static bool DisableCache = false;
+    private static bool DisableCache = true;
     
     public string GetCachedQuestionPostPath(int id) => appConfig.CacheDir.CombineWith(GetQuestionPostVirtualPath(id)); 
     public string GetQuestionPostVirtualPath(int id)

@@ -90,6 +90,7 @@ public class PostFts
     public string UserName { get; set; }
     public string Body { get; set; }
     public string? Tags { get; set; }
+    public DateTime ModifiedDate { get; set; }
 }
 
 public class Choice

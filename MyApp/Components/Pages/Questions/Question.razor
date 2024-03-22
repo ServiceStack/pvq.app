@@ -52,7 +52,7 @@
     async Task load()
     {
         MessageProducer.Publish(new AnalyticsTasks {
-            RecordPostStat = new PostStat { PostId = Id }.WithRequest(HttpContext)
+            RecordPostStat = new PostView { PostId = Id }.WithRequest(HttpContext)
         });
         
         title = Slug.Replace("-", " ").ToTitleCase();
@@ -62,7 +62,7 @@
         {
             var attrPrefix = "<template id=\"Post\">";
             var json = Html.IndexOf(attrPrefix, StringComparison.Ordinal) >= 0
-                ? Html.RightPart(attrPrefix).LeftPart("</template>")
+                ? Html.RightPart(attrPrefix).LeftPart("</template>").HtmlDecode()
                 : null;
 
             if (json != null)

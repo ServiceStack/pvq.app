@@ -14,7 +14,6 @@
                     </h1>
                 </div>
 
-
                 @if (posts.Count > 0)
                 {
                     <div class="py-2 flex justify-end">
@@ -66,7 +65,9 @@
     int? Skip => Page > 1 ? (Page - 1) * PageSize : 0;
     string Title => "All Questions" + (!string.IsNullOrEmpty(Q) ? $" with '{Q}'" : "");
 
-    static string[] Tabs = ["most-votes", "most-views", "most-recent"];
+    static string[] DefaultTabs = ["interesting", "popular", "newest"];
+    static string[] SearchTabs = ["relevance", "newest", "oldest"];
+    string[] Tabs => !string.IsNullOrEmpty(Q) ? SearchTabs : DefaultTabs;
 
     [SupplyParameterFromQuery] string? Q { get; set; }
 
@@ -84,14 +85,6 @@
     {
         try
         {
-            if (Q != null)
-            {
-                MessageProducer.Publish(new AnalyticsTasks
-                {
-                    RecordSearchStat = new SearchStat { Query = Q }.WithRequest(HttpContext)
-                });
-            }
-
             if (Tab == null || !Tabs.Contains(Tab))
                 Tab = Tabs[0];
             if (PageSize is null or <= 0)
@@ -102,6 +95,11 @@
 
             if (!string.IsNullOrEmpty(Q))
             {
+                MessageProducer.Publish(new AnalyticsTasks
+                {
+                    RecordSearchStat = new SearchView { Query = Q }.WithRequest(HttpContext)
+                });
+
                 using var dbSearch = await DbFactory.OpenAsync(Databases.Search);
                 var q = dbSearch.From<PostFts>();
             
@@ -115,9 +113,21 @@
                     q.Where("Body match {0}", search);
                 }
 
+                if (Tab == "newest")
+                {
+                    q.OrderByDescending("ModifiedDate");
+                }
+                else if (Tab == "oldest")
+                {
+                    q.OrderBy("ModifiedDate");
+                }
+                else
+                {
+                    q.OrderBy("Rank");
+                }
+
                 List<PostFts> postsFts = await dbSearch.SelectAsync(q
-                    .Select("RefId, substring(Body,0,400) as Body")
-                    .OrderBy("Rank")
+                    .Select("RefId, substring(Body,0,400) as Body, ModifiedDate")
                     .Skip(skip)
                     .Take(take));
 
@@ -126,6 +136,8 @@
                     Id = x.RefId.LeftPart('-').ToInt(),
                     PostTypeId = x.RefId.Contains('-') ? 2 : 1,
                     Summary = x.Body.StripHtml().SubstringWithEllipsis(0,200),
+                    CreationDate = x.ModifiedDate,
+                    LastEditDate = x.ModifiedDate,
                 }).ToList();
 
                 var postIds = posts.Select(x => x.Id).ToSet();
@@ -146,6 +158,7 @@
                             post.Score = fullPost.Score;
                             post.ViewCount = fullPost.ViewCount;
                             post.CreationDate = fullPost.CreationDate;
+                            post.LastEditDate = fullPost.LastEditDate;
                         }
                     }
                 }
