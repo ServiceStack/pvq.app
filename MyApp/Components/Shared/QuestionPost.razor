@@ -3,9 +3,10 @@
 @inject MarkdownQuestions Markdown
 
 <template id="Post">@Question.Post.ToJson()</template>
+<template id="Meta">@Question.Meta.ToJson()</template>
 
 <div class="mt-8 mb-20 mx-auto sm:max-w-4xl sm:w-[56rem] xl:max-w-5xl xl:w-[64rem]">
-    <article>
+    <article data-postid=@Question.Id>
         <h1 class="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">
             <span class="block xl:inline">@Question.Post.Title</span>
         </h1>
@@ -24,19 +25,19 @@
                 }
                 <div>
                     <span>viewed</span>
-                    <b>@($"{Question.Post.ViewCount:n0}") times</b>
+                    <b>@($"{Question.ViewCount:n0}") times</b>
                 </div>
             </div>
         </div>
         <div class="flex">
 
             <div class="w-20">
-                <div id="@Question.Post.Id" class="flex flex-col items-center">
+                <div id="@Question.Post.Id" class="voting flex flex-col items-center">
                     <!-- bx:up-arrow bxs:up-arrow <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19"/> -->
-                    <svg class="up w-10 h-10 cursor-pointer hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
-                    <b class="text-xl">@Question.Post.Score</b>
+                    <svg class="up w-10 h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
+                    <b class="score text-xl" data-score=@Question.QuestionScore>@Question.QuestionScore</b>
                     <!-- bx:down-arrow bxs:down-arrow <path fill="currentColor" d="M11.178 19.569a.998.998 0 0 0 1.644 0l9-13A.999.999 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569z"/> -->
-                    <svg class="down w-10 h-10 cursor-pointer hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
+                    <svg class="down w-10 h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
                 </div>
             </div>
             <div id="question" class="flex-grow prose">
@@ -62,19 +63,22 @@
                 }
             </dl>
         </div>
-        <div class="border-t border-gray-200 dark:border-gray-700">
-            @foreach (var comment in Question.PostComments)
-            {
-                <div class="p-2 border-b border-gray-500 dark:border-gray-400 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
-                    @BlazorHtml.Raw(Markdown.GenerateHtml(comment.Body))
-                    <span class="inline-block">
-                        <span class="px-1" aria-hidden="true">&middot;</span>
-                        <span class="text-indigo-700">@comment.CreatedBy</span>
-                        <span class="ml-1 text-gray-400"> @Markdown.GetDateLabel(comment.CreatedDate)</span>
-                    </span>
-                </div>
-            }
-        </div>
+        @if (Question.QuestionComments.Count > 0)
+        {
+            <div class="border-t border-gray-200 dark:border-gray-700">
+                @foreach (var comment in Question.QuestionComments)
+                {
+                    <div class="p-2 border-b border-gray-500 dark:border-gray-400 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                        @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
+                        <span class="inline-block">
+                            <span class="px-1" aria-hidden="true">&middot;</span>
+                            <span class="text-indigo-700">@comment.CreatedBy</span>
+                            <span class="ml-1 text-gray-400"> @Markdown.GetDateLabel(comment.CreatedDate)</span>
+                        </span>
+                    </div>
+                }
+            </div>
+        }
     </article>
     
     <div class="mt-16">
@@ -87,10 +91,10 @@
                 <div class="py-8 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex">
                         <div class="w-32">
-                            <div id=@answer.Id class="flex flex-col items-center">
-                                <svg class="up w-10 h-10 cursor-pointer hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
-                                <b class="text-xl">@answer.Votes</b>
-                                <svg class="down w-10 h-10 cursor-pointer hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
+                            <div id=@answer.Id class="voting flex flex-col items-center">
+                                <svg class="up w-10 h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
+                                <b class="score text-xl" data-score=@Question.GetAnswerScore(answer.Id)>@Question.GetAnswerScore(answer.Id)</b>
+                                <svg class="down w-10 h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
                             </div>
                             @{
                                 var user = AppConfig.GetApplicationUser(answer.Model);
@@ -108,6 +112,22 @@
                         answered <time class="ml-2" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
                     </div>
                 </div>
+                @if (Question.GetAnswerComments(answer.Id).Count > 0)
+                {
+                    <div class="border-t border-gray-200 dark:border-gray-700">
+                        @foreach (var comment in Question.GetAnswerComments(answer.Id))
+                        {
+                            <div class="p-2 border-b border-gray-500 dark:border-gray-400 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                                @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
+                                <span class="inline-block">
+                                    <span class="px-1" aria-hidden="true">&middot;</span>
+                                    <span class="text-indigo-700">@comment.CreatedBy</span>
+                                    <span class="ml-1 text-gray-400"> @Markdown.GetDateLabel(comment.CreatedDate)</span>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
             }
         </div>
     </div>

@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
-using System.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.IO;
-using ServiceStack.OrmLite;
 using ServiceStack.Text;
 
 namespace MyApp.Data;
@@ -25,18 +23,55 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         ["accepted"] = 9,
         ["most-voted"] = 10,
     };
+    
+    public int GetModelScore(string model) => model switch {
+        "accepted" => AcceptedScore,
+        "most-voted" => MostVotedScore,
+        _ => ModelScores.GetValueOrDefault(model, 0)
+    };
 
     public int Id { get; init; } = id;
     public string Dir1 { get; init; } = dir1;
     public string Dir2 { get; init; } = dir2;
     public string DirPath = "/{Dir1}/{Dir2}";
     public string FileId { get; init; } = fileId;
-    public List<IVirtualFile> Files { get; init; } = files;
+    public List<IVirtualFile> Files { get; init; } = WithoutDuplicateAnswers(files);
     public bool LoadedRemotely { get; set; } = remote;
-    public bool ScoresUpdated { get; set; }
     public ConcurrentDictionary<string, string> FileContents { get; } = [];
     public QuestionAndAnswers? Question { get; set; }
-    public Meta? Meta { get; set; }
+
+    public static Meta DeserializeMeta(string json)
+    {
+        if (string.IsNullOrEmpty(json))
+            return new Meta();
+        
+        var meta = json.FromJson<Meta>();
+        var toRemove = new List<string>();
+        foreach (var item in meta.Comments)
+        {
+            if (item.Key.Contains('[') || item.Key.Contains(']'))
+            {
+                toRemove.Add(item.Key);
+            }
+        }
+        toRemove.ForEach(key => meta.Comments.Remove(key));
+        return meta;
+    }
+
+    public IVirtualFile? GetMetaFile() => Files.FirstOrDefault(x => x.Name == $"{FileId}.meta.json");
+    
+    public static List<IVirtualFile> WithoutDuplicateAnswers(List<IVirtualFile> files)
+    {
+        var accepted = files.FirstOrDefault(x => x.Name.Contains(".h.accepted"));
+        var mostVoted = files.FirstOrDefault(x => x.Name.Contains(".h.most-voted"));
+        return accepted?.Length == mostVoted?.Length
+            ? files.Where(x => !Equals(x, mostVoted)).ToList()
+            : files;
+    }
+    
+    public IEnumerable<IVirtualFile> GetAnswerFiles() => Files.Where(x => x.Name.Contains(".a.") || x.Name.Contains(".h."));
+
+    public int GetAnswerFilesCount() => GetAnswerFiles().Count();
 
     public async Task<QuestionAndAnswers?> GetQuestionAsync()
     {
@@ -47,24 +82,19 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         return Question;
     }
     
-    public void UpdateScores(List<StatTotals> postStats)
+    public void ApplyScores(List<StatTotals> postStats)
     {
         if (Question == null)
             throw new ArgumentNullException(nameof(Question));
-        if (ScoresUpdated)
-            return;
-
-        ScoresUpdated = true;
-
-        var map = postStats.ToDictionary(x => x.Id);
-        foreach (var answer in Question.Answers)
+        
+        Question.Answers.Sort((a, b) =>
         {
-            if (map.TryGetValue(answer.Id, out var stat))
-            {
-                answer.UpVotes = stat.UpVotes;
-                answer.DownVotes = stat.DownVotes;
-            }
-        }
+            var aScore = postStats.FirstOrDefault(x => x.Id == a.Id)?.GetScore()
+                         ?? GetModelScore(a.Model);
+            var bScore = postStats.FirstOrDefault(x => x.Id == b.Id)?.GetScore()
+                         ?? GetModelScore(b.Model);
+            return bScore - aScore;
+        });
     }
     
     public async Task LoadContentsAsync()
@@ -77,11 +107,15 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         await Task.WhenAll(tasks);
     }
 
+    public string GetAnswerUserName(string answerFileName) => answerFileName[(FileId + ".a.").Length..].LeftPart('.');
+
+    public string GetAnswerId(string answerFileName) => Id + "-" + GetAnswerUserName(answerFileName);
+
     public async Task LoadQuestionAndAnswersAsync()
     {
         var questionFileName = FileId + ".json";
         await LoadContentsAsync();
-
+        
         var to = new QuestionAndAnswers();
         foreach (var entry in FileContents)
         {
@@ -92,14 +126,14 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
             }
             else if (fileName == $"{FileId}.meta.json")
             {
-                Meta = entry.Value.FromJson<Meta>();
-                Meta.StatTotals ??= new();
-                Meta.ModelVotes ??= new();
+                to.Meta = DeserializeMeta(entry.Value);
+                to.Meta.StatTotals ??= new();
+                to.Meta.ModelVotes ??= new();
             }
             else if (fileName.StartsWith(FileId + ".a."))
             {
                 var answer = entry.Value.FromJson<Answer>();
-                answer.Id = $"{Id}-{answer.Model.Replace(':','-')}";
+                answer.Id = GetAnswerId(fileName);
                 to.Answers.Add(answer);
             }
             else if (fileName.StartsWith(FileId + ".h."))
@@ -111,7 +145,6 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
                     Id = $"{Id}-{userName}",
                     Model = userName,
                     Created = (post.LastEditDate ?? post.CreationDate).ToUnixTime(),
-                    UpVotes = userName == "most-voted" ? MostVotedScore : AcceptedScore,
                     Choices = [
                         new()
                         {
@@ -120,22 +153,18 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
                         }
                     ]
                 };
-                if (to.Answers.All(x => x.Id != answer.Id))
-                    to.Answers.Add(answer);
+                to.Answers.Add(answer);
             }
         }
 
         if (to.Post == null)
             return;
-
-        to.Answers.Each(x => x.UpVotes = x.UpVotes == 0 ? ModelScores.GetValueOrDefault(x.Model, 1) : x.UpVotes);
-        to.Answers.Sort((a, b) => b.Votes - a.Votes);
-
-        if (Meta?.StatTotals.Count > 0)
-        {
-            UpdateScores(Meta.StatTotals);
-        }
         
         Question = to;
+
+        if (to.Meta?.StatTotals.Count > 0)
+        {
+            ApplyScores(to.Meta.StatTotals);
+        }
     }
 }

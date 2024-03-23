@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-03-17 02:49:05
+Date: 2024-03-23 01:13:02
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -14,7 +14,7 @@ BaseUrl: https://localhost:5001
 
 "use strict";
 export class Post {
-    /** @param {{id?:number,postTypeId?:number,acceptedAnswerId?:number,parentId?:number,score?:number,viewCount?:number,title?:string,contentLicense?:string,favoriteCount?:number,creationDate?:string,lastActivityDate?:string,lastEditDate?:string,lastEditorUserId?:number,ownerUserId?:number,tags?:string[],slug?:string,summary?:string,body?:string}} [init] */
+    /** @param {{id?:number,postTypeId?:number,acceptedAnswerId?:number,parentId?:number,score?:number,viewCount?:number,title?:string,favoriteCount?:number,creationDate?:string,lastActivityDate?:string,lastEditDate?:string,lastEditorUserId?:number,ownerUserId?:number,tags?:string[],slug?:string,summary?:string,rankDate?:string,answerCount?:number,body?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {number} */
     id;
@@ -30,8 +30,6 @@ export class Post {
     viewCount;
     /** @type {string} */
     title;
-    /** @type {string} */
-    contentLicense;
     /** @type {?number} */
     favoriteCount;
     /** @type {string} */
@@ -51,17 +49,65 @@ export class Post {
     /** @type {string} */
     summary;
     /** @type {?string} */
+    rankDate;
+    /** @type {?number} */
+    answerCount;
+    /** @type {?string} */
     body;
 }
-export class Comment {
-    /** @param {{body?:string,createdBy?:string,createdDate?:string}} [init] */
+export class StatTotals {
+    /** @param {{id?:string,postId?:number,favoriteCount?:number,viewCount?:number,upVotes?:number,downVotes?:number,startingUpVotes?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    /** @type {number} */
+    postId;
+    /** @type {number} */
+    favoriteCount;
+    /** @type {number} */
+    viewCount;
+    /** @type {number} */
+    upVotes;
+    /** @type {number} */
+    downVotes;
+    /** @type {number} */
+    startingUpVotes;
+}
+export class Comment {
+    /** @param {{id?:string,body?:string,createdBy?:string,upVotes?:number,createdDate?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
     /** @type {string} */
     body;
     /** @type {string} */
     createdBy;
+    /** @type {?number} */
+    upVotes;
     /** @type {string} */
     createdDate;
+}
+export class AnswerMeta {
+    /** @param {{comments?:Comment[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {Comment[]} */
+    comments;
+}
+export class Meta {
+    /** @param {{id?:number,statTotals?:StatTotals[],modelVotes?:{ [index: string]: number; },comments?:Comment[],answers?:{ [index: string]: AnswerMeta; },modifiedDate?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    /** @type {StatTotals[]} */
+    statTotals;
+    /** @type {{ [index: string]: number; }} */
+    modelVotes;
+    /** @type {Comment[]} */
+    comments;
+    /** @type {{ [index: string]: AnswerMeta; }} */
+    answers;
+    /** @type {string} */
+    modifiedDate;
 }
 export class ChoiceMessage {
     /** @param {{role?:string,content?:string}} [init] */
@@ -106,16 +152,20 @@ export class Answer {
     downVotes;
 }
 export class QuestionAndAnswers {
-    /** @param {{id?:number,post?:Post,postComments?:Comment[],answers?:Answer[]}} [init] */
+    /** @param {{id?:number,post?:Post,meta?:Meta,statTotals?:StatTotals,answers?:Answer[],viewCount?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {number} */
     id;
     /** @type {Post} */
     post;
-    /** @type {Comment[]} */
-    postComments;
+    /** @type {?Meta} */
+    meta;
+    /** @type {StatTotals} */
+    statTotals;
     /** @type {Answer[]} */
     answers;
+    /** @type {number} */
+    viewCount;
 }
 export class RenderHome {
     /** @param {{tab?:string,posts?:Post[]}} [init] */
@@ -156,6 +206,20 @@ export class PageStats {
     /** @type {number} */
     total;
 }
+export class PostJob {
+    /** @param {{jobId?:number,postId?:number,title?:string,body?:string,tags?:string[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    jobId;
+    /** @type {number} */
+    postId;
+    /** @type {string} */
+    title;
+    /** @type {string} */
+    body;
+    /** @type {string[]} */
+    tags;
+}
 export class ResponseError {
     /** @param {{errorCode?:string,fieldName?:string,message?:string,meta?:{ [index: string]: string; }}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -194,10 +258,26 @@ export class AdminDataResponse {
     /** @type {PageStats[]} */
     pageStats;
 }
+export class CheckPostJobsResponse {
+    /** @param {{results?:PostJob[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {PostJob[]} */
+    results;
+}
 export class UpdateUserProfileResponse {
     /** @param {{responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {ResponseStatus} */
+    responseStatus;
+}
+export class UserPostDataResponse {
+    /** @param {{upVoteIds?:string[],downVoteIds?:string[],responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string[]} */
+    upVoteIds;
+    /** @type {string[]} */
+    downVoteIds;
+    /** @type {?ResponseStatus} */
     responseStatus;
 }
 export class AuthenticateResponse {
@@ -287,6 +367,17 @@ export class GetCdnFile {
     getMethod() { return 'POST' }
     createResponse () { };
 }
+export class CheckPostJobs {
+    /** @param {{workerId?:string,models?:string[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    workerId;
+    /** @type {string[]} */
+    models;
+    getTypeName() { return 'CheckPostJobs' }
+    getMethod() { return 'GET' }
+    createResponse() { return new CheckPostJobsResponse() }
+}
 export class UpdateUserProfile {
     constructor(init) { Object.assign(this, init) }
     getTypeName() { return 'UpdateUserProfile' }
@@ -302,11 +393,35 @@ export class GetUserAvatar {
     getMethod() { return 'GET' }
     createResponse() { return new Blob() }
 }
+export class UserPostData {
+    /** @param {{postId?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    postId;
+    getTypeName() { return 'UserPostData' }
+    getMethod() { return 'GET' }
+    createResponse() { return new UserPostDataResponse() }
+}
+export class PostVote {
+    /** @param {{refId?:string,up?:boolean,down?:boolean}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    refId;
+    /** @type {?boolean} */
+    up;
+    /** @type {?boolean} */
+    down;
+    getTypeName() { return 'PostVote' }
+    getMethod() { return 'POST' }
+    createResponse() { }
+}
 export class RenderComponent {
-    /** @param {{ifQuestionModified?:number,question?:QuestionAndAnswers,home?:RenderHome}} [init] */
+    /** @param {{ifQuestionModified?:number,regenerateMeta?:number,question?:QuestionAndAnswers,home?:RenderHome}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {?number} */
     ifQuestionModified;
+    /** @type {?number} */
+    regenerateMeta;
     /** @type {?QuestionAndAnswers} */
     question;
     /** @type {?RenderHome} */

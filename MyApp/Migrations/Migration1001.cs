@@ -6,18 +6,6 @@ namespace MyApp.Migrations;
 [NamedConnection(MyApp.ServiceModel.Databases.Analytics)]
 public class Migration1001 : MigrationBase
 {
-    public class StatTotals
-    {
-        public required string Id { get; set; } // PostId or PostId-UserName (Answer)
-        public int PostId { get; set; }
-        public int FavoriteCount { get; set; }
-        public int ViewCount { get; set; }
-        public int UpVotes { get; set; }
-        public int DownVotes { get; set; }
-        public int StartingUpVotes { get; set; }
-        public DateTime ModifiedDate { get; set; }
-    }
-
     public class StatBase
     {
         public string RefId { get; set; }
@@ -30,6 +18,7 @@ public class Migration1001 : MigrationBase
     {
         [AutoIncrement]
         public int Id { get; set; }
+        [Index]
         public int PostId { get; set; }
     }
 
@@ -42,14 +31,12 @@ public class Migration1001 : MigrationBase
 
     public override void Up()
     {
-        Db.CreateTable<StatTotals>();
         Db.CreateTable<PostView>();
         Db.CreateTable<SearchView>();
     }
 
     public override void Down()
     {
-        Db.CreateTable<StatTotals>();
         Db.CreateTable<PostView>();
         Db.CreateTable<SearchView>();
     }

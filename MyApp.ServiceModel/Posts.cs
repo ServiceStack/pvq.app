@@ -115,17 +115,10 @@ public class Answer
     public Dictionary<string, int> Usage { get; set; }
     public decimal Temperature { get; set; }
     public List<Comment> Comments { get; set; } = [];
-    public int Votes => UpVotes - DownVotes;
-    public int UpVotes { get; set; }
-    public int DownVotes { get; set; }
 }
 
 public class Comment
 {
-    /// <summary>
-    /// `Post.Id` or `${Post.Id}-{UserName}` (Answer)
-    /// </summary>
-    public string Id { get; set; }
     public string Body { get; set; }
     public string CreatedBy { get; set; }
     public int? UpVotes { get; set; }
@@ -136,9 +129,22 @@ public class QuestionAndAnswers
 {
     public int Id => Post.Id;
     public Post Post { get; set; }
-
-    public List<Comment> PostComments { get; set; } = [];
+    public Meta? Meta { get; set; }
     public List<Answer> Answers { get; set; } = [];
+
+    public int ViewCount => Post.ViewCount + Meta?.StatTotals.Find(x => x.Id == $"{Id}")?.ViewCount ?? 0;
+    
+    public int QuestionScore => Meta?.StatTotals.Find(x => x.Id == $"{Id}")?.GetScore() ?? Post.Score;
+    
+    public int GetAnswerScore(string refId) => Meta?.StatTotals.Find(x => x.Id == refId)?.GetScore() ?? 0;
+
+    public List<Comment> QuestionComments => Meta?.Comments.TryGetValue($"{Id}", out var comments) == true
+        ? comments
+        : [];
+    
+    public List<Comment> GetAnswerComments(string refId) => Meta?.Comments.TryGetValue($"{refId}", out var comments) == true
+        ? comments
+        : [];
 }
 
 public class AdminData : IGet, IReturn<AdminDataResponse>
@@ -154,4 +160,25 @@ public class PageStats
 public class AdminDataResponse
 {
     public List<PageStats> PageStats { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class UserPostData : IGet, IReturn<UserPostDataResponse>
+{
+    public int PostId { get; set; }
+}
+
+public class UserPostDataResponse
+{
+    public HashSet<string> UpVoteIds { get; set; } = [];
+    public HashSet<string> DownVoteIds { get; set; } = [];
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class PostVote : IReturnVoid
+{
+    public string RefId { get; set; }
+    public bool? Up { get; set; }
+    public bool? Down { get; set; }
 }

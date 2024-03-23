@@ -20,18 +20,40 @@ public class BackgroundMqServices(R2VirtualFiles r2) : Service
         }
     }
 
+    public async Task Any(DbWriteTasks request)
+    {
+        var vote = request.RecordPostVote;
+        if (vote != null)
+        {
+            if (string.IsNullOrEmpty(vote.RefId))
+                throw new ArgumentNullException(nameof(vote.RefId));
+            if (string.IsNullOrEmpty(vote.UserName))
+                throw new ArgumentNullException(nameof(vote.UserName));
+
+            await Db.DeleteAsync<Vote>(new { vote.RefId, vote.UserName });
+            if (vote.Score != 0)
+            {
+                await Db.InsertAsync(vote);
+            }
+            
+            MessageProducer.Publish(new RenderComponent {
+                RegenerateMeta = vote.PostId
+            });
+        }
+    }
+
     public async Task Any(AnalyticsTasks request)
     {
-        if (request.RecordPostStat != null && !Stats.IsAdminOrModerator(request.RecordPostStat.UserName))
+        if (request.RecordPostView != null && !Stats.IsAdminOrModerator(request.RecordPostView.UserName))
         {
             using var analyticsDb = HostContext.AppHost.GetDbConnection(Databases.Analytics);
-            await analyticsDb.InsertAsync(request.RecordPostStat);
+            await analyticsDb.InsertAsync(request.RecordPostView);
         }
 
-        if (request.RecordSearchStat != null && !Stats.IsAdminOrModerator(request.RecordSearchStat.UserName))
+        if (request.RecordSearchView != null && !Stats.IsAdminOrModerator(request.RecordSearchView.UserName))
         {
             using var analyticsDb = HostContext.AppHost.GetDbConnection(Databases.Analytics);
-            await analyticsDb.InsertAsync(request.RecordSearchStat);
+            await analyticsDb.InsertAsync(request.RecordSearchView);
         }
     }
 }

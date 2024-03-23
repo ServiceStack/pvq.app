@@ -1,9 +1,11 @@
 ﻿@page "/questions/{Id:int}/{*Slug}"
+@using ServiceStack.Caching
 @inject QuestionsProvider QuestionsProvider
-@inject R2VirtualFiles R2
 @inject RendererCache RendererCache
 @inject NavigationManager NavigationManager
 @inject IMessageProducer MessageProducer
+@inject MemoryCacheClient Cache
+@inject IWebHostEnvironment Env
 
 <PageTitle>@title</PageTitle>
 
@@ -33,6 +35,7 @@
     </div>
     <Aside/>
 </div>
+<script src="mjs/question.mjs" type="module"></script>
 
 @code {
     [CascadingParameter]
@@ -41,6 +44,8 @@
     [Parameter] public required int Id { get; set; }
 
     [Parameter] public required string Slug { get; set; }
+
+    [SupplyParameterFromQuery] int? Force { get; set; }
 
     QuestionAndAnswers? question;
     ResponseStatus? error;
@@ -52,11 +57,15 @@
     async Task load()
     {
         MessageProducer.Publish(new AnalyticsTasks {
-            RecordPostStat = new PostView { PostId = Id }.WithRequest(HttpContext)
+            RecordPostView = new PostView { PostId = Id }.WithRequest(HttpContext)
         });
         
+        var noCache = Force != null && (Env.IsDevelopment() || HttpContext?.User.IsAdminOrModerator() == true);
+        
         title = Slug.Replace("-", " ").ToTitleCase();
-        Html = await RendererCache.GetQuestionPostHtmlAsync(Id);
+        Html = noCache
+            ? await RendererCache.GetQuestionPostHtmlAsync(Id)
+            : null;
 
         if (!string.IsNullOrEmpty(Html))
         {
@@ -76,10 +85,25 @@
                 }
             }
 
-            MessageProducer.Publish(new RenderComponent
+            if (noCache)
             {
-                IfQuestionModified = Id
-            });
+                MessageProducer.Publish(new RenderComponent
+                {
+                    RegenerateMeta = noCache ? Id : null
+                });
+            }
+            else
+            {
+                Cache.RemoveExpiredEntries();
+                var oncePerMinute = Cache.Add($"Question:{Id}", Id, TimeSpan.FromMinutes(1));
+                if (oncePerMinute)
+                {
+                    MessageProducer.Publish(new RenderComponent
+                    {
+                        IfQuestionModified = Id,
+                    });
+                }
+            }
             return;
         }
         
@@ -88,23 +112,25 @@
         if (question?.Post?.Body != null)
         {
             title = question.Post.Title;
-            question.PostComments =
-            [
-                new Comment
-                {
-                    Body = "You may want to check out the [ins and outs of C# enums](https://github.com/steaks/codeducky/blob/master/blogs/enums.md), which discusses this as well as other useful enum tidbits",
-                    CreatedBy = "mistral",
-                    CreatedDate = DateTime.Now.Add(-TimeSpan.FromHours(25))
-                }
-            ];
-
-            MessageProducer.Publish(new RenderComponent { Question = question });
 
             var slug = question.Post.Slug.GenerateSlug(200);
             if (slug != Slug)
             {
                 NavigationManager.NavigateTo($"/questions/{Id}/{slug}");
                 return;
+            }
+
+            if (noCache || !questionFiles.Files.Any(x => x.Name.EndsWith(".meta.json")))
+            {
+                MessageProducer.Publish(new RenderComponent {
+                    RegenerateMeta = Id,
+                });
+            }
+            else
+            {
+                MessageProducer.Publish(new RenderComponent {
+                    Question = question,
+                });
             }
         }
         else

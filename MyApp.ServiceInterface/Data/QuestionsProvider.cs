@@ -1,12 +1,19 @@
 ﻿using Microsoft.Extensions.Logging;
+using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.IO;
 using ServiceStack.Messaging;
+using ServiceStack.Text;
 
 namespace MyApp.Data;
 
 public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer mqClient, IVirtualFiles fs, R2VirtualFiles r2)
 {
+    public System.Text.Json.JsonSerializerOptions SystemJsonOptions = new(TextConfig.SystemJsonOptions)
+    {
+        WriteIndented = true
+    };
+    
     public QuestionFiles GetLocalQuestionFiles(int id)
     {
         var (dir1, dir2, fileId) = id.ToFileParts();
@@ -29,6 +36,22 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
             .ToList();
         
         return new QuestionFiles(id: id, dir1: dir1, dir2: dir2, fileId: fileId, files: files, remote:true);
+    }
+
+    public static string GetMetaPath(int id)
+    {
+        var (dir1, dir2, fileId) = id.ToFileParts();
+        var metaPath = $"{dir1}/{dir2}/{fileId}.meta.json";
+        return metaPath;
+    }
+
+    public async Task WriteMetaAsync(Meta meta)
+    {
+        var metaJson = System.Text.Json.JsonSerializer.Serialize(meta, SystemJsonOptions);
+        var metaPath = GetMetaPath(meta.Id);
+        await Task.WhenAll(
+            fs.WriteFileAsync(metaPath, metaJson),
+            r2.WriteFileAsync(metaPath, metaJson));
     }
 
     public async Task<QuestionFiles> GetQuestionFilesAsync(int id)

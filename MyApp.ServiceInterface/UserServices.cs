@@ -82,4 +82,36 @@ public class UserServices(R2VirtualFiles r2) : Service
         }
         return new HttpResult(Svg.GetImage(Svg.Icons.Users), MimeTypes.ImageSvg);
     }
+
+    public async Task<object> Any(UserPostData request)
+    {
+        var userName = Request.GetClaimsPrincipal().Identity!.Name!;
+        var allUserPostVotes = await Db.SelectAsync<Vote>(x => x.PostId == request.PostId && x.UserName == userName);
+        
+        var to = new UserPostDataResponse
+        {
+            UpVoteIds = allUserPostVotes.Where(x => x.Score > 0).Select(x => x.RefId).ToSet(),
+            DownVoteIds = allUserPostVotes.Where(x => x.Score < 0).Select(x => x.RefId).ToSet(),
+        };
+        return to;
+    }
+
+    public async Task Any(PostVote request)
+    {
+        var userName = Request.GetClaimsPrincipal().Identity!.Name!;
+        if (string.IsNullOrEmpty(userName))
+            throw new ArgumentNullException(nameof(userName));
+        var postId = request.RefId.LeftPart('-').ToInt();
+        var score = request.Up == true ? 1 : request.Down == true ? -1 : 0;
+        MessageProducer.Publish(new DbWriteTasks
+        {
+            RecordPostVote = new()
+            {
+                RefId = request.RefId,
+                PostId = postId,
+                UserName = userName,
+                Score = score,
+            }
+        });
+    }
 }

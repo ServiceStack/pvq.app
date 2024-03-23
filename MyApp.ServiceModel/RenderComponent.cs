@@ -11,6 +11,7 @@ public class RenderHome
 public class RenderComponent : IReturnVoid
 {
     public int? IfQuestionModified { get; set; }
+    public int? RegenerateMeta { get; set; }
     public QuestionAndAnswers? Question { get; set; }
     public RenderHome? Home { get; set; }
 }

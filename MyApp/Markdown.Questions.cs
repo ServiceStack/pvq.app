@@ -21,4 +21,10 @@ public class MarkdownQuestions(ILogger<MarkdownPages> log, IWebHostEnvironment e
         var html = writer.ToString();
         return html;
     }
+
+    public string GenerateCommentHtml(string? markdown)
+    {
+        // extra processing for comments
+        return GenerateHtml(markdown);
+    }
 }
