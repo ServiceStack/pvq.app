@@ -96,6 +96,7 @@
 
     [Parameter] public string? @class { get; set; }
     [Parameter] public required string Path { get; set; }
+    [Parameter] public required string? Tab { get; set; }
     [Parameter] public required long? Total { get; set; }
     [Parameter] public required int? PageSize { get; set; }
     [Parameter] public required int Page { get; set; }
@@ -108,5 +109,5 @@
     int EndPage => Math.Min(StartPage + 5, Pages);
 
     public string GetRoute(int? page = 1, int? pageSize = null) => 
-        Path.AddQueryParam("page", page).AddQueryParam("pagesize", pageSize);
+        Path.AddQueryParam("tab", Tab).AddQueryParam("page", page).AddQueryParam("pagesize", pageSize);
 }

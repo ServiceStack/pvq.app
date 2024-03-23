@@ -22,14 +22,14 @@
 
                     @if (total > PageSize)
                     {
-                        <PagesNav class="border-b" Path=@Path PageSize=@PageSize Total=@total Page=@Math.Max(1, Page ?? 1)/>
+                        <PagesNav class="border-b" Path=@Path Tab=@Tab PageSize=@PageSize Total=@total Page=@Math.Max(1, Page ?? 1)/>
                     }
 
                     <QuestionPosts Posts=@posts/>
 
                     @if (total > PageSize)
                     {
-                        <PagesNav class="border-t" Path=@Path PageSize=@PageSize Total=@total Page=@Math.Max(1, Page ?? 1)/>
+                        <PagesNav class="border-t" Path=@Path Tab=@Tab PageSize=@PageSize Total=@total Page=@Math.Max(1, Page ?? 1)/>
                     }
                 }
                 else
