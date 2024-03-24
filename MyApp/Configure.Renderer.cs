@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MyApp.Components.Shared;
 using MyApp.Data;
@@ -15,15 +16,39 @@ namespace MyApp;
 
 public class ConfigureRenderer : IHostingStartup
 {
+    static T RequiredService<T>() where T : notnull => 
+        ServiceStackHost.Instance.GetApplicationServices().GetRequiredService<T>();
+
     public void Configure(IWebHostBuilder builder) => builder
-        .ConfigureServices(services =>
+        .ConfigureServices((context,services) =>
         {
-            services.AddScoped<HtmlRenderer>();
+            var svc = new ServiceCollection();
+            svc.AddLogging();
+            svc.AddSingleton<AppConfig>(c => RequiredService<AppConfig>());
+            svc.AddSingleton<MarkdownQuestions>(c => RequiredService<MarkdownQuestions>());
+            svc.AddSingleton<NavigationManager>(c => new StaticNavigationManager());
+            var sp = svc.BuildServiceProvider();
+            services.AddScoped<HtmlRenderer>(c => new HtmlRenderer(sp, c.GetRequiredService<ILoggerFactory>()));
+            
             services.AddScoped<BlazorRenderer>();
             services.AddSingleton<RendererCache>();
             services.RegisterService<RenderServices>();
         })
         .ConfigureAppHost(appHost => { });
+}
+
+// Use fake NavigationManager in Static Rendering to avoid NavigationManager has not been initialized Exception
+internal class StaticNavigationManager : NavigationManager
+{
+    public StaticNavigationManager()
+    {
+        Initialize("https://pvq.app/", "https://pvq.app/");
+    }
+
+    protected override void NavigateToCore(string uri, bool forceLoad)
+    {
+        NotifyLocationChanged(false);
+    }
 }
 
 public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)

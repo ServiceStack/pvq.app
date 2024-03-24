@@ -2,7 +2,7 @@
 
 namespace MyApp;
 
-public class MarkdownQuestions(ILogger<MarkdownPages> log, IWebHostEnvironment env, IVirtualFiles fs)
+public class MarkdownQuestions(ILogger<MarkdownQuestions> log, IWebHostEnvironment env, IVirtualFiles fs)
     : MarkdownPagesBase<MarkdownFileInfo>(log, env, fs)
 {
     public override string Id => "questions";
