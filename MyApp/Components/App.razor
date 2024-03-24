@@ -25,7 +25,12 @@
     <Routes />
     <script src="_framework/blazor.web.js"></script>
     <script src="js/servicestack-blazor.js"></script>
-    <script>JS.init({ colorScheme:false })</script>
+    <script>
+    JS.init({ colorScheme:false })
+    Blazor.addEventListener('enhancedload', () => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    })
+    </script>
     <script src="lib/js/highlight.js"></script>
     <script>hljs.highlightAll()</script>
 </body>
