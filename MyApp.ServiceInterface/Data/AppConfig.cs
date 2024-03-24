@@ -8,6 +8,7 @@ public class AppConfig
     public string CacheDir { get; set; }
     public string ProfilesDir { get; set; }
     public string? GitPagesBaseUrl { get; set; }
+    public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
     public ApplicationUser DefaultUser { get; set; } = new()
     {
@@ -21,4 +22,9 @@ public class AppConfig
         var user = ModelUsers.FirstOrDefault(x => x.Model == model || x.UserName == model);
         return user ?? DefaultUser;
     }
+    
+    private long nextPostId = -1;
+    public void SetInitialPostId(long initialValue) => this.nextPostId = initialValue;
+    public long LastPostId => Interlocked.Read(ref nextPostId);
+    public long GetNextPostId() => Interlocked.Increment(ref nextPostId);
 }

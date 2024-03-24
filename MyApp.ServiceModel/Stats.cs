@@ -103,7 +103,19 @@ public class AnalyticsTasks
     public PostView? RecordPostView { get; set; }
 }
 
-public class DbWriteTasks
+public class StartJob
+{
+    public int Id { get; set; }
+    public string? Worker { get; set; }
+    public string? WorkerIp { get; set; }
+}
+
+public class DbWrites
 {
     public Vote? RecordPostVote { get; set; }
+    public Post? CreatePost { get; set; }
+    public List<PostJob>? CreatePostJobs { get; set; }
+    public StartJob? StartJob { get; set; }
+    public int? AnswerAddedToPost { get; set; }
+    public List<int>? CompleteJobIds { get; set; }
 }

@@ -8,27 +8,7 @@ namespace MyApp.Data;
 
 public class QuestionFiles(int id, string dir1, string dir2, string fileId, List<IVirtualFile> files, bool remote=false)
 {
-    public const int MostVotedScore = 10;
-    public const int AcceptedScore = 9;
-    public static Dictionary<string,int> ModelScores = new()
-    {
-        ["phi"] = 1, //2.7B
-        ["gemma:2b"] = 2,
-        ["qwen:4b"] = 3, //4B
-        ["codellama"] = 4, //7B
-        ["gemma"] = 5, //7B
-        ["deepseek-coder:6.7b"] = 5, //6.7B
-        ["mistral"] = 7, //7B
-        ["mixtral"] = 8, //47B
-        ["accepted"] = 9,
-        ["most-voted"] = 10,
-    };
-    
-    public int GetModelScore(string model) => model switch {
-        "accepted" => AcceptedScore,
-        "most-voted" => MostVotedScore,
-        _ => ModelScores.GetValueOrDefault(model, 0)
-    };
+    public int GetModelScore(string model) => QuestionsProvider.ModelScores.GetValueOrDefault(model, 0);
 
     public int Id { get; init; } = id;
     public string Dir1 { get; init; } = dir1;

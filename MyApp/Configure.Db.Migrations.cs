@@ -194,5 +194,41 @@ public class ConfigureDbMigrations : IHostingStartup
             ProfilePath = "/profiles/mi/mixtral.jpg",
             Model = "mixtral", //47B
         }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "servicestack",
+            Email = "team@servicestack.net",
+            DisplayName = "ServiceStack",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/se/servicestack.svg",
+        }, "p@55wOrd", [Roles.Moderator]);
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "mythz",
+            Email = "demis.bellot@gmail.com",
+            DisplayName = "mythz",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/my/mythz/kerrigan.png",
+        }, "p@55wOrd", [Roles.Moderator]);
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "reddit",
+            Email = "reddit@email.com",
+            DisplayName = "Reddit",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/re/reddit.svg",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "discourse",
+            Email = "discourse@email.com",
+            DisplayName = "Discourse",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/di/discourse.svg",
+        }, "p@55wOrd");
     }
 }

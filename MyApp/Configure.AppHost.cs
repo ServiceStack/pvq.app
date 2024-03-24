@@ -4,6 +4,7 @@ using ServiceStack.IO;
 using ServiceStack.OrmLite;
 using MyApp.Data;
 using MyApp.ServiceInterface;
+using MyApp.ServiceModel;
 using ServiceStack.Messaging;
 
 [assembly: HostingStartup(typeof(MyApp.AppHost))]
@@ -63,6 +64,26 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         using var db = GetDbConnection();
         AppConfig.Instance.ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null
             || x.UserName == "most-voted" || x.UserName == "accepted"));
+        var maxPostId = db.Scalar<int>("SELECT MAX(Id) FROM Post");
+        AppConfig.Instance.SetInitialPostId(Math.Max(100_000_000, maxPostId));
+        
+        var allTagsFile = new FileInfo(Path.Combine(HostingEnvironment.WebRootPath, "data/tags.txt"));
+        if (!allTagsFile.Exists)
+            throw new FileNotFoundException("data/tags.txt");
+        using var stream = allTagsFile.OpenRead();
+        var allTags = AppConfig.Instance.AllTags;
+        foreach (var line in stream.ReadLines())
+        {
+            allTags.Add(line.Trim());
+        }
+        Log.Info($"Loaded {allTags.Count} tags");
+
+        var incompleteJobs = db.Select(db.From<PostJob>().Where(x => x.CompletedDate == null));
+        if (incompleteJobs.Count > 0)
+        {
+            var modelWorkers = base.ApplicationServices.GetRequiredService<ModelWorkerQueue>();
+            incompleteJobs.ForEach(modelWorkers.Enqueue);
+        }
     }
     
     private string? ResolveGitBlobBaseUrl(IVirtualDirectory contentDir)

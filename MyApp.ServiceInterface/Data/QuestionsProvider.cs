@@ -9,6 +9,27 @@ namespace MyApp.Data;
 
 public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer mqClient, IVirtualFiles fs, R2VirtualFiles r2)
 {
+    public const int MostVotedScore = 10;
+    public const int AcceptedScore = 9;
+    public static Dictionary<string,int> ModelScores = new()
+    {
+        ["phi"] = 1, //2.7B
+        ["gemma:2b"] = 2,
+        ["qwen:4b"] = 3, //4B
+        ["codellama"] = 4, //7B
+        ["gemma"] = 5, //7B
+        ["deepseek-coder:6.7b"] = 5, //6.7B
+        ["mistral"] = 7, //7B
+        ["mixtral"] = 8, //47B
+        ["accepted"] = 9,
+        ["most-voted"] = 10,
+    };
+
+    public List<string> GetAnswerModelsFor(string? userName)
+    {
+        return ["phi", "gemma:2b", "qwen:4b", "codellama", "gemma", "deepseek-coder:6.7b", "mistral", "mixtral"];
+    }
+
     public System.Text.Json.JsonSerializerOptions SystemJsonOptions = new(TextConfig.SystemJsonOptions)
     {
         WriteIndented = true
@@ -38,20 +59,39 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         return new QuestionFiles(id: id, dir1: dir1, dir2: dir2, fileId: fileId, files: files, remote:true);
     }
 
+    public static string GetQuestionPath(int id)
+    {
+        var (dir1, dir2, fileId) = id.ToFileParts();
+        var path = $"{dir1}/{dir2}/{fileId}.json";
+        return path;
+    }
+
+    public static string GetModelAnswerPath(int id, string model)
+    {
+        var (dir1, dir2, fileId) = id.ToFileParts();
+        var path = $"{dir1}/{dir2}/{fileId}.{model}.json";
+        return path;
+    }
+
     public static string GetMetaPath(int id)
     {
         var (dir1, dir2, fileId) = id.ToFileParts();
-        var metaPath = $"{dir1}/{dir2}/{fileId}.meta.json";
-        return metaPath;
+        var path = $"{dir1}/{dir2}/{fileId}.meta.json";
+        return path;
+    }
+    
+    public string ToJson<T>(T obj) => System.Text.Json.JsonSerializer.Serialize(obj, SystemJsonOptions); 
+
+    public async Task SaveFileAsync(string file, string contents)
+    {
+        await Task.WhenAll(
+            fs.WriteFileAsync(file, contents),
+            r2.WriteFileAsync(file, contents));
     }
 
     public async Task WriteMetaAsync(Meta meta)
     {
-        var metaJson = System.Text.Json.JsonSerializer.Serialize(meta, SystemJsonOptions);
-        var metaPath = GetMetaPath(meta.Id);
-        await Task.WhenAll(
-            fs.WriteFileAsync(metaPath, metaJson),
-            r2.WriteFileAsync(metaPath, metaJson));
+        await SaveFileAsync(GetMetaPath(meta.Id), ToJson(meta));
     }
 
     public async Task<QuestionFiles> GetQuestionFilesAsync(int id)
@@ -83,5 +123,15 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
             }
         }
         return questionFiles;
+    }
+
+    public async Task SaveQuestionAsync(Post post)
+    {
+        await SaveFileAsync(GetQuestionPath(post.Id), ToJson(post));
+    }
+
+    public async Task SaveAnswerAsync(int postId, string model, string json)
+    {
+        await SaveFileAsync(GetModelAnswerPath(postId, model), json);
     }
 }

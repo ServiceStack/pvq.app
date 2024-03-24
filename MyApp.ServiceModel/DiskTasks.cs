@@ -14,7 +14,9 @@ public class DiskTasks : IReturnVoid
 public class SaveFile
 {
     public string FilePath { get; set; }
-    public Stream Stream { get; set; }
+    public Stream? Stream { get; set; }
+    public string? Text { get; set; }
+    public byte[]? Bytes { get; set; }
 }
 
 [Tag(Tag.Tasks)]

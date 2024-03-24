@@ -53,7 +53,7 @@ internal class StaticNavigationManager : NavigationManager
 
 public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
 {
-    private static bool DisableCache = false;
+    private static bool DisableCache = true;
 
     public string GetCachedQuestionPostPath(int id) => appConfig.CacheDir.CombineWith(GetQuestionPostVirtualPath(id));
 
@@ -131,7 +131,8 @@ public class RenderServices(
     BlazorRenderer renderer,
     RendererCache cache,
     IDbConnectionFactory dbFactory,
-    MemoryCacheClient memory) : Service
+    AppConfig appConfig,
+    MarkdownQuestions markdown) : Service
 {
     public async Task Any(RenderComponent request)
     {
@@ -250,7 +251,7 @@ public class RenderServices(
         {
             var model = remoteFiles.GetAnswerUserName(answerFile.Name);
             if (!meta.ModelVotes.ContainsKey(model))
-                meta.ModelVotes[model] = QuestionFiles.ModelScores.GetValueOrDefault(model, 0);
+                meta.ModelVotes[model] = QuestionsProvider.ModelScores.GetValueOrDefault(model, 0);
         }
         if (meta.Id == default)
             meta.Id = id;
@@ -314,5 +315,11 @@ public class RenderServices(
                 
         meta.StatTotals = await Db.SelectAsync<StatTotals>(x => x.PostId == id);
         await questions.WriteMetaAsync(meta);
+    }
+    
+    public object Any(PreviewMarkdown request)
+    {
+        var html = markdown.GenerateHtml(request.Markdown);
+        return html;
     }
 }

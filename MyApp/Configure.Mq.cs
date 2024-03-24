@@ -22,6 +22,7 @@ public class ConfigureMq : IHostingStartup
             }
             services.AddSingleton<IMessageService>(c => new BackgroundMqService());
             services.AddSingleton<IMessageProducer>(c => c.GetRequiredService<IMessageService>().MessageFactory.CreateMessageProducer());
+            services.AddSingleton<ModelWorkerQueue>();
         })
         .ConfigureAppHost(afterAppHostInit: appHost => {
             var mqService = appHost.Resolve<IMessageService>();
@@ -31,7 +32,7 @@ public class ConfigureMq : IHostingStartup
             mqService.RegisterHandler<RenderComponent>(appHost.ExecuteMessage);
             mqService.RegisterHandler<DiskTasks>(appHost.ExecuteMessage);
             mqService.RegisterHandler<AnalyticsTasks>(appHost.ExecuteMessage);
-            mqService.RegisterHandler<DbWriteTasks>(appHost.ExecuteMessage);
+            mqService.RegisterHandler<DbWrites>(appHost.ExecuteMessage);
             mqService.Start();
         });
 }

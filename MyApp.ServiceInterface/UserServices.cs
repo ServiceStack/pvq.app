@@ -103,7 +103,7 @@ public class UserServices(R2VirtualFiles r2) : Service
             throw new ArgumentNullException(nameof(userName));
         var postId = request.RefId.LeftPart('-').ToInt();
         var score = request.Up == true ? 1 : request.Down == true ? -1 : 0;
-        MessageProducer.Publish(new DbWriteTasks
+        MessageProducer.Publish(new DbWrites
         {
             RecordPostVote = new()
             {

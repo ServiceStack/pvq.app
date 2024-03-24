@@ -1,17 +1,30 @@
-﻿using MyApp.ServiceModel;
+﻿using MyApp.Data;
+using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.IO;
 using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class BackgroundMqServices(R2VirtualFiles r2) : Service
+public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorkers, QuestionsProvider questions) : Service
 {
     public async Task Any(DiskTasks request)
     {
-        if (request.SaveFile != null)
+        var saveFile = request.SaveFile;
+        if (saveFile != null)
         {
-            await r2.WriteFileAsync(request.SaveFile.FilePath, request.SaveFile.Stream);
+            if (saveFile.Stream != null)
+            {
+                await r2.WriteFileAsync(saveFile.FilePath, saveFile.Stream);
+            }
+            else if (saveFile.Text != null)
+            {
+                await r2.WriteFileAsync(saveFile.FilePath, saveFile.Text);
+            }
+            else if (saveFile.Bytes != null)
+            {
+                await r2.WriteFileAsync(saveFile.FilePath, saveFile.Bytes);
+            }
         }
 
         if (request.CdnDeleteFiles != null)
@@ -20,7 +33,7 @@ public class BackgroundMqServices(R2VirtualFiles r2) : Service
         }
     }
 
-    public async Task Any(DbWriteTasks request)
+    public async Task Any(DbWrites request)
     {
         var vote = request.RecordPostVote;
         if (vote != null)
@@ -38,6 +51,28 @@ public class BackgroundMqServices(R2VirtualFiles r2) : Service
             
             MessageProducer.Publish(new RenderComponent {
                 RegenerateMeta = vote.PostId
+            });
+        }
+
+        if (request.CreatePost != null)
+        {
+            await Db.InsertAsync(request.CreatePost);
+        }
+        
+        if (request.CreatePostJobs is { Count: > 0 })
+        {
+            Db.BulkInsert(request.CreatePostJobs, new() { Mode = BulkInsertMode.Sql });
+            request.CreatePostJobs.ForEach(modelWorkers.Enqueue);
+        }
+
+        var startJob = request.StartJob;
+        if (startJob != null)
+        {
+            await Db.UpdateOnlyAsync(() => new PostJob
+            {
+                StartedDate = DateTime.UtcNow,
+                Worker = startJob.Worker,
+                WorkerIp = startJob.WorkerIp,
             });
         }
     }
