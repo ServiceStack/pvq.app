@@ -2,9 +2,6 @@
 import { useAuth, useClient } from "@servicestack/vue"
 import { UserPostData, PostVote } from "dtos.mjs"
 
-const { user } = useAuth()
-const userName = user.value?.userName
-
 const svgPaths = {
     up: {
         empty: '<path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/>',
@@ -16,73 +13,80 @@ const svgPaths = {
     }
 }
 
-const client = new JsonServiceClient()
-let userPostVotes = {upVoteIds:[], downVoteIds:[]}
-let origPostValues = {upVoteIds:[], downVoteIds:[]}
-function updateVote(el) {
-    const up = el.querySelector('.up')
-    const down = el.querySelector('.down')
-    const score = el.querySelector('.score')
+export default  {
+    async load() {
+        const { user } = useAuth()
+        const userName = user.value?.userName
 
-    const value = getValue(userPostVotes, el.id)
-    up.classList.toggle('text-green-600',value === 1)
-    up.innerHTML = value === 1 ? svgPaths.up.solid : svgPaths.up.empty
-    down.classList.toggle('text-green-600',value === -1)
-    down.innerHTML = value === -1 ? svgPaths.down.solid : svgPaths.down.empty
-    score.innerHTML = parseInt(score.dataset.score) + value - getValue(origPostValues, el.id)
-}
-function getValue(postVotes, refId) {
-    return (postVotes.upVoteIds.includes(refId) ? 1 : postVotes.downVoteIds.includes(refId) ? -1 : 0)
-}
-function setValue(refId, value) {
-    userPostVotes.upVoteIds = userPostVotes.upVoteIds.filter(x => x !== refId)
-    userPostVotes.downVoteIds = userPostVotes.downVoteIds.filter(x => x !== refId)
-    if (value === 1) {
-        userPostVotes.upVoteIds.push(refId)
-    }
-    if (value === -1) {
-        userPostVotes.downVoteIds.push(refId)
-    }
-}
+        const client = new JsonServiceClient()
+        let userPostVotes = {upVoteIds:[], downVoteIds:[]}
+        let origPostValues = {upVoteIds:[], downVoteIds:[]}
+        function updateVote(el) {
+            const up = el.querySelector('.up')
+            const down = el.querySelector('.down')
+            const score = el.querySelector('.score')
 
-$$('.voting').forEach(el => {
-    const refId = el.id
-    async function vote(value) {
-        if (!userName) {
-            location.href = `/Account/Login?ReturnUrl=${encodeURIComponent(location.pathname)}`
-            return
+            const value = getValue(userPostVotes, el.id)
+            up.classList.toggle('text-green-600',value === 1)
+            up.innerHTML = value === 1 ? svgPaths.up.solid : svgPaths.up.empty
+            down.classList.toggle('text-green-600',value === -1)
+            down.innerHTML = value === -1 ? svgPaths.down.solid : svgPaths.down.empty
+            score.innerHTML = parseInt(score.dataset.score) + value - getValue(origPostValues, el.id)
+        }
+        function getValue(postVotes, refId) {
+            return (postVotes.upVoteIds.includes(refId) ? 1 : postVotes.downVoteIds.includes(refId) ? -1 : 0)
+        }
+        function setValue(refId, value) {
+            userPostVotes.upVoteIds = userPostVotes.upVoteIds.filter(x => x !== refId)
+            userPostVotes.downVoteIds = userPostVotes.downVoteIds.filter(x => x !== refId)
+            if (value === 1) {
+                userPostVotes.upVoteIds.push(refId)
+            }
+            if (value === -1) {
+                userPostVotes.downVoteIds.push(refId)
+            }
         }
 
-        const prevValue = getValue(userPostVotes, refId)
-        setValue(refId, value)
-        updateVote(el)
+        $$('.voting').forEach(el => {
+            const refId = el.id
+            async function vote(value) {
+                if (!userName) {
+                    location.href = `/Account/Login?ReturnUrl=${encodeURIComponent(location.pathname)}`
+                    return
+                }
 
-        const api = await client.apiVoid(new PostVote({ refId, up:value === 1, down:value === -1 }))
-        if (!api.succeeded) {
-            setValue(refId, prevValue)
-            updateVote(el)
-        }
-    }
-    
-    on(el.querySelector('.up'), {
-        click(e) {
-            vote(getValue(userPostVotes, refId) === 1 ? 0 : 1)
-        }
-    })
-    on(el.querySelector('.down'), {
-        click(e) {
-            vote(getValue(userPostVotes, refId) === -1 ? 0 : -1)
-        }
-    })
-})
+                const prevValue = getValue(userPostVotes, refId)
+                setValue(refId, value)
+                updateVote(el)
 
-const postId = parseInt($1('[data-postid]')?.getAttribute('data-postid'))
-if (!isNaN(postId)) {
-    const api = await client.api(new UserPostData({ postId }))
-    if (api.succeeded) {
-        origPostValues = api.response
-        userPostVotes = Object.assign({}, origPostValues)
-        console.log('origPostValues', origPostValues)
-        $$('.voting').forEach(updateVote)
+                const api = await client.apiVoid(new PostVote({ refId, up:value === 1, down:value === -1 }))
+                if (!api.succeeded) {
+                    setValue(refId, prevValue)
+                    updateVote(el)
+                }
+            }
+
+            on(el.querySelector('.up'), {
+                click(e) {
+                    vote(getValue(userPostVotes, refId) === 1 ? 0 : 1)
+                }
+            })
+            on(el.querySelector('.down'), {
+                click(e) {
+                    vote(getValue(userPostVotes, refId) === -1 ? 0 : -1)
+                }
+            })
+        })
+
+        const postId = parseInt($1('[data-postid]')?.getAttribute('data-postid'))
+        if (!isNaN(postId)) {
+            const api = await client.api(new UserPostData({ postId }))
+            if (api.succeeded) {
+                origPostValues = api.response
+                userPostVotes = Object.assign({}, origPostValues)
+                console.log('origPostValues', origPostValues)
+                $$('.voting').forEach(updateVote)
+            }
+        }
     }
 }
