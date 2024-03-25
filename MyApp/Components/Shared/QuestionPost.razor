@@ -10,7 +10,7 @@
         <h1 class="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">
             <span class="block xl:inline">@Question.Post.Title</span>
         </h1>
-        <div class="my-4 py-2 flex border-b border-gray-200 dark:border-gray-700">
+        <div class="my-4 py-2 flex justify-between border-b border-gray-200 dark:border-gray-700">
             <div class="flex gap-x-6 text-sm text-gray-500 dark:text-gray-400">
                 <div>
                     <a class="text-indigo-700 dark:text-indigo-200 hover:underline" target="_blank" href=@StackOverflowUrl>asked</a>
@@ -28,6 +28,15 @@
                     <b>@($"{Question.ViewCount:n0}") times</b>
                 </div>
             </div>
+            @if (Question.Post.CreatedBy != null)
+            {
+                <div class="flex mr-4">
+                    <img id="user-avatar" class="h-8 w-8 rounded-full" src="/avatar/@Question.Post.CreatedBy" alt=@($"{Question.Post.CreatedBy} avatar")>
+                    <div>
+                        <b class="ml-2">@Question.Post.CreatedBy</b>
+                    </div>
+                </div>
+            }
         </div>
         <div class="flex">
 
