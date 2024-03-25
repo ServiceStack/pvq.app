@@ -39,7 +39,13 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
         var incompleteJobs = Db.Select(Db.From<PostJob>().Where(x => x.CompletedDate == null));
         var missingJobs = incompleteJobs.Where(x => !pendingJobIds.Contains(x.Id) && x.StartedDate == null).ToList();
         var startedJobs = incompleteJobs.Where(x => x.StartedDate != null).ToList();
+        var lostJobsBefore = DateTime.UtcNow.Add(TimeSpan.FromMinutes(-5));
+        var lostJobs = startedJobs.Where(x => x.StartedDate < lostJobsBefore && missingJobs.All(m => m.Id != x.Id)).ToList();
 
+        foreach (var lostJob in lostJobs)
+        {
+            workerQueues.Enqueue(lostJob);
+        }
         foreach (var missingJob in missingJobs)
         {
             workerQueues.Enqueue(missingJob);
@@ -51,7 +57,7 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
                 $"{pendingJobs.Count} pending jobs in queue",
                 $"{incompleteJobs.Count} incomplete jobs in database",
                 $"{startedJobs.Count} jobs being processed by workers",
-                $"{missingJobs.Count} jobs missing and re-added to queue",
+                $"{missingJobs.Count} missing and ${lostJobs.Count} lost jobs re-added to queue",
             ]
         };
     }
