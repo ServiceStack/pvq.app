@@ -61,7 +61,7 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
         
         if (request.CreatePostJobs is { Count: > 0 })
         {
-            Db.BulkInsert(request.CreatePostJobs, new() { Mode = BulkInsertMode.Sql });
+            await Db.SaveAllAsync(request.CreatePostJobs);
             request.CreatePostJobs.ForEach(modelWorkers.Enqueue);
         }
 
