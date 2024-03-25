@@ -215,6 +215,15 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "layoric",
+            Email = "darren@reidmail.org",
+            DisplayName = "layoric",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/la/layoric/layoric.png",
+        }, "p@55wOrd", [Roles.Moderator]);
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "reddit",
             Email = "reddit@email.com",
             DisplayName = "Reddit",
