@@ -71,7 +71,7 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
     public static string GetModelAnswerPath(int id, string model)
     {
         var (dir1, dir2, fileId) = id.ToFileParts();
-        var path = $"{dir1}/{dir2}/{fileId}.a.{model}.json";
+        var path = $"{dir1}/{dir2}/{fileId}.a.{model.Replace(':','-')}.json";
         return path;
     }
 
