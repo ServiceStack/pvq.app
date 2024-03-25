@@ -73,7 +73,24 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
                 StartedDate = DateTime.UtcNow,
                 Worker = startJob.Worker,
                 WorkerIp = startJob.WorkerIp,
-            });
+            }, x => x.PostId == startJob.Id);
+        }
+
+        if (request.CompleteJobIds?.Count > 0)
+        {
+            await Db.UpdateOnlyAsync(() => new PostJob {
+                    Body = null,
+                    CompletedDate = DateTime.UtcNow,
+                }, 
+                x => request.CompleteJobIds.Contains(x.PostId));
+        }
+        
+        if (request.AnswerAddedToPost != null)
+        {
+            await Db.UpdateAddAsync(() => new Post
+            {
+                AnswerCount = 1,
+            }, x => x.Id == request.AnswerAddedToPost.Value);
         }
     }
 

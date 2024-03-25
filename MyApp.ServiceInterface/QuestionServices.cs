@@ -60,6 +60,23 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
 
     public async Task Any(CreateWorkerAnswer request)
     {
+        var json = request.Json;
+        if (string.IsNullOrEmpty(json))
+        {
+            var file = base.Request!.Files.FirstOrDefault();
+            if (file != null)
+            {
+                using var reader = new StreamReader(file.InputStream);
+                json = await reader.ReadToEndAsync();
+            }
+        }
+
+        json = json?.Trim();
+        if (string.IsNullOrEmpty(json))
+            throw new ArgumentException("Json is required", nameof(request.Json));
+        if (!json.StartsWith('{'))
+            throw new ArgumentException("Invalid Json", nameof(request.Json));
+        
         if (request.PostJobId != null)
         {
             MessageProducer.Publish(new DbWrites {
