@@ -38,6 +38,7 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         return meta;
     }
 
+    public IVirtualFile? GetQuestionFile() => Files.FirstOrDefault(x => x.Name == $"{FileId}.json");
     public IVirtualFile? GetMetaFile() => Files.FirstOrDefault(x => x.Name == $"{FileId}.meta.json");
     
     public static List<IVirtualFile> WithoutDuplicateAnswers(List<IVirtualFile> files)

@@ -79,10 +79,30 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
         if (request.CompleteJobIds?.Count > 0)
         {
             await Db.UpdateOnlyAsync(() => new PostJob {
-                    Body = null,
                     CompletedDate = DateTime.UtcNow,
                 }, 
                 x => request.CompleteJobIds.Contains(x.PostId));
+            var postJobs = await Db.SelectAsync(Db.From<PostJob>()
+                .Where(x => request.CompleteJobIds.Contains(x.PostId)));
+
+            foreach (var postJob in postJobs)
+            {
+                // If there's no outstanding model answer jobs for this post, add a rank job
+                if (!Db.Exists(Db.From<PostJob>()
+                    .Where(x => x.PostId == postJob.PostId && x.CompletedDate == null)))
+                {
+                    var rankJob = new PostJob
+                    {
+                        PostId = postJob.PostId,
+                        Model = "rank",
+                        Title = postJob.Title,
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = nameof(DbWrites),
+                    };
+                    await Db.InsertAsync(rankJob);
+                    modelWorkers.Enqueue(rankJob);
+                }
+            }
         }
         
         if (request.AnswerAddedToPost != null)

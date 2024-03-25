@@ -7,29 +7,6 @@ namespace MyApp.ServiceInterface;
 
 public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQueues) : Service
 {
-    public async Task<object> Get(CheckPostJobs request)
-    {
-        // Place holder for the actual implementation
-        var post = Db.Single<Post>(x => x.Id == 105372);
-        JobIdCount++;
-        var questionFile = await questions.GetQuestionAsync(post.Id);
-        var question = await questionFile.GetQuestionAsync();
-        
-        var result = new List<PostJob>
-        {
-            new PostJob
-            {
-                Id = JobIdCount,
-                Body = question?.Post.Body,
-                Tags = post.Tags,
-                Title = post.Title,
-                PostId = post.Id
-            }
-        };
-        
-        return new CheckPostJobsResponse { Results = result };
-    }
-
     public object Any(ViewModelQueues request)
     {
         var jobs = workerQueues.GetAll(request.Models);
@@ -47,7 +24,7 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
             return to;
         
         MessageProducer.Publish(new DbWrites {
-            StartJob = new() { Id = job.Id, Worker = request.Worker, WorkerIp = Request?.RemoteIp }
+            StartJob = new() { Id = job.Id, Worker = request.Worker, WorkerIp = Request!.RemoteIp }
         });
         return new GetNextJobsResponse
         {

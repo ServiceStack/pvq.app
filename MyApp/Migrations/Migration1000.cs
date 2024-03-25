@@ -80,8 +80,7 @@ public class Migration1000 : MigrationBase
         public int PostId { get; set; }
         public string Model { get; set; }
         public string Title { get; set; }
-        public string? Body { get; set; }
-        public List<string> Tags { get; set; }
+        public string CreatedBy { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? StartedDate { get; set; }
         public string? Worker { get; set; }

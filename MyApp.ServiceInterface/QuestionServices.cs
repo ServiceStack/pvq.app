@@ -16,7 +16,8 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
         if (tags.Count > 5)
             throw new ArgumentException("Maximum of 5 tags allowed", nameof(request.Tags));
 
-        var userName = Request.GetClaimsPrincipal().GetUserName();
+        var userName = Request.GetClaimsPrincipal().GetUserName()
+            ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
 
         var now = DateTime.UtcNow;
         var post = new Post
@@ -28,9 +29,10 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
             Slug = request.Title.GenerateSlug(200),
             Summary = request.Body.StripHtml().SubstringWithEllipsis(0,200),
             CreationDate = now,
-            LastActivityDate = now,
             CreatedBy = userName,
+            LastActivityDate = now,
             Body = request.Body,
+            RefId = request.RefId,
         };
 
         MessageProducer.Publish(new DbWrites
@@ -40,10 +42,9 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
                 .Select(model => new PostJob
                 {
                     PostId = post.Id,
-                    Title = request.Title,
-                    Body = request.Body,
-                    Tags = tags,
                     Model = model,
+                    Title = request.Title,
+                    CreatedBy = userName,
                     CreatedDate = now,
                 }).ToList(),
         });
@@ -56,6 +57,15 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
             Slug = post.Slug,
             RedirectTo = $"/questions/{post.Id}/{post.Slug}"
         };
+    }
+
+    public async Task<object> Any(GetQuestionFile request)
+    {
+        var questionFiles = await questions.GetQuestionFilesAsync(request.Id);
+        var file = questionFiles.GetQuestionFile();
+        if (file == null)
+            throw HttpError.NotFound($"Question {request.Id} not found");
+        return new HttpResult(file, MimeTypes.Json);
     }
 
     public async Task Any(CreateWorkerAnswer request)

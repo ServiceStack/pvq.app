@@ -48,10 +48,13 @@ public class Post
     
     public int? AnswerCount { get; set; }
 
+    public string? CreatedBy { get; set; }
+    
+    public string? ModifiedBy { get; set; }
+    
+    public string? RefId { get; set; }
+
     [Ignore] public string? Body { get; set; }
-    [Ignore] public string? CreatedBy { get; set; }
-    [Ignore] public string? ModifiedBy { get; set; }
-    [Ignore] public string? RefId { get; set; }
 }
 
 public class PostJob
@@ -61,8 +64,7 @@ public class PostJob
     public int PostId { get; set; }
     public string Model { get; set; }
     public string Title { get; set; }
-    public string? Body { get; set; }
-    public List<string> Tags { get; set; }
+    public string CreatedBy { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime? StartedDate { get; set; }
     public string? Worker { get; set; }
@@ -221,6 +223,12 @@ public class CreateWorkerAnswer : IReturn<IdResponse>
     [ValidateNotEmpty]
     public string Json { get; set; }
     public int? PostJobId { get; set; }
+}
+
+[ValidateHasRole(Roles.Moderator)]
+public class GetQuestionFile : IGet, IReturn<string>
+{
+    public int Id { get; set; }
 }
 
 [ValidateIsAuthenticated]

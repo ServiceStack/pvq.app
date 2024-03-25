@@ -15,6 +15,7 @@ public class ModelWorkerQueue
         ["deepseek-coder:6.7b"] = new(),
         ["mistral"] = new(),
         ["mixtral"] = new(),
+        ["rank"] = new(),
     };
 
     public void Enqueue(PostJob job)
