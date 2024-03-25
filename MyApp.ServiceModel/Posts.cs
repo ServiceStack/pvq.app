@@ -109,7 +109,10 @@ public class ViewModelQueuesResponse
 }
 
 [ValidateHasRole(Roles.Moderator)]
-public class RestoreModelQueues : IGet, IReturn<StringsResponse> {}
+public class RestoreModelQueues : IGet, IReturn<StringsResponse>
+{
+    public bool? RestoreFailedJobs { get; set; }
+}
 
 [ValidateHasRole(Roles.Moderator)]
 public class FailJob : IPost, IReturnVoid

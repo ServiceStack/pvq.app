@@ -39,16 +39,17 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
         });
     }
 
-    public object Any(RestoreModelQueues request)
+    public async Task<object> Any(RestoreModelQueues request)
     {
         var pendingJobs = workerQueues.GetAll();
         var pendingJobIds = pendingJobs.Select(x => x.Id).ToSet();
-        var incompleteJobs = Db.Select(Db.From<PostJob>().Where(x => x.CompletedDate == null));
+        var incompleteJobs = await Db.SelectAsync(Db.From<PostJob>().Where(x => x.CompletedDate == null));
         var missingJobs = incompleteJobs.Where(x => !pendingJobIds.Contains(x.Id) && x.StartedDate == null).ToList();
         var startedJobs = incompleteJobs.Where(x => x.StartedDate != null).ToList();
         var lostJobsBefore = DateTime.UtcNow.Add(TimeSpan.FromMinutes(-5));
         var lostJobs = startedJobs.Where(x => x.StartedDate < lostJobsBefore && missingJobs.All(m => m.Id != x.Id)).ToList();
-        var failedJobsCount = Db.Count(Db.From<PostJob>().Where(x => x.CompletedDate != null && x.Error != null));
+        var failedJobs = await Db.SelectAsync(Db.From<PostJob>().Where(x => x.CompletedDate != null && x.Error != null));
+        var restoreFailedJobs = request.RestoreFailedJobs == true;
 
         foreach (var lostJob in lostJobs)
         {
@@ -58,6 +59,11 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
         {
             workerQueues.Enqueue(missingJob);
         }
+        foreach (var failedJob in failedJobs)
+        {
+            workerQueues.Enqueue(failedJob);
+        }
+        var failedSuffix = restoreFailedJobs ? ", restored!" : "";
 
         return new StringsResponse
         {
@@ -66,7 +72,7 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
                 $"{incompleteJobs.Count} incomplete jobs in database",
                 $"{startedJobs.Count} jobs being processed by workers",
                 $"{missingJobs.Count} missing and {lostJobs.Count} lost jobs re-added to queue",
-                $"{failedJobsCount} failed jobs",
+                $"{failedJobs.Count} failed jobs{failedSuffix}",
             ]
         };
     }
