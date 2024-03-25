@@ -76,14 +76,14 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
             }, x => x.PostId == startJob.Id);
         }
 
-        if (request.CompleteJobIds?.Count > 0)
+        if (request.CompleteJobIds is { Count: > 0 })
         {
             await Db.UpdateOnlyAsync(() => new PostJob {
                     CompletedDate = DateTime.UtcNow,
                 }, 
-                x => request.CompleteJobIds.Contains(x.PostId));
+                x => request.CompleteJobIds.Contains(x.Id));
             var postJobs = await Db.SelectAsync(Db.From<PostJob>()
-                .Where(x => request.CompleteJobIds.Contains(x.PostId)));
+                .Where(x => request.CompleteJobIds.Contains(x.Id)));
 
             foreach (var postJob in postJobs)
             {
