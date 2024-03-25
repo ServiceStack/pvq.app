@@ -128,6 +128,7 @@
             else
             {
                 MessageProducer.Publish(new RenderComponent {
+                    IfQuestionModified = Id,
                     Question = question,
                 });
             }

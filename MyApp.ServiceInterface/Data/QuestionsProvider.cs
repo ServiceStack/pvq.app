@@ -134,4 +134,9 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
     {
         await SaveFileAsync(GetModelAnswerPath(postId, model), json);
     }
+
+    public async Task SaveLocalFileAsync(string virtualPath, string contents)
+    {
+        await fs.WriteFileAsync(virtualPath, contents);
+    }
 }

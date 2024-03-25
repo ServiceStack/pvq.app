@@ -127,6 +127,7 @@ public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
 }
 
 public class RenderServices(
+    ILogger<RenderServices> log,
     QuestionsProvider questions,
     BlazorRenderer renderer,
     RendererCache cache,
@@ -153,7 +154,20 @@ public class RenderServices(
                                  await ShouldRegenerateMeta(id, localFiles, remoteFiles, dbStatTotals, allPostVotes);
             if (regenerateMeta)
             {
+                log.LogInformation("Regenerating Meta for Post {Id}...", id);
                 await RegenerateMeta(dbAnalytics, id, remoteFiles, dbStatTotals, allPostVotes);
+            }
+
+            // Update Local Files with new or modified remote files
+            foreach (var remoteFile in remoteFiles.Files)
+            {
+                var localFile = localFiles.Files.FirstOrDefault(x => x.Name == remoteFile.Name);
+                if (localFile == null || localFile.LastModified < remoteFile.LastModified)
+                {
+                    log.LogInformation("Saving local file for {State} {Path}", localFile == null ? "new" : "modified", remoteFile.VirtualPath);
+                    var remoteContents = await remoteFile.ReadAllTextAsync();
+                    await questions.SaveLocalFileAsync(remoteFile.VirtualPath, remoteContents);
+                }
             }
             
             var rerenderPostHtml = regenerateMeta;
@@ -173,6 +187,7 @@ public class RenderServices(
 
         if (request.Question != null)
         {
+            log.LogInformation("Rendering Question Post HTML {Id}...", request.Question.Id);
             var html = await renderer.RenderComponent<QuestionPost>(new() { ["Question"] = request.Question });
             await cache.SetQuestionPostHtmlAsync(request.Question.Id, html);
         }
