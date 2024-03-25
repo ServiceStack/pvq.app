@@ -34,6 +34,8 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
     {
         WriteIndented = true
     };
+
+    public string ToJson<T>(T obj) => System.Text.Json.JsonSerializer.Serialize(obj, SystemJsonOptions); 
     
     public QuestionFiles GetLocalQuestionFiles(int id)
     {
@@ -80,8 +82,6 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         return path;
     }
     
-    public string ToJson<T>(T obj) => System.Text.Json.JsonSerializer.Serialize(obj, SystemJsonOptions); 
-
     public async Task SaveFileAsync(string file, string contents)
     {
         await Task.WhenAll(

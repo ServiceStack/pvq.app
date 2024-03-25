@@ -57,7 +57,7 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
                 $"{pendingJobs.Count} pending jobs in queue",
                 $"{incompleteJobs.Count} incomplete jobs in database",
                 $"{startedJobs.Count} jobs being processed by workers",
-                $"{missingJobs.Count} missing and ${lostJobs.Count} lost jobs re-added to queue",
+                $"{missingJobs.Count} missing and {lostJobs.Count} lost jobs re-added to queue",
             ]
         };
     }
