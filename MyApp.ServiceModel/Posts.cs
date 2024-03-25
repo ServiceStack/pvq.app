@@ -70,6 +70,7 @@ public class PostJob
     public string? Worker { get; set; }
     public string? WorkerIp { get; set; }
     public DateTime? CompletedDate { get; set; }
+    public string? Error { get; set; }
 }
 
 public class CheckPostJobs : IGet, IReturn<CheckPostJobsResponse>
@@ -109,6 +110,15 @@ public class ViewModelQueuesResponse
 
 [ValidateHasRole(Roles.Moderator)]
 public class RestoreModelQueues : IGet, IReturn<StringsResponse> {}
+
+[ValidateHasRole(Roles.Moderator)]
+public class FailJob : IPost, IReturnVoid
+{
+    public int Id { get; set; }
+    [ValidateNotEmpty]
+    public required string Error { get; set; }
+}
+
 
 public class QueryPosts : QueryDb<Post>
 {

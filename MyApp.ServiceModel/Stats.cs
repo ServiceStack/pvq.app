@@ -118,4 +118,5 @@ public class DbWrites
     public StartJob? StartJob { get; set; }
     public int? AnswerAddedToPost { get; set; }
     public List<int>? CompleteJobIds { get; set; }
+    public FailJob? FailJob { get; set; }
 }

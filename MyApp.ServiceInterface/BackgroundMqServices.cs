@@ -104,6 +104,15 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
                 }
             }
         }
+
+        if (request.FailJob != null)
+        {
+            await Db.UpdateOnlyAsync(() => new PostJob {
+                    CompletedDate = DateTime.UtcNow,
+                    Error = request.FailJob.Error,
+                }, 
+                x => x.PostId == request.FailJob.Id);
+        }
         
         if (request.AnswerAddedToPost != null)
         {

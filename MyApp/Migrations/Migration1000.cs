@@ -86,6 +86,7 @@ public class Migration1000 : MigrationBase
         public string? Worker { get; set; }
         public string? WorkerIp { get; set; }
         public DateTime? CompletedDate { get; set; }
+        public string? Error { get; set; }
     }
 
     public override void Up()

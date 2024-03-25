@@ -32,6 +32,13 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
         };
     }
 
+    public void Any(FailJob request)
+    {
+        MessageProducer.Publish(new DbWrites {
+            FailJob = request
+        });
+    }
+
     public object Any(RestoreModelQueues request)
     {
         var pendingJobs = workerQueues.GetAll();
@@ -41,6 +48,7 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
         var startedJobs = incompleteJobs.Where(x => x.StartedDate != null).ToList();
         var lostJobsBefore = DateTime.UtcNow.Add(TimeSpan.FromMinutes(-5));
         var lostJobs = startedJobs.Where(x => x.StartedDate < lostJobsBefore && missingJobs.All(m => m.Id != x.Id)).ToList();
+        var failedJobsCount = Db.Count(Db.From<PostJob>().Where(x => x.CompletedDate != null && x.Error != null));
 
         foreach (var lostJob in lostJobs)
         {
@@ -58,6 +66,7 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
                 $"{incompleteJobs.Count} incomplete jobs in database",
                 $"{startedJobs.Count} jobs being processed by workers",
                 $"{missingJobs.Count} missing and {lostJobs.Count} lost jobs re-added to queue",
+                $"{failedJobsCount} failed jobs",
             ]
         };
     }
