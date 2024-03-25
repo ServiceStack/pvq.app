@@ -228,12 +228,11 @@ public class PostVote : IReturnVoid
 }
 
 [ValidateHasRole(Roles.Moderator)]
-public class CreateWorkerAnswer : IReturn<IdResponse>
+public class CreateWorkerAnswer : IPost, IReturn<IdResponse>
 {
     public int PostId { get; set; }
     [ValidateNotEmpty]
     public string Model { get; set; }
-    [ValidateNotEmpty]
     public string Json { get; set; }
     public int? PostJobId { get; set; }
 }
