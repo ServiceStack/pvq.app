@@ -100,6 +100,9 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         var to = new QuestionAndAnswers();
         foreach (var entry in FileContents)
         {
+            if (string.IsNullOrEmpty(entry.Value))
+                continue;
+            
             var fileName = entry.Key.LastRightPart('/');
             if (fileName == questionFileName)
             {

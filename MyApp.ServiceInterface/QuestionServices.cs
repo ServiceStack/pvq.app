@@ -95,6 +95,6 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
             });
         }
         
-        await questions.SaveAnswerAsync(request.PostId, request.Model, request.Json);
+        await questions.SaveAnswerAsync(request.PostId, request.Model, json);
     }
 }
