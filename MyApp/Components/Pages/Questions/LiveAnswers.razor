@@ -1,13 +1,7 @@
 ﻿@attribute [StreamRendering]
 @page "/answers/{Id:int}/{*Slug}"
-@using ServiceStack.Caching
 @using System.Data
 @inject QuestionsProvider QuestionsProvider
-@inject RendererCache RendererCache
-@inject NavigationManager NavigationManager
-@inject IMessageProducer MessageProducer
-@inject MemoryCacheClient Cache
-@inject IWebHostEnvironment Env
 @inject WorkerAnswerNotifier AnswerNotifier
 @inject AppConfig AppConfig
 @inject MarkdownQuestions Markdown
