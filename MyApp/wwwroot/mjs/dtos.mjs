@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-03-25 01:27:36
+Date: 2024-03-26 13:48:21
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -28,7 +28,7 @@ export class Vote {
     score;
 }
 export class Post {
-    /** @param {{id?:number,postTypeId?:number,acceptedAnswerId?:number,parentId?:number,score?:number,viewCount?:number,title?:string,favoriteCount?:number,creationDate?:string,lastActivityDate?:string,lastEditDate?:string,lastEditorUserId?:number,ownerUserId?:number,tags?:string[],slug?:string,summary?:string,rankDate?:string,answerCount?:number,body?:string,createdBy?:string,modifiedBy?:string,refId?:string}} [init] */
+    /** @param {{id?:number,postTypeId?:number,acceptedAnswerId?:number,parentId?:number,score?:number,viewCount?:number,title?:string,favoriteCount?:number,creationDate?:string,lastActivityDate?:string,lastEditDate?:string,lastEditorUserId?:number,ownerUserId?:number,tags?:string[],slug?:string,summary?:string,rankDate?:string,answerCount?:number,createdBy?:string,modifiedBy?:string,refId?:string,body?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {number} */
     id;
@@ -67,16 +67,16 @@ export class Post {
     /** @type {?number} */
     answerCount;
     /** @type {?string} */
-    body;
-    /** @type {?string} */
     createdBy;
     /** @type {?string} */
     modifiedBy;
     /** @type {?string} */
     refId;
+    /** @type {?string} */
+    body;
 }
 export class PostJob {
-    /** @param {{id?:number,postId?:number,model?:string,title?:string,body?:string,tags?:string[],createdDate?:string,startedDate?:string,completedDate?:string}} [init] */
+    /** @param {{id?:number,postId?:number,model?:string,title?:string,createdBy?:string,createdDate?:string,startedDate?:string,worker?:string,workerIp?:string,completedDate?:string,error?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {number} */
     id;
@@ -86,16 +86,30 @@ export class PostJob {
     model;
     /** @type {string} */
     title;
-    /** @type {?string} */
-    body;
-    /** @type {string[]} */
-    tags;
+    /** @type {string} */
+    createdBy;
     /** @type {string} */
     createdDate;
     /** @type {?string} */
     startedDate;
     /** @type {?string} */
+    worker;
+    /** @type {?string} */
+    workerIp;
+    /** @type {?string} */
     completedDate;
+    /** @type {?string} */
+    error;
+}
+export class StartJob {
+    /** @param {{id?:number,worker?:string,workerIp?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    /** @type {?string} */
+    worker;
+    /** @type {?string} */
+    workerIp;
 }
 export class StatTotals {
     /** @param {{id?:string,postId?:number,favoriteCount?:number,viewCount?:number,upVotes?:number,downVotes?:number,startingUpVotes?:number}} [init] */
@@ -272,17 +286,19 @@ export class AdminDataResponse {
     /** @type {PageStats[]} */
     pageStats;
 }
-export class CheckPostJobsResponse {
-    /** @param {{results?:PostJob[]}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {PostJob[]} */
-    results;
-}
 export class ViewModelQueuesResponse {
     /** @param {{jobs?:PostJob[],responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {PostJob[]} */
     jobs;
+    /** @type {ResponseStatus} */
+    responseStatus;
+}
+export class GetNextJobsResponse {
+    /** @param {{results?:PostJob[],responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {PostJob[]} */
+    results;
     /** @type {ResponseStatus} */
     responseStatus;
 }
@@ -306,6 +322,20 @@ export class AskQuestionResponse {
     /** @type {?string} */
     redirectTo;
     /** @type {?ResponseStatus} */
+    responseStatus;
+}
+export class AnswerQuestionResponse {
+    /** @param {{responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
+export class IdResponse {
+    /** @param {{id?:string,responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    /** @type {ResponseStatus} */
     responseStatus;
 }
 export class UpdateUserProfileResponse {
@@ -384,8 +414,19 @@ export class AdminData {
     getMethod() { return 'GET' }
     createResponse() { return new AdminDataResponse() }
 }
+export class FailJob {
+    /** @param {{id?:number,error?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    /** @type {string} */
+    error;
+    getTypeName() { return 'FailJob' }
+    getMethod() { return 'POST' }
+    createResponse() { }
+}
 export class DbWrites {
-    /** @param {{recordPostVote?:Vote,createPost?:Post,createPostJobs?:PostJob[]}} [init] */
+    /** @param {{recordPostVote?:Vote,createPost?:Post,createPostJobs?:PostJob[],startJob?:StartJob,answerAddedToPost?:number,completeJobIds?:number[],failJob?:FailJob}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {?Vote} */
     recordPostVote;
@@ -393,6 +434,14 @@ export class DbWrites {
     createPost;
     /** @type {?PostJob[]} */
     createPostJobs;
+    /** @type {?StartJob} */
+    startJob;
+    /** @type {?number} */
+    answerAddedToPost;
+    /** @type {?number[]} */
+    completeJobIds;
+    /** @type {?FailJob} */
+    failJob;
     getTypeName() { return 'DbWrites' }
     getMethod() { return 'POST' }
     createResponse () { };
@@ -424,17 +473,6 @@ export class GetCdnFile {
     getMethod() { return 'POST' }
     createResponse () { };
 }
-export class CheckPostJobs {
-    /** @param {{workerId?:string,models?:string[]}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {string} */
-    workerId;
-    /** @type {string[]} */
-    models;
-    getTypeName() { return 'CheckPostJobs' }
-    getMethod() { return 'GET' }
-    createResponse() { return new CheckPostJobsResponse() }
-}
 export class ViewModelQueues {
     /** @param {{models?:string[]}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -444,8 +482,24 @@ export class ViewModelQueues {
     getMethod() { return 'GET' }
     createResponse() { return new ViewModelQueuesResponse() }
 }
-export class RestoreModelQueues {
+export class GetNextJobs {
+    /** @param {{models?:string[],worker?:string,take?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {string[]} */
+    models;
+    /** @type {?string} */
+    worker;
+    /** @type {?number} */
+    take;
+    getTypeName() { return 'GetNextJobs' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetNextJobsResponse() }
+}
+export class RestoreModelQueues {
+    /** @param {{restoreFailedJobs?:boolean}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?boolean} */
+    restoreFailedJobs;
     getTypeName() { return 'RestoreModelQueues' }
     getMethod() { return 'GET' }
     createResponse() { return new StringsResponse() }
@@ -464,6 +518,43 @@ export class AskQuestion {
     getTypeName() { return 'AskQuestion' }
     getMethod() { return 'POST' }
     createResponse() { return new AskQuestionResponse() }
+}
+export class AnswerQuestion {
+    /** @param {{postId?:number,body?:string,refId?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    postId;
+    /** @type {string} */
+    body;
+    /** @type {?string} */
+    refId;
+    getTypeName() { return 'AnswerQuestion' }
+    getMethod() { return 'POST' }
+    createResponse() { return new AnswerQuestionResponse() }
+}
+export class GetQuestionFile {
+    /** @param {{id?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    getTypeName() { return 'GetQuestionFile' }
+    getMethod() { return 'GET' }
+    createResponse() { return '' }
+}
+export class CreateWorkerAnswer {
+    /** @param {{postId?:number,model?:string,json?:string,postJobId?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    postId;
+    /** @type {string} */
+    model;
+    /** @type {string} */
+    json;
+    /** @type {?number} */
+    postJobId;
+    getTypeName() { return 'CreateWorkerAnswer' }
+    getMethod() { return 'POST' }
+    createResponse() { return new IdResponse() }
 }
 export class UpdateUserProfile {
     constructor(init) { Object.assign(this, init) }

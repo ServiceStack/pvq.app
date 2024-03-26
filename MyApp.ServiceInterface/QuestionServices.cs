@@ -4,7 +4,7 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface;
 
-public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) : Service
+public class QuestionServices(AppConfig appConfig, QuestionsProvider questions, RendererCache rendererCache) : Service
 {
     public async Task<object> Any(AskQuestion request)
     {
@@ -16,9 +16,7 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
         if (tags.Count > 5)
             throw new ArgumentException("Maximum of 5 tags allowed", nameof(request.Tags));
 
-        var userName = Request.GetClaimsPrincipal().GetUserName()
-            ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
-
+        var userName = GetUserName();
         var now = DateTime.UtcNow;
         var post = new Post
         {
@@ -59,6 +57,26 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
         };
     }
 
+    public async Task<object> Any(AnswerQuestion request)
+    {
+        var userName = GetUserName();
+        var now = DateTime.UtcNow;
+        var post = new Post
+        {
+            ParentId = request.PostId,
+            Summary = request.Body.StripHtml().SubstringWithEllipsis(0,200),
+            CreationDate = now,
+            CreatedBy = userName,
+            LastActivityDate = now,
+            Body = request.Body,
+            RefId = request.RefId,
+        };
+        
+        await questions.SaveHumanAnswerAsync(post);
+        rendererCache.DeleteCachedQuestionPostHtml(post.Id);
+        return new AnswerQuestionResponse();
+    }
+
     public async Task<object> Any(GetQuestionFile request)
     {
         var questionFiles = await questions.GetQuestionFilesAsync(request.Id);
@@ -95,6 +113,13 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions) 
             });
         }
         
-        await questions.SaveAnswerAsync(request.PostId, request.Model, json);
+        await questions.SaveModelAnswerAsync(request.PostId, request.Model, json);
+    }
+
+    private string GetUserName()
+    {
+        var userName = Request.GetClaimsPrincipal().GetUserName()
+                       ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
+        return userName;
     }
 }

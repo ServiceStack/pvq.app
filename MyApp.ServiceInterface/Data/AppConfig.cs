@@ -23,6 +23,12 @@ public class AppConfig
         return user ?? DefaultUser;
     }
     
+    public string GetUserName(string model)
+    {
+        var user = ModelUsers.FirstOrDefault(x => x.Model == model || x.UserName == model);
+        return user?.UserName ?? model;
+    }
+    
     private long nextPostId = -1;
     public void SetInitialPostId(long initialValue) => this.nextPostId = initialValue;
     public long LastPostId => Interlocked.Read(ref nextPostId);

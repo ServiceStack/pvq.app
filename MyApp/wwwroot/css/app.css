@@ -1437,10 +1437,6 @@ select{
   width: 24rem;
 }
 
-.w-\[56rem\] {
-  width: 56rem;
-}
-
 .w-auto {
   width: auto;
 }
@@ -2442,6 +2438,10 @@ select{
 
 .pl-5 {
   padding-left: 1.25rem;
+}
+
+.pl-6 {
+  padding-left: 1.5rem;
 }
 
 .pl-8 {
@@ -4615,16 +4615,16 @@ select{
     padding-left: 4rem;
   }
 
+  .sm\:pr-4 {
+    padding-right: 1rem;
+  }
+
   .sm\:pr-6 {
     padding-right: 1.5rem;
   }
 
   .sm\:pt-1 {
     padding-top: 0.25rem;
-  }
-
-  .sm\:pr-4 {
-    padding-right: 1rem;
   }
 
   .sm\:text-left {

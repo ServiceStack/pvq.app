@@ -251,7 +251,7 @@ public class AskQuestion : IPost, IReturn<AskQuestionResponse>
     public required string Title { get; set; }
     
     [ValidateNotEmpty, ValidateMinimumLength(30), ValidateMaximumLength(32768)]
-    [Input(Type="MarkdownInput", Help = "Include all information required for someone to identity and resolve your exact question"), FieldCss(Field="col-span-12", Input="h-56")]
+    [Input(Type="MarkdownInput", Help = "Include all information required for someone to identity and resolve your exact question"), FieldCss(Field="col-span-12", Input="h-60")]
     public required string Body { get; set; }
     
     [ValidateNotEmpty, ValidateMinimumLength(2, Message = "At least 1 tag required"), ValidateMaximumLength(120)]
@@ -267,6 +267,26 @@ public class AskQuestionResponse
     public int Id { get; set; }
     public string Slug { get; set; }
     public string? RedirectTo { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
+[ValidateIsAuthenticated]
+[Description("Your Answer")]
+public class AnswerQuestion : IPost, IReturn<AnswerQuestionResponse>
+{
+    [Input(Type="hidden")]
+    [ValidateGreaterThan(0)]
+    public int PostId { get; set; }
+    
+    [ValidateNotEmpty, ValidateMinimumLength(30), ValidateMaximumLength(32768)]
+    [Input(Type="MarkdownInput", Label=""), FieldCss(Field="col-span-12", Input="h-60")]
+    public required string Body { get; set; }
+    
+    [Input(Type="hidden")]
+    public string? RefId { get; set; }
+}
+public class AnswerQuestionResponse
+{
     public ResponseStatus? ResponseStatus { get; set; }
 }
 

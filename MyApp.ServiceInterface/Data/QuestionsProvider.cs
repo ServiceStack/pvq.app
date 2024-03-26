@@ -75,6 +75,13 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         return path;
     }
 
+    public static string GetHumanAnswerPath(int id, string userName)
+    {
+        var (dir1, dir2, fileId) = id.ToFileParts();
+        var path = $"{dir1}/{dir2}/{fileId}.h.{userName}.json";
+        return path;
+    }
+
     public static string GetMetaPath(int id)
     {
         var (dir1, dir2, fileId) = id.ToFileParts();
@@ -82,11 +89,11 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         return path;
     }
     
-    public async Task SaveFileAsync(string file, string contents)
+    public async Task SaveFileAsync(string virtualPath, string contents)
     {
         await Task.WhenAll(
-            fs.WriteFileAsync(file, contents),
-            r2.WriteFileAsync(file, contents));
+            r2.WriteFileAsync(virtualPath, contents),
+            fs.WriteFileAsync(virtualPath, contents));
     }
 
     public async Task WriteMetaAsync(Meta meta)
@@ -130,13 +137,31 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         await SaveFileAsync(GetQuestionPath(post.Id), ToJson(post));
     }
 
-    public async Task SaveAnswerAsync(int postId, string model, string json)
+    public async Task SaveModelAnswerAsync(int postId, string model, string json)
     {
         await SaveFileAsync(GetModelAnswerPath(postId, model), json);
+    }
+
+    public async Task SaveHumanAnswerAsync(Post post)
+    {
+        await SaveFileAsync(GetHumanAnswerPath(
+            post.ParentId ?? throw new ArgumentNullException(nameof(Post.ParentId)), 
+            post.CreatedBy ?? throw new ArgumentNullException(nameof(Post.CreatedBy))), 
+            ToJson(post));
+    }
+
+    public async Task SaveHumanAnswerAsync(int postId, string userName, string json)
+    {
+        await SaveFileAsync(GetHumanAnswerPath(postId, userName), json);
     }
 
     public async Task SaveLocalFileAsync(string virtualPath, string contents)
     {
         await fs.WriteFileAsync(virtualPath, contents);
+    }
+    
+    public async Task SaveRemoteFileAsync(string virtualPath, string contents)
+    {
+        await r2.WriteFileAsync(virtualPath, contents);
     }
 }

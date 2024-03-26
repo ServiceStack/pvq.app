@@ -114,6 +114,7 @@ public class DbWrites
 {
     public Vote? RecordPostVote { get; set; }
     public Post? CreatePost { get; set; }
+    public Post? UpdatePost { get; set; }
     public List<PostJob>? CreatePostJobs { get; set; }
     public StartJob? StartJob { get; set; }
     public int? AnswerAddedToPost { get; set; }
