@@ -294,3 +294,10 @@ public class PreviewMarkdown : IPost, IReturn<string>
 {
     public string Markdown { get; set; }
 }
+
+[ValidateHasRole(Roles.Moderator)]
+public class DeleteQuestion : IGet, IReturn<EmptyResponse>
+{
+    [ValidateGreaterThan(0)]
+    public int Id { get; set; }
+}

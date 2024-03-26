@@ -58,6 +58,13 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
         {
             await Db.InsertAsync(request.CreatePost);
         }
+
+        if (request.DeletePost != null)
+        {
+            await Db.DeleteAsync<PostJob>(x => x.PostId == request.DeletePost);
+            await Db.DeleteAsync<Vote>(x => x.PostId == request.DeletePost);
+            await Db.DeleteByIdAsync<Post>(request.DeletePost);
+        }
         
         if (request.CreatePostJobs is { Count: > 0 })
         {
@@ -125,16 +132,24 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
 
     public async Task Any(AnalyticsTasks request)
     {
+        if (request.RecordPostView == null && request.RecordSearchView == null && request.DeletePost == null)
+            return;
+
+        using var analyticsDb = HostContext.AppHost.GetDbConnection(Databases.Analytics);
+        
         if (request.RecordPostView != null)// && !Stats.IsAdminOrModerator(request.RecordPostView.UserName))
         {
-            using var analyticsDb = HostContext.AppHost.GetDbConnection(Databases.Analytics);
             await analyticsDb.InsertAsync(request.RecordPostView);
         }
 
         if (request.RecordSearchView != null)// && !Stats.IsAdminOrModerator(request.RecordSearchView.UserName))
         {
-            using var analyticsDb = HostContext.AppHost.GetDbConnection(Databases.Analytics);
             await analyticsDb.InsertAsync(request.RecordSearchView);
+        }
+
+        if (request.DeletePost != null)
+        {
+            await analyticsDb.DeleteAsync<PostView>(x => x.PostId == request.DeletePost);
         }
     }
 }

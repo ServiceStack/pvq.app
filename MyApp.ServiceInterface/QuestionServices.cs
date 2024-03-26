@@ -1,6 +1,7 @@
 ﻿using MyApp.Data;
 using ServiceStack;
 using MyApp.ServiceModel;
+using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
@@ -57,6 +58,17 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions, 
         };
     }
 
+    public async Task<EmptyResponse> Any(DeleteQuestion request)
+    {
+        await questions.DeleteQuestionFilesAsync(request.Id);
+        rendererCache.DeleteCachedQuestionPostHtml(request.Id);
+        MessageProducer.Publish(new DbWrites
+        {
+            DeletePost = request.Id,
+        });
+        return new EmptyResponse();
+    }
+
     public async Task<object> Any(AnswerQuestion request)
     {
         var userName = GetUserName();
@@ -74,6 +86,11 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions, 
         
         await questions.SaveHumanAnswerAsync(post);
         rendererCache.DeleteCachedQuestionPostHtml(post.Id);
+        
+        // Rewind last Id if it was latest question
+        var maxPostId = Db.Scalar<int>("SELECT MAX(Id) FROM Post");
+        AppConfig.Instance.SetInitialPostId(Math.Max(100_000_000, maxPostId));
+        
         return new AnswerQuestionResponse();
     }
 

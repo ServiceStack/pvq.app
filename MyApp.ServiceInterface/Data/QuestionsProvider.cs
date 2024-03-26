@@ -164,4 +164,12 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
     {
         await r2.WriteFileAsync(virtualPath, contents);
     }
+
+    public async Task DeleteQuestionFilesAsync(int id)
+    {
+        var localQuestionFiles = GetLocalQuestionFiles(id);
+        fs.DeleteFiles(localQuestionFiles.Files.Select(x => x.VirtualPath));
+        var remoteQuestionFiles = await GetRemoteQuestionFilesAsync(id);
+        r2.DeleteFiles(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
+    }
 }
