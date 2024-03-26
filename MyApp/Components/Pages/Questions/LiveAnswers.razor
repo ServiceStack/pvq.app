@@ -52,7 +52,7 @@
                         <div class="flex">
                             <div class="flex-1 md:flex md:justify-between">
                                 <div class="flex">
-                                    <Loading class="mb-0 mr-1" Message="" />
+                                    <Loading class="!mb-0 mr-1" Message="" />
                                     <p class="flex leading-6 text-white">
                                         @Progress
                                     </p>
@@ -174,7 +174,7 @@
             var lastCount = pendingJobs.Count;
             Progress = $"Waiting on {pendingJobs.Count} remaining answer{Plural(pendingJobs.Count)}...";
             StateHasChanged();
-            var timeOut = TimeSpan.FromMinutes(2);
+            var timeOut = TimeSpan.FromMinutes(5);
             while (DateTime.UtcNow - startedAt < timeOut)
             {
                 await AnswerNotifier.ListenForNewAnswersAsync(Id, TimeSpan.FromSeconds(5));
