@@ -125,13 +125,13 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
 
     public async Task Any(AnalyticsTasks request)
     {
-        if (request.RecordPostView != null && !Stats.IsAdminOrModerator(request.RecordPostView.UserName))
+        if (request.RecordPostView != null)// && !Stats.IsAdminOrModerator(request.RecordPostView.UserName))
         {
             using var analyticsDb = HostContext.AppHost.GetDbConnection(Databases.Analytics);
             await analyticsDb.InsertAsync(request.RecordPostView);
         }
 
-        if (request.RecordSearchView != null && !Stats.IsAdminOrModerator(request.RecordSearchView.UserName))
+        if (request.RecordSearchView != null)// && !Stats.IsAdminOrModerator(request.RecordSearchView.UserName))
         {
             using var analyticsDb = HostContext.AppHost.GetDbConnection(Databases.Analytics);
             await analyticsDb.InsertAsync(request.RecordSearchView);

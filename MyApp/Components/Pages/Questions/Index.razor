@@ -3,7 +3,7 @@
 @inject IMessageProducer MessageProducer
 
 <PageTitle>@Title</PageTitle>
-<div class="flex flex-wrap justify-center">
+<div class="sm:flex flex-wrap justify-center px-2">
     <div>
         @if (posts != null)
         {
@@ -20,7 +20,7 @@
                                 <h4 class="mt-4 text-2xl">results for '@Q'</h4>
                             }
                         </div>
-                        <div class="w-96 text-right">
+                        <div class="w-full sm:w-96 text-right">
                             <div class="mb-4">
                                 <NavLink class=@PrimaryButton.Classes(ButtonStyle.Indigo) href="questions/ask">Ask Question</NavLink>
                             </div>

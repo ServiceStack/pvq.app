@@ -84,6 +84,11 @@
         line-height: 1.3333333;
     }
 }
+@media (max-width: 1024px) {
+    .prose :where(pre):not(:where([class~="not-prose"] *)) {
+        min-width: unset;
+    }
+}
 
 /* custom containers */
 .copy p, .copy p code { color:#fff }

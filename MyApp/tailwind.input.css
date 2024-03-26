@@ -51,6 +51,9 @@ select{
 [type='file']{background:unset;border-color:inherit;border-width:0;border-radius:0;padding:0;font-size:unset;line-height:inherit}
 [type='file']:focus{outline:1px auto -webkit-focus-ring-color;}
 
+.dark [type='text'],.dark [type='email'],.dark [type='url'],.dark [type='password'],.dark [type='number'],.dark [type='date'],.dark [type='month'],.dark [type='search'],.dark [type='tel'],.dark [type='time'],.dark [type='checkbox'],.dark [type='radio'],.dark [multiple],.dark textarea,.dark select {
+    background-color: #000;
+}
 
 /* @tailwindcss/aspect css */
 .aspect-h-9 {
