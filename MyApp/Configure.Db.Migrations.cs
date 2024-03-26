@@ -94,7 +94,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "stackoverflow@email.com",
             DisplayName = "StackOverflow",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/hu/human.svg",
+            ProfilePath = "/profiles/st/stackoverflow/stackoverflow.svg",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -103,7 +103,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "most-voted@email.com",
             DisplayName = "Most Voted",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/hu/human.svg",
+            ProfilePath = "/profiles/mo/most-voted/most-voted.svg",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -112,7 +112,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "accepted@email.com",
             DisplayName = "Accepted",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/hu/human-accepted.svg",
+            ProfilePath = "/profiles/ac/accepted/accepted.svg",
         }, "p@55wOrd");
         
         await EnsureUserAsync(new ApplicationUser
@@ -121,7 +121,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "phi@email.com",
             DisplayName = "Phi-2 2.7B",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/ph/phi-2.svg",
+            ProfilePath = "/profiles/ph/phi/phi.svg",
             Model = "phi", //3B
         }, "p@55wOrd");
 
@@ -131,7 +131,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "gemma-2b@email.com",
             DisplayName = "Gemma 2B",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/ge/gemma-2b.svg",
+            ProfilePath = "/profiles/ge/gemma-2b/gemma-2b.svg",
             Model = "gemma:2b", //3B
         }, "p@55wOrd");
 
@@ -141,7 +141,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "qwen@email.com",
             DisplayName = "Qwen 1.5",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/qw/qwen.svg",
+            ProfilePath = "/profiles/qw/qwen-4b/qwen-4b.svg",
             Model = "qwen:4b", //4B
         }, "p@55wOrd");
 
@@ -151,7 +151,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "codellama-13B@email.com",
             DisplayName = "Code Llama 7B",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/co/codellama.svg",
+            ProfilePath = "/profiles/co/codellama/codellama.svg",
             Model = "codellama", //7B
         }, "p@55wOrd");
 
@@ -161,7 +161,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "gemma@email.com",
             DisplayName = "Gemma 7B",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/ge/gemma-7b.svg",
+            ProfilePath = "/profiles/ge/gemma/gemma.svg",
             Model = "gemma", //9B
         }, "p@55wOrd");
 
@@ -171,7 +171,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "deepseek-coder@email.com",
             DisplayName = "DeepSeek Coder 6.7b",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/de/deepseek-coder.jpg",
+            ProfilePath = "/profiles/de/deepseek-coder/deepseek-coder.jpg",
             Model = "deepseek-coder:6.7b", //16B
         }, "p@55wOrd");
 
@@ -181,7 +181,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "mistral-7B@email.com",
             DisplayName = "Mistral 7B",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/mi/mistral.svg",
+            ProfilePath = "/profiles/mi/mistral/mistral.svg",
             Model = "mistral", //7B
         }, "p@55wOrd");
 
@@ -191,7 +191,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "mixtral-8x7b@email.com",
             DisplayName = "Mixtral 8x7B",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/mi/mixtral.jpg",
+            ProfilePath = "/profiles/mi/mixtral/mixtral.jpg",
             Model = "mixtral", //47B
         }, "p@55wOrd");
 
@@ -201,7 +201,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "team@servicestack.net",
             DisplayName = "ServiceStack",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/se/servicestack.svg",
+            ProfilePath = "/profiles/se/servicestack/servicestack.svg",
         }, "p@55wOrd", [Roles.Moderator]);
 
         await EnsureUserAsync(new ApplicationUser
@@ -228,7 +228,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "reddit@email.com",
             DisplayName = "Reddit",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/re/reddit.svg",
+            ProfilePath = "/profiles/re/reddit/reddit.svg",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -237,7 +237,7 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "discourse@email.com",
             DisplayName = "Discourse",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/di/discourse.svg",
+            ProfilePath = "/profiles/di/discourse/discourse.svg",
         }, "p@55wOrd");
     }
 }
