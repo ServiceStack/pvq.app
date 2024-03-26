@@ -27,7 +27,11 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
 
     public List<string> GetAnswerModelsFor(string? userName)
     {
+#if DEBUG
+        return ["phi", "gemma:2b", "gemma", "mixtral"];
+#else
         return ["phi", "gemma:2b", "qwen:4b", "codellama", "gemma", "deepseek-coder:6.7b", "mistral", "mixtral"];
+#endif
     }
 
     public System.Text.Json.JsonSerializerOptions SystemJsonOptions = new(TextConfig.SystemJsonOptions)

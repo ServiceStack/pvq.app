@@ -1000,6 +1000,11 @@ select{
   margin-right: auto;
 }
 
+.my-16 {
+  margin-top: 4rem;
+  margin-bottom: 4rem;
+}
+
 .my-2 {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
@@ -1051,6 +1056,10 @@ select{
 
 .-mt-8 {
   margin-top: -2rem;
+}
+
+.mb-0 {
+  margin-bottom: 0px;
 }
 
 .mb-1 {
@@ -2334,6 +2343,11 @@ select{
   padding-bottom: 0.5rem;
 }
 
+.py-2\.5 {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
 .py-20 {
   padding-top: 5rem;
   padding-bottom: 5rem;
@@ -3282,6 +3296,11 @@ select{
   background-color: rgb(249 250 251 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-gray-900:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-green-100:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(220 252 231 / var(--tw-bg-opacity));
@@ -3334,6 +3353,11 @@ select{
 .hover\:bg-yellow-50:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(254 252 232 / var(--tw-bg-opacity));
+}
+
+.hover\:text-blue-400:hover {
+  --tw-text-opacity: 1;
+  color: rgb(96 165 250 / var(--tw-text-opacity));
 }
 
 .hover\:text-blue-500:hover {
@@ -4575,6 +4599,10 @@ select{
     border-radius: 0.375rem;
   }
 
+  .sm\:rounded-xl {
+    border-radius: 0.75rem;
+  }
+
   .sm\:p-0 {
     padding: 0px;
   }
@@ -4603,6 +4631,11 @@ select{
     padding-right: 1.5rem;
   }
 
+  .sm\:py-3 {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
   .sm\:pb-0 {
     padding-bottom: 0px;
   }
@@ -4613,6 +4646,18 @@ select{
 
   .sm\:pl-16 {
     padding-left: 4rem;
+  }
+
+  .sm\:pl-4 {
+    padding-left: 1rem;
+  }
+
+  .sm\:pr-3 {
+    padding-right: 0.75rem;
+  }
+
+  .sm\:pr-3\.5 {
+    padding-right: 0.875rem;
   }
 
   .sm\:pr-4 {
@@ -4688,6 +4733,14 @@ select{
     margin-bottom: 7rem;
   }
 
+  .md\:ml-6 {
+    margin-left: 1.5rem;
+  }
+
+  .md\:mt-0 {
+    margin-top: 0px;
+  }
+
   .md\:mt-5 {
     margin-top: 1.25rem;
   }
@@ -4730,6 +4783,10 @@ select{
 
   .md\:flex-row {
     flex-direction: row;
+  }
+
+  .md\:justify-between {
+    justify-content: space-between;
   }
 
   .md\:gap-x-16 {

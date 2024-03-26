@@ -1,0 +1,212 @@
+﻿@attribute [StreamRendering]
+@page "/answers/{Id:int}/{*Slug}"
+@using ServiceStack.Caching
+@using System.Data
+@inject QuestionsProvider QuestionsProvider
+@inject RendererCache RendererCache
+@inject NavigationManager NavigationManager
+@inject IMessageProducer MessageProducer
+@inject MemoryCacheClient Cache
+@inject IWebHostEnvironment Env
+@inject WorkerAnswerNotifier AnswerNotifier
+@inject AppConfig AppConfig
+@inject MarkdownQuestions Markdown
+
+<PageTitle>@title</PageTitle>
+
+<div class="lg:flex flex-wrap justify-center px-2">
+    <div>
+        @if (question?.Post?.Title != null)
+        {
+            <div class="my-8 mx-auto sm:max-w-4xl sm:w-[56rem] xl:max-w-5xl xl:w-[64rem]">
+                <article data-postid=@question.Id>
+                    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lg:text-4xl xl:text-5xl">
+                        <span class="block xl:inline">@question.Post.Title</span>
+                    </h1>
+                    <div class="my-4 py-2 flex justify-between border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex gap-x-6 text-sm text-gray-500 dark:text-gray-400">
+                            <div>
+                                <span>asked</span>
+                                <b>@TimeAgo</b>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex flex-wrap gap-x-2 gap-y-2">
+                                @foreach (var tag in question.Post.Tags.Safe())
+                                {
+                                    <a href="questions/tagged/@tag.UrlEncode()" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">@tag</a>
+                                }
+                            </div>
+                        </div>
+                        
+                        @if (question.Post.CreatedBy != null)
+                        {
+                            <div class="flex mr-4">
+                                <img class="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-contain" src="/avatar/@question.Post.CreatedBy" alt=@($"{question.Post.CreatedBy} avatar")>
+                                <div>
+                                    <b class="ml-2">@question.Post.CreatedBy</b>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </article>
+                
+                @if (!string.IsNullOrEmpty(Progress))
+                {
+                    <div class="mt-4 rounded-md gap-x-6 bg-gray-900 px-6 py-2.5 sm:rounded-xl sm:py-3 sm:pl-4 sm:pr-3.5">
+                        <div class="flex">
+                            <div class="flex-1 md:flex md:justify-between">
+                                <div class="flex">
+                                    <Loading class="mb-0 mr-1" Message="" />
+                                    <p class="flex leading-6 text-white">
+                                        @Progress
+                                    </p>
+                                </div>
+                                <p class="mt-3 md:ml-6 md:mt-0">
+                                    <NavLink href=@QuestionPath class="whitespace-nowrap font-medium text-blue-200 hover:text-blue-400">
+                                        full question page
+                                        <span aria-hidden="true"> &rarr;</span>
+                                    </NavLink>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                
+                <div id="answers" class="mt-8">
+                    @if (question.Answers.Count > 0)
+                    {
+                        <h3 class="text-2xl font-semibold">
+                            @question.Answers.Count @($"Answer{Plural(question.Answers.Count)}")
+                        </h3>
+                    }
+                    <div>
+                        @foreach (var answer in question.Answers)
+                        {
+                            <div class="py-8 border-b border-gray-200 dark:border-gray-700">
+                                <div class="flex">
+                                    <div class="md:w-32 pr-2">
+                                        @{
+                                            var userName = AppConfig.GetUserName(answer.Model);
+                                        }
+                                        <div class="mt-8 flex flex-col items-center">
+                                            <img class="w-10 h-10 xl:w-20 xl:h-20 bg-cover inline-block" src="@userName.GetAvatarUrl()">
+                                            <div class="hidden md:block text-center whitespace-nowrap text-xs xl:text-sm font-semibold">@userName</div>
+                                        </div>
+                                    </div>
+                                    <div class="xl:flex-grow prose">
+                                        @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Choices.FirstOrDefault()?.Message.Content))
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex justify-end text-gray-700 dark:text-gray-200 text-sm">
+                                    answered <time class="ml-2" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            @if (question.Answers.Count > 0)
+            {
+                <div class="my-16 flex justify-end">
+                    <NavLink href=@QuestionPath>
+                        <div class="rounded-md py-2 pl-6 pr-2 shadow-lg bg-gray-800 text-white hover:bg-gray-900 text-2xl font-normal flex items-center">
+                            Full Question Page
+                            <svg class="w-10 h-10" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M9.4 18L8 16.6l4.6-4.6L8 7.4L9.4 6l6 6Z"></path></svg>
+                        </div>
+                    </NavLink>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="mt-3 mb-20 mx-auto max-w-fit">
+                @if (error != null)
+                {
+                    <ErrorSummary Status=@error/>
+                }
+                else
+                {
+                    <Loading/>
+                }
+            </div>
+        }
+    </div>
+    <div class="mt-12">
+        <Aside />
+    </div>
+</div>
+<LiteYoutubeIncludes />
+
+@code {
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+    
+    [Parameter] public required int Id { get; set; }
+
+    [Parameter] public required string Slug { get; set; }
+
+    [SupplyParameterFromQuery] int? Force { get; set; }
+
+    string QuestionPath => $"/questions/{Id}/{Slug}";
+
+    string Plural(int count) => count != 1 ? "s" : "";
+
+    string TimeAgo => question == null ? "" : (DateTime.UtcNow - question.Post.CreationDate).TimeAgo();
+
+    QuestionAndAnswers? question;
+    ResponseStatus? error;
+    AuthorInfo? author;
+
+    string title = "";
+    string? Progress;
+    string? Html;
+
+    async Task load()
+    {
+        var startedAt = DateTime.UtcNow;
+        using var db = HostContext.AppHost.GetDbConnection();
+
+        var pendingJobs = await GetPendingJobs(db);
+
+        var questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
+        question = questionFiles.Question;
+        StateHasChanged();
+
+        if (pendingJobs.Count > 0)
+        {
+            var lastCount = pendingJobs.Count;
+            Progress = $"Waiting on {pendingJobs.Count} remaining answer{Plural(pendingJobs.Count)}...";
+            StateHasChanged();
+            var timeOut = TimeSpan.FromMinutes(2);
+            while (DateTime.UtcNow - startedAt < timeOut)
+            {
+                await AnswerNotifier.ListenForNewAnswersAsync(Id, TimeSpan.FromSeconds(5));
+
+                pendingJobs = await GetPendingJobs(db);
+                if (pendingJobs.Count == 0)
+                    break;
+
+                if (pendingJobs.Count != lastCount)
+                {
+                    questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
+                    question = questionFiles.Question;
+                    Progress = $"Waiting on {pendingJobs.Count} remaining answers...";
+                    lastCount = pendingJobs.Count;
+                    StateHasChanged();
+                }
+            }
+            Progress = null;
+            questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
+            question = questionFiles.Question;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<List<PostJob>> GetPendingJobs(IDbConnection db) =>
+        await db.SelectAsync<PostJob>(x => x.PostId == Id && x.CompletedDate == null && x.Model != "rank");
+
+    protected override Task OnInitializedAsync() => load();
+}

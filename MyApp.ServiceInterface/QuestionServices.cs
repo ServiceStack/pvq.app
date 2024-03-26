@@ -5,7 +5,10 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class QuestionServices(AppConfig appConfig, QuestionsProvider questions, RendererCache rendererCache) : Service
+public class QuestionServices(AppConfig appConfig, 
+    QuestionsProvider questions, 
+    RendererCache rendererCache, 
+    WorkerAnswerNotifier answerNotifier) : Service
 {
     public async Task<object> Any(AskQuestion request)
     {
@@ -54,7 +57,7 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions, 
         {
             Id = post.Id,
             Slug = post.Slug,
-            RedirectTo = $"/questions/{post.Id}/{post.Slug}"
+            RedirectTo = $"/answers/{post.Id}/{post.Slug}"
         };
     }
 
@@ -91,6 +94,8 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions, 
         var maxPostId = Db.Scalar<int>("SELECT MAX(Id) FROM Post");
         AppConfig.Instance.SetInitialPostId(Math.Max(100_000_000, maxPostId));
         
+        answerNotifier.NotifyNewAnswer(request.PostId, post.CreatedBy);
+
         return new AnswerQuestionResponse();
     }
 
@@ -122,6 +127,8 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions, 
         if (!json.StartsWith('{'))
             throw new ArgumentException("Invalid Json", nameof(request.Json));
         
+        rendererCache.DeleteCachedQuestionPostHtml(request.PostId);
+
         if (request.PostJobId != null)
         {
             MessageProducer.Publish(new DbWrites {
@@ -131,6 +138,8 @@ public class QuestionServices(AppConfig appConfig, QuestionsProvider questions, 
         }
         
         await questions.SaveModelAnswerAsync(request.PostId, request.Model, json);
+        
+        answerNotifier.NotifyNewAnswer(request.PostId, request.Model);
     }
 
     private string GetUserName()

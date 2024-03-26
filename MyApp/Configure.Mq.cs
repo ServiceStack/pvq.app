@@ -23,6 +23,7 @@ public class ConfigureMq : IHostingStartup
             services.AddSingleton<IMessageService>(c => new BackgroundMqService());
             services.AddSingleton<IMessageProducer>(c => c.GetRequiredService<IMessageService>().MessageFactory.CreateMessageProducer());
             services.AddSingleton<ModelWorkerQueue>();
+            services.AddSingleton<WorkerAnswerNotifier>();
         })
         .ConfigureAppHost(afterAppHostInit: appHost => {
             var mqService = appHost.Resolve<IMessageService>();
