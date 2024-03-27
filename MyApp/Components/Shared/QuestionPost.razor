@@ -13,7 +13,14 @@
         <div class="my-4 py-2 flex justify-between border-b border-gray-200 dark:border-gray-700">
             <div class="flex gap-x-6 text-sm text-gray-500 dark:text-gray-400">
                 <div>
-                    <a class="text-indigo-700 dark:text-indigo-200 hover:underline" target="_blank" href=@StackOverflowUrl>asked</a>
+                    @if (Question.Post is { Id: < 100_000_000, CreatedBy: null })
+                    {
+                        <a class="text-indigo-700 dark:text-indigo-200 hover:underline" target="_blank" href=@StackOverflowUrl>asked</a>
+                    }
+                    else
+                    {
+                        <span>asked</span>
+                    }
                     <b>@((DateTime.UtcNow - Question.Post.CreationDate).TimeAgo())</b>
                 </div>
                 @if (Question.Post.LastEditDate != null)
@@ -63,7 +70,14 @@
                 @if (Question.Post.LastEditDate != null)
                 {
                     <div class="flex flex-grow px-4 sm:px-6 text-sm justify-end">
-                        <a class="text-indigo-700 dark:text-indigo-200 hover:underline" target="_blank" href=@StackOverflowUrl>edited</a>
+                        @if (Question.Post is { Id: < 100_000_000, CreatedBy: null })
+                        {
+                            <a class="text-indigo-700 dark:text-indigo-200 hover:underline" target="_blank" href=@StackOverflowUrl>edited</a>
+                        }
+                        else
+                        {
+                            <span>edited</span>
+                        }
                         <dd class="ml-2 text-gray-600 dark:text-gray-300">
                             <time datetime="@Markdown.GetDateTimestamp(Question.Post?.LastEditDate)">@Markdown.GetDateLabel(Question.Post?.LastEditDate)</time>
                         </dd>
