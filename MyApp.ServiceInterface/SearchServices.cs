@@ -21,6 +21,7 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                 questionFiles.GetAnswerFiles().Count());
             using var db = HostContext.AppHost.GetDbConnection(Databases.Search);
             var nextId = await db.ScalarAsync<int>("SELECT MAX(rowid) FROM PostFts");
+            nextId += 1;
             var existingIds = new HashSet<int>();
             var minDate = new DateTime(2008,08,1);
 
@@ -35,10 +36,13 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                     if (fileType == "json")
                     {
                         var post = await ToPostAsync(file);
+                        if (post.Id == default)
+                            throw new ArgumentNullException(nameof(post.Id));
                         if (!existingIds.Add(post.Id)) continue;
                         log.LogDebug("Adding Question {FilePath}", file.VirtualPath);
                         var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
-                        db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
+                        await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} WHERE rowid = {post.Id}");
+                        await db.ExecuteNonQueryAsync($@"INSERT INTO {nameof(PostFts)} (
                             rowid,
                             {nameof(PostFts.RefId)},
                             {nameof(PostFts.UserName)},
