@@ -23,7 +23,7 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
         if (job == null)
         {
             var dbHasIncompleteJobs = await Db.SelectAsync(Db.From<PostJob>()
-                .Where(x => (x.CompletedDate == null || x.StartedDate < DateTime.UtcNow.AddMinutes(-5)) && x.Model != "rank"));
+                .Where(x => x.CompletedDate == null || x.StartedDate < DateTime.UtcNow.AddMinutes(-5)));
             if (dbHasIncompleteJobs.Count > 0)
             {
                 await Any(new RestoreModelQueues { RestoreFailedJobs = true });
