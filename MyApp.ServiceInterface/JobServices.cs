@@ -65,14 +65,17 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
 
         foreach (var lostJob in lostJobs)
         {
+            if (pendingJobIds.Contains(lostJob.Id)) continue;
             workerQueues.Enqueue(lostJob);
         }
         foreach (var missingJob in missingJobs)
         {
+            if (pendingJobIds.Contains(missingJob.Id)) continue;
             workerQueues.Enqueue(missingJob);
         }
         foreach (var failedJob in failedJobs)
         {
+            if (pendingJobIds.Contains(failedJob.Id)) continue;
             workerQueues.Enqueue(failedJob);
         }
         var failedSuffix = restoreFailedJobs ? ", restored!" : "";
