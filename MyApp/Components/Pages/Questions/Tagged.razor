@@ -61,7 +61,7 @@
 
     [Parameter] public required string Slug { get; set; }
 
-    static string[] Tabs = ["interesting", "popular", "newest"];
+    static string[] Tabs = ["relevance", "newest", "oldest"];
 
     [SupplyParameterFromQuery] string? Tab { get; set; }
 

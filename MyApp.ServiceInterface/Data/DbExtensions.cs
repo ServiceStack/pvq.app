@@ -41,7 +41,7 @@ public static class DbExtensions
         view = view?.ToLower();
         if (view is "popular" or "most-views")
             q.OrderByDescending(x => x.ViewCount);
-        else if (view is "interesting" or "most-votes")
+        else if (view is null or "" or "interesting" or "most-votes")
             q.OrderByDescending(x => x.Score);
         else
             q.OrderByDescending(x => x.Id);
