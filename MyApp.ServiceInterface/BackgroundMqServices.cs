@@ -64,6 +64,8 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
             await Db.DeleteAsync<PostJob>(x => x.PostId == request.DeletePost);
             await Db.DeleteAsync<Vote>(x => x.PostId == request.DeletePost);
             await Db.DeleteByIdAsync<Post>(request.DeletePost);
+            var maxPostId = await Db.ScalarAsync<int>("SELECT MAX(Id) FROM Post");
+            AppConfig.Instance.SetInitialPostId(Math.Max(100_000_000, maxPostId));
         }
         
         if (request.CreatePostJobs is { Count: > 0 })
