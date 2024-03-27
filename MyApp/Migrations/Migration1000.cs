@@ -87,6 +87,7 @@ public class Migration1000 : MigrationBase
         public string? WorkerIp { get; set; }
         public DateTime? CompletedDate { get; set; }
         public string? Error { get; set; }
+        public int RetryCount { get; set; }
     }
 
     public override void Up()
