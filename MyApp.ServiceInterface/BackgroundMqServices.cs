@@ -108,7 +108,7 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
                     };
                     await Db.InsertAsync(rankJob);
                     modelWorkers.Enqueue(rankJob);
-                    MessageProducer.Publish(new SearchTasks { AddPostId = postJob.PostId });
+                    MessageProducer.Publish(new SearchTasks { AddPostToIndex = postJob.PostId });
                 }
             }
         }

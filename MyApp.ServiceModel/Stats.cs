@@ -131,5 +131,5 @@ public class DbWrites
 [Restrict(InternalOnly = true)]
 public class SearchTasks
 {
-    public int? AddPostId { get; set; }
+    public int? AddPostToIndex { get; set; }
 }
