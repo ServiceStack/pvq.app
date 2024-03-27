@@ -302,3 +302,5 @@ public class DeleteQuestion : IGet, IReturn<EmptyResponse>
     [ValidateGreaterThan(0)]
     public int Id { get; set; }
 }
+
+public class GetRequestInfo : IGet, IReturn<string> {}
