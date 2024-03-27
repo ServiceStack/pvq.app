@@ -16,12 +16,24 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
         };
     }
 
-    public object Any(GetNextJobs request)
+    public async Task<object> Any(GetNextJobs request)
     {
         var to = new GetNextJobsResponse();
         var job = workerQueues.Dequeue(request.Models, TimeSpan.FromSeconds(30));
         if (job == null)
-            return to;
+        {
+            var dbHasIncompleteJobs = await Db.SelectAsync(Db.From<PostJob>()
+                .Where(x => x.CompletedDate == null || x.StartedDate < DateTime.UtcNow.AddMinutes(-5)));
+            if (dbHasIncompleteJobs.Count > 0)
+            {
+                await Any(new RestoreModelQueues { RestoreFailedJobs = true });
+                job = workerQueues.Dequeue(request.Models, TimeSpan.FromSeconds(30));
+            }
+            if (job == null)
+            {
+                return to;
+            }
+        }
         
         MessageProducer.Publish(new DbWrites {
             StartJob = new() { Id = job.Id, Worker = request.Worker, WorkerIp = Request!.RemoteIp }
