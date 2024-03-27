@@ -1030,6 +1030,10 @@ select{
   margin-bottom: 2rem;
 }
 
+.\!mb-0 {
+  margin-bottom: 0px !important;
+}
+
 .-mb-px {
   margin-bottom: -1px;
 }
@@ -1056,10 +1060,6 @@ select{
 
 .-mt-8 {
   margin-top: -2rem;
-}
-
-.mb-0 {
-  margin-bottom: 0px;
 }
 
 .mb-1 {
@@ -1212,10 +1212,6 @@ select{
 
 .mt-auto {
   margin-top: auto;
-}
-
-.\!mb-0 {
-  margin-bottom: 0px !important;
 }
 
 .block {
