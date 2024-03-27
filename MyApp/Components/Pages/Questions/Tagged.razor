@@ -69,6 +69,8 @@
 
     [SupplyParameterFromQuery] int? Page { get; set; }
 
+    [SupplyParameterFromQuery] string? Use { get; set; }
+
     string selectedTag = "";
     List<Post>? posts;
     ResponseStatus? error;
@@ -84,14 +86,34 @@
                 PageSize = 25;
 
             selectedTag = Slug.UrlDecode().Replace("'", "").SqlVerifyFragment();
-            using var db = await DbFactory.OpenAsync();
-            var q = db.From<Post>()
-                .WhereContainsTag(selectedTag);
-            posts = await db.SelectAsync(q
-                .OrderByView(Tab)
-                .Skip(Page > 1 ? (Page - 1) * PageSize : 0)
-                .Take(PageSize.ToPageSize()));
-            total = db.Count(q);
+
+            if (Use == "db")
+            {
+                using var db = await DbFactory.OpenAsync();
+                var q = db.From<Post>()
+                    .WhereContainsTag(selectedTag);
+                posts = await db.SelectAsync(q
+                    .OrderByView(Tab)
+                    .Skip(Page > 1 ? (Page - 1) * PageSize : 0)
+                    .Take(PageSize.ToPageSize()));
+                total = db.Count(q);
+            }
+            else //search
+            {
+                using var dbSearch = await DbFactory.OpenAsync(Databases.Search);
+                var q = dbSearch.From<PostFts>();
+                q.WhereContainsTag(selectedTag);
+                q.OrderByView(Tab);
+
+                List<PostFts> postsFts = await dbSearch.SelectAsync(q
+                    .Select("RefId, substring(Body,0,400) as Body, ModifiedDate")
+                    .Skip(Page > 1 ? (Page - 1) * PageSize : 0)
+                    .Take(PageSize.ToPageSize()));
+
+                total = dbSearch.Count(q);
+                using var db = await DbFactory.OpenAsync();
+                posts = await db.PopulatePostsAsync(postsFts);
+            }
         }
         catch (Exception ex)
         {
