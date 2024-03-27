@@ -34,6 +34,7 @@ public class ConfigureMq : IHostingStartup
             mqService.RegisterHandler<DiskTasks>(appHost.ExecuteMessage);
             mqService.RegisterHandler<AnalyticsTasks>(appHost.ExecuteMessage);
             mqService.RegisterHandler<DbWrites>(appHost.ExecuteMessage);
+            mqService.RegisterHandler<SearchTasks>(appHost.ExecuteMessage);
             mqService.Start();
         });
 }

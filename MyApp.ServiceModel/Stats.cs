@@ -111,6 +111,9 @@ public class StartJob
     public string? WorkerIp { get; set; }
 }
 
+[Tag(Tag.Tasks)]
+[ExcludeMetadata]
+[Restrict(InternalOnly = true)]
 public class DbWrites
 {
     public Vote? RecordPostVote { get; set; }
@@ -121,4 +124,12 @@ public class DbWrites
     public int? AnswerAddedToPost { get; set; }
     public List<int>? CompleteJobIds { get; set; }
     public FailJob? FailJob { get; set; }
+}
+
+[Tag(Tag.Tasks)]
+[ExcludeMetadata]
+[Restrict(InternalOnly = true)]
+public class SearchTasks
+{
+    public int? AddPostId { get; set; }
 }
