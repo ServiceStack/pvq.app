@@ -114,11 +114,22 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
 
         if (request.FailJob != null)
         {
-            await Db.UpdateOnlyAsync(() => new PostJob {
-                    CompletedDate = DateTime.UtcNow,
+            await Db.UpdateAddAsync(() => new PostJob {
                     Error = request.FailJob.Error,
+                    RetryCount = 1,
                 }, 
                 x => x.PostId == request.FailJob.Id);
+            var postJob = await Db.SingleByIdAsync<PostJob>(request.FailJob.Id);
+            if (postJob.RetryCount > 3)
+            {
+                await Db.UpdateOnlyAsync(() =>
+                        new PostJob { CompletedDate = DateTime.UtcNow },
+                    x => x.PostId == request.FailJob.Id);
+            }
+            else
+            {
+                modelWorkers.Enqueue(postJob);
+            }
         }
         
         if (request.AnswerAddedToPost != null)

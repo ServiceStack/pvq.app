@@ -71,6 +71,7 @@ public class PostJob
     public string? WorkerIp { get; set; }
     public DateTime? CompletedDate { get; set; }
     public string? Error { get; set; }
+    public int RetryCount { get; set; }
 }
 
 public class CheckPostJobs : IGet, IReturn<CheckPostJobsResponse>
