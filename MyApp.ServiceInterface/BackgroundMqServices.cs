@@ -64,6 +64,8 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
             await Db.DeleteAsync<PostJob>(x => x.PostId == request.DeletePost);
             await Db.DeleteAsync<Vote>(x => x.PostId == request.DeletePost);
             await Db.DeleteByIdAsync<Post>(request.DeletePost);
+            var maxPostId = await Db.ScalarAsync<int>("SELECT MAX(Id) FROM Post");
+            AppConfig.Instance.SetInitialPostId(Math.Max(100_000_000, maxPostId));
         }
         
         if (request.CreatePostJobs is { Count: > 0 })
@@ -108,7 +110,7 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
                     };
                     await Db.InsertAsync(rankJob);
                     modelWorkers.Enqueue(rankJob);
-                    MessageProducer.Publish(new SearchTasks { AddPostId = postJob.PostId });
+                    MessageProducer.Publish(new SearchTasks { AddPostToIndex = postJob.PostId });
                 }
             }
         }
@@ -121,15 +123,18 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
                 }, 
                 x => x.PostId == request.FailJob.Id);
             var postJob = await Db.SingleByIdAsync<PostJob>(request.FailJob.Id);
-            if (postJob.RetryCount > 3)
+            if (postJob != null)
             {
-                await Db.UpdateOnlyAsync(() =>
-                        new PostJob { CompletedDate = DateTime.UtcNow },
-                    x => x.PostId == request.FailJob.Id);
-            }
-            else
-            {
-                modelWorkers.Enqueue(postJob);
+                if (postJob.RetryCount > 3)
+                {
+                    await Db.UpdateOnlyAsync(() =>
+                            new PostJob { CompletedDate = DateTime.UtcNow },
+                        x => x.PostId == request.FailJob.Id);
+                }
+                else
+                {
+                    modelWorkers.Enqueue(postJob);
+                }
             }
         }
         

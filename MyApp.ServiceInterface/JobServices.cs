@@ -16,12 +16,24 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
         };
     }
 
-    public object Any(GetNextJobs request)
+    public async Task<object> Any(GetNextJobs request)
     {
         var to = new GetNextJobsResponse();
         var job = workerQueues.Dequeue(request.Models, TimeSpan.FromSeconds(30));
         if (job == null)
-            return to;
+        {
+            var dbHasIncompleteJobs = await Db.SelectAsync(Db.From<PostJob>()
+                .Where(x => (x.CompletedDate == null || x.StartedDate < DateTime.UtcNow.AddMinutes(-5)) && x.Model != "rank"));
+            if (dbHasIncompleteJobs.Count > 0)
+            {
+                await Any(new RestoreModelQueues { RestoreFailedJobs = true });
+                job = workerQueues.Dequeue(request.Models, TimeSpan.FromSeconds(30));
+            }
+            if (job == null)
+            {
+                return to;
+            }
+        }
         
         MessageProducer.Publish(new DbWrites {
             StartJob = new() { Id = job.Id, Worker = request.Worker, WorkerIp = Request!.RemoteIp }
@@ -53,14 +65,17 @@ public class JobServices(QuestionsProvider questions, ModelWorkerQueue workerQue
 
         foreach (var lostJob in lostJobs)
         {
+            if (pendingJobIds.Contains(lostJob.Id)) continue;
             workerQueues.Enqueue(lostJob);
         }
         foreach (var missingJob in missingJobs)
         {
+            if (pendingJobIds.Contains(missingJob.Id)) continue;
             workerQueues.Enqueue(missingJob);
         }
         foreach (var failedJob in failedJobs)
         {
+            if (pendingJobIds.Contains(failedJob.Id)) continue;
             workerQueues.Enqueue(failedJob);
         }
         var failedSuffix = restoreFailedJobs ? ", restored!" : "";

@@ -78,13 +78,13 @@
                     <div>
                         @foreach (var answer in question.Answers)
                         {
-                            <div class="py-8 border-b border-gray-200 dark:border-gray-700">
+                            <div class="pt-4 pb-8 border-b border-gray-200 dark:border-gray-700">
                                 <div class="flex">
                                     <div class="md:w-32 pr-2">
                                         @{
                                             var userName = AppConfig.GetUserName(answer.Model);
                                         }
-                                        <div class="mt-8 flex flex-col items-center">
+                                        <div class="flex flex-col items-center">
                                             <img class="w-10 h-10 xl:w-20 xl:h-20 bg-cover inline-block" src="@userName.GetAvatarUrl()">
                                             <div class="hidden md:block text-center whitespace-nowrap text-xs xl:text-sm font-semibold">@userName</div>
                                         </div>
@@ -187,7 +187,7 @@
                 {
                     questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
                     question = questionFiles.Question;
-                    Progress = $"Waiting on {pendingJobs.Count} remaining answers...";
+                    Progress = $"Waiting on {pendingJobs.Count} remaining answer{Plural(pendingJobs.Count)}...";
                     lastCount = pendingJobs.Count;
                     StateHasChanged();
                 }

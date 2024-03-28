@@ -11,9 +11,9 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
 {
     public async Task Any(SearchTasks request)
     {
-        if (request.AddPostId != null)
+        if (request.AddPostToIndex != null)
         {
-            var id = request.AddPostId.Value;
+            var id = request.AddPostToIndex.Value;
             var questionFiles = await questions.GetQuestionAsync(id);
             
             log.LogInformation("Adding Post '{PostId}' Question and {AnswerCount} to Search Index...", 
@@ -21,6 +21,7 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                 questionFiles.GetAnswerFiles().Count());
             using var db = HostContext.AppHost.GetDbConnection(Databases.Search);
             var nextId = await db.ScalarAsync<int>("SELECT MAX(rowid) FROM PostFts");
+            nextId += 1;
             var existingIds = new HashSet<int>();
             var minDate = new DateTime(2008,08,1);
 
@@ -35,10 +36,13 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                     if (fileType == "json")
                     {
                         var post = await ToPostAsync(file);
+                        if (post.Id == default)
+                            throw new ArgumentNullException(nameof(post.Id));
                         if (!existingIds.Add(post.Id)) continue;
                         log.LogDebug("Adding Question {FilePath}", file.VirtualPath);
                         var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
-                        db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
+                        await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} WHERE rowid = {post.Id}");
+                        await db.ExecuteNonQueryAsync($@"INSERT INTO {nameof(PostFts)} (
                             rowid,
                             {nameof(PostFts.RefId)},
                             {nameof(PostFts.UserName)},
@@ -61,7 +65,9 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                         var userName = fileType.Substring(2); 
                         log.LogDebug("Adding Human Answer {FilePath}", file.VirtualPath);
                         var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
-                        db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
+                        var refId = $"{id}-{userName}";
+                        await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} where {nameof(PostFts.RefId)} = {QuotedValue(refId)}");
+                        await db.ExecuteNonQueryAsync($@"INSERT INTO {nameof(PostFts)} (
                             rowid,
                             {nameof(PostFts.RefId)},
                             {nameof(PostFts.UserName)},
@@ -69,8 +75,8 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                             {nameof(PostFts.ModifiedDate)}
                         ) VALUES (
                             {post.Id},
-                            '{id}-{userName}',
-                            '{userName}',
+                            {QuotedValue(refId)},
+                            {QuotedValue(userName)},
                             {QuotedValue(post.Body)},
                             {QuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
                         )");
@@ -88,6 +94,8 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                             ? DateTimeOffset.FromUnixTimeSeconds(created).DateTime
                             : file.LastModified;
                         log.LogDebug("Adding Model Answer {FilePath} {UserName}", file.VirtualPath, userName);
+                        var refId = $"{id}-{userName}";
+                        await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} where {nameof(PostFts.RefId)} = {QuotedValue(refId)}");
                         db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
                             rowid,
                             {nameof(PostFts.RefId)},
@@ -96,8 +104,8 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                             {nameof(PostFts.ModifiedDate)}
                         ) VALUES (
                             {nextId++},
-                            '{id}-{userName}',
-                            '{userName}',
+                            {QuotedValue(refId)},
+                            {QuotedValue(userName)},
                             {QuotedValue(body)},
                             {QuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
                         )");
@@ -121,5 +129,4 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
         var post = json.FromJson<Post>();
         return post;
     }
-
 }

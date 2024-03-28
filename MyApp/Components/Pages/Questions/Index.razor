@@ -122,57 +122,16 @@
                     q.Where("Body match {0}", searchPhrase);
                 }
 
-                if (Tab == "newest")
-                {
-                    q.OrderByDescending("ModifiedDate");
-                }
-                else if (Tab == "oldest")
-                {
-                    q.OrderBy("ModifiedDate");
-                }
-                else
-                {
-                    q.OrderBy("Rank");
-                }
+                q.OrderByView(Tab);
 
                 List<PostFts> postsFts = await dbSearch.SelectAsync(q
                     .Select("RefId, substring(Body,0,400) as Body, ModifiedDate")
                     .Skip(skip)
                     .Take(take));
-
-                posts = postsFts.Select(x => new Post
-                {
-                    Id = x.RefId.LeftPart('-').ToInt(),
-                    PostTypeId = x.RefId.Contains('-') ? 2 : 1,
-                    Summary = x.Body.StripHtml().SubstringWithEllipsis(0,200),
-                    CreationDate = x.ModifiedDate,
-                    LastEditDate = x.ModifiedDate,
-                }).ToList();
-
-                var postIds = posts.Select(x => x.Id).ToSet();
-                
-                using var db = await DbFactory.OpenAsync();
-                var fullPosts = await db.SelectAsync(db.From<Post>().Where(x => postIds.Contains(x.Id)));
-                var fullPostsMap = fullPosts.ToDictionary(x => x.Id);
-
-                foreach (var post in posts)
-                {
-                    if (fullPostsMap.TryGetValue(post.Id, out var fullPost))
-                    {
-                        post.Title = fullPost.Title;
-                        post.Slug = fullPost.Slug;
-                        if (post.PostTypeId == 1)
-                        {
-                            post.Tags = fullPost.Tags;
-                            post.Score = fullPost.Score;
-                            post.ViewCount = fullPost.ViewCount;
-                            post.CreationDate = fullPost.CreationDate;
-                            post.LastEditDate = fullPost.LastEditDate;
-                        }
-                    }
-                }
-
                 total = dbSearch.Count(q);
+
+                using var db = await DbFactory.OpenAsync();
+                posts = await db.PopulatePostsAsync(postsFts);
             }
             else
             {

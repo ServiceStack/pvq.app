@@ -70,6 +70,17 @@ public class RendererCache(AppConfig appConfig, R2VirtualFiles r2)
         await File.WriteAllTextAsync(filePath, html);
     }
 
+    public void DeleteHomeTabHtml(string? tab)
+    {
+        try
+        {
+            var filePath = GetHtmlTabFilePath(tab);
+            var fileInfo = new FileInfo(filePath);
+            fileInfo.Delete();
+        }
+        catch {}
+    }
+
     public async Task<string?> GetHomeTabHtmlAsync(string? tab)
     {
         if (DisableCache)
