@@ -86,7 +86,7 @@ public class RenderServices(
             foreach (var remoteFile in remoteFiles.Files)
             {
                 var localFile = localFiles.Files.FirstOrDefault(x => x.Name == remoteFile.Name);
-                if (localFile == null || localFile.LastModified < remoteFile.LastModified)
+                if (localFile == null || localFile.Length != remoteFile.Length)
                 {
                     log.LogInformation("Saving local file for {State} {Path}", localFile == null ? "new" : "modified", remoteFile.VirtualPath);
                     var remoteContents = await remoteFile.ReadAllTextAsync();

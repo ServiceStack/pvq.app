@@ -11,6 +11,9 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
 {
     public const int MostVotedScore = 10;
     public const int AcceptedScore = 9;
+    public static List<string> ModelUserNames { get; } = [
+        "phi", "gemma-2b", "qwen-4b", "codellama", "gemma", "deepseek-coder", "mistral", "mixtral"
+    ];
     public static Dictionary<string,int> ModelScores = new()
     {
         ["phi"] = 1, //2.7B
@@ -99,6 +102,16 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
             r2.WriteFileAsync(virtualPath, contents),
             fs.WriteFileAsync(virtualPath, contents));
     }
+    
+    public async Task DeleteFileAsync(string virtualPath)
+    {
+        fs.DeleteFile(virtualPath);
+        await r2.AmazonS3.DeleteObjectAsync(new Amazon.S3.Model.DeleteObjectRequest
+        {
+            BucketName = r2.BucketName,
+            Key = r2.SanitizePath(virtualPath),
+        });
+    }
 
     public async Task WriteMetaAsync(Meta meta)
     {
@@ -136,6 +149,31 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         return questionFiles;
     }
 
+    public async Task<IVirtualFile?> GetAnswerFileAsync(string refId)
+    {
+        if (refId.IndexOf('-') < 0)
+            throw new ArgumentException("Invalid Answer Id", nameof(refId));
+        
+        var postId = refId.LeftPart('-').ToInt();
+        var userName = refId.RightPart('-');
+        var answerPath = ModelUserNames.Contains(userName)
+            ? GetModelAnswerPath(postId, userName)
+            : GetHumanAnswerPath(postId, userName);
+
+        var file = fs.GetFile(answerPath)
+                ?? r2.GetFile(answerPath);
+
+        if (file == null)
+        {
+            // After first edit AI Model is converted to h. (Post) answer
+            var modelAnswerPath = GetHumanAnswerPath(postId, userName);
+            file = fs.GetFile(modelAnswerPath)
+                   ?? r2.GetFile(modelAnswerPath);
+        }
+        
+        return file;
+    }
+
     public async Task SaveQuestionAsync(Post post)
     {
         await SaveFileAsync(GetQuestionPath(post.Id), ToJson(post));
@@ -167,6 +205,61 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
     public async Task SaveRemoteFileAsync(string virtualPath, string contents)
     {
         await r2.WriteFileAsync(virtualPath, contents);
+    }
+    
+    public async Task SaveAnswerEditAsync(IVirtualFile existingAnswer, string userName, string body, string editReason)
+    {
+        var now = DateTime.UtcNow;
+        var existingAnswerJson = await existingAnswer.ReadAllTextAsync();
+        var tasks = new List<Task>();
+
+        var fileName = existingAnswer.VirtualPath.TrimStart('/').Replace("/", "");
+        var postId = fileName.LeftPart('.').ToInt();
+        string existingAnswerBy = "";
+        var newAnswer = new Post
+        {
+            Id = postId,
+        };
+        
+        if (fileName.Contains(".a."))
+        {
+            existingAnswerBy = fileName.RightPart(".a.").LastLeftPart('.');
+            var datePart = DateTime.UtcNow.ToString("yyMMdd-HHmmss");
+            var editFilePath = existingAnswer.VirtualPath.LastLeftPart('/') + "/edit.a." + postId + "-" + userName + "_" + datePart + ".json";
+            tasks.Add(SaveFileAsync(editFilePath, existingAnswerJson));
+            tasks.Add(DeleteFileAsync(existingAnswer.VirtualPath));
+
+            var obj = (Dictionary<string,object>)JSON.parse(existingAnswerJson);
+            newAnswer.CreationDate = obj.TryGetValue("created", out var oCreated) && oCreated is int created
+                ? DateTimeOffset.FromUnixTimeSeconds(created).DateTime
+                : existingAnswer.LastModified;
+        }
+        else if (fileName.Contains(".h."))
+        {
+            existingAnswerBy = fileName.RightPart(".h.").LastLeftPart('.');
+            var datePart = DateTime.UtcNow.ToString("yyMMdd-HHmmss");
+            newAnswer = existingAnswerJson.FromJson<Post>();
+            
+            // Just override the existing answer if it's the same user 
+            if (newAnswer.ModifiedBy != userName)
+            {
+                var editFilePath = existingAnswer.VirtualPath.LastLeftPart('/') + "/edit.h." + postId + "-" + userName + "_" + datePart + ".json";
+                tasks.Add(SaveFileAsync(editFilePath, existingAnswerJson));
+            }
+        }
+        else throw new ArgumentException($"Invalid Answer File {existingAnswer.Name}", nameof(existingAnswer));
+
+        newAnswer.Body = body;
+        newAnswer.CreatedBy ??= existingAnswerBy;
+        newAnswer.ModifiedBy = userName;
+        newAnswer.LastEditDate = now;
+        newAnswer.ModifiedReason = editReason;
+
+        var newFileName = $"{existingAnswer.Name.LeftPart('.')}.h.{existingAnswerBy}.json";
+        var newFilePath = existingAnswer.VirtualPath.LastLeftPart('/') + "/" + newFileName;
+        tasks.Add(SaveFileAsync(newFilePath, ToJson(newAnswer)));
+        
+        await Task.WhenAll(tasks);
     }
 
     public async Task DeleteQuestionFilesAsync(int id)

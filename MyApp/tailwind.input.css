@@ -84,3 +84,14 @@ select{
 }
 
 @tailwind utilities;
+
+@layer components {
+    .slide-up {
+        @apply transition-transform duration-500 ease-in-out;
+        transform: scaleY(1) translateY(0);
+    }
+    .slide-up-out {
+        transform: scaleY(0) translateY(-100%);
+    }
+}
+@tailwind variants;

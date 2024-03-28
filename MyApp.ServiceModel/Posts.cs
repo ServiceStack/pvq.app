@@ -1,7 +1,6 @@
 ﻿// Complete declarative AutoQuery services for Bookings CRUD example:
 // https://docs.servicestack.net/autoquery-crud-bookings
 
-using System.ComponentModel.DataAnnotations;
 using ServiceStack;
 using ServiceStack.DataAnnotations;
 
@@ -54,7 +53,13 @@ public class Post
     
     public string? RefId { get; set; }
 
-    [Ignore] public string? Body { get; set; }
+    public string? Body { get; set; }
+
+    public string? ModifiedReason { get; set; }
+    
+    public DateTime? LockedDate { get; set; }
+
+    public string? LockedReason { get; set; }
 }
 
 public class PostJob
@@ -271,12 +276,31 @@ public class AskQuestion : IPost, IReturn<AskQuestionResponse>
     [Input(Type="hidden")]
     public string? RefId { get; set; }
 }
-
 public class AskQuestionResponse
 {
     public int Id { get; set; }
     public string Slug { get; set; }
     public string? RedirectTo { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class EditQuestion : IPost, IReturn<EditQuestionResponse>
+{
+    [ValidateNotEmpty, ValidateMinimumLength(20), ValidateMaximumLength(120)]
+    [Input(Type = "text", Help = "A summary of what your main question is asking"), FieldCss(Field="col-span-12")]
+    public required string Title { get; set; }
+    
+    [ValidateNotEmpty, ValidateMinimumLength(30), ValidateMaximumLength(32768)]
+    [Input(Type="MarkdownInput", Help = "Include all information required for someone to identity and resolve your exact question"), FieldCss(Field="col-span-12", Input="h-60")]
+    public required string Body { get; set; }
+    
+    [ValidateNotEmpty, ValidateMinimumLength(2, Message = "At least 1 tag required"), ValidateMaximumLength(120)]
+    [Input(Type = "tag", Help = "Up to 5 tags relevant to your question"), FieldCss(Field="col-span-12")]
+    public required List<string> Tags { get; set; }
+}
+public class EditQuestionResponse
+{
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
@@ -300,9 +324,35 @@ public class AnswerQuestionResponse
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
+[ValidateIsAuthenticated]
+[Description("Your Answer")]
+public class EditAnswer : IPost, IReturn<EditAnswerResponse>
+{
+    [Input(Type="hidden")]
+    [ValidateNotEmpty]
+    public required string Id { get; set; }
+    
+    [ValidateNotEmpty, ValidateMinimumLength(30), ValidateMaximumLength(32768)]
+    [Input(Type="MarkdownInput", Label=""), FieldCss(Field="col-span-12", Input="h-60")]
+    public required string Body { get; set; }
+
+    [Input(Type="text", Placeholder="Short summary of this edit (e.g. corrected spelling, grammar, improved formatting)"),FieldCss(Field = "col-span-12")]
+    [ValidateNotEmpty, ValidateMinimumLength(4)]
+    public required string EditReason { get; set; }
+}
+public class EditAnswerResponse
+{
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
 public class PreviewMarkdown : IPost, IReturn<string>
 {
     public string Markdown { get; set; }
+}
+
+public class GetAnswerBody : IGet, IReturn<string>
+{
+    public string Id { get; set; }
 }
 
 [ValidateHasRole(Roles.Moderator)]

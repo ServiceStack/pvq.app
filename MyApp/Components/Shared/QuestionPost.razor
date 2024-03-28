@@ -21,7 +21,7 @@
                     {
                         <span>asked</span>
                     }
-                    <b>@((DateTime.UtcNow - Question.Post.CreationDate).TimeAgo())</b>
+                    <b class="ml-1">@((DateTime.UtcNow - Question.Post.CreationDate).TimeAgo())</b>
                 </div>
                 @if (Question.Post.LastEditDate != null)
                 {
@@ -29,10 +29,13 @@
                         <b>@((DateTime.UtcNow - Question.Post.LastEditDate.Value).TimeAgo())</b>
                     </div>
                 }
-                <div>
-                    <span>viewed</span>
-                    <b>@($"{Question.ViewCount:n0}") times</b>
-                </div>
+                @if (Question.ViewCount > 1)
+                {
+                    <div>
+                        <span>viewed</span>
+                        <b>@($"{Question.ViewCount:n0}") times</b>
+                    </div>
+                }
             </div>
             @if (Question.Post.CreatedBy != null)
             {
@@ -103,7 +106,7 @@
     </article>
     
     <div id="answers" class="mt-16">
-        @if (@Question.Answers.Count > 0)
+        @if (Question.Answers.Count > 0)
         {
             <h3 class="text-2xl font-semibold">
                 @Question.Answers.Count Answers
@@ -112,7 +115,7 @@
         <div>
             @foreach (var answer in Question.Answers)
             {
-                <div class="py-8 border-b border-gray-200 dark:border-gray-700">
+                <div data-answer=@answer.Id class="py-8 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex">
                         <div class="md:w-32 pr-2">
                             <div id=@answer.Id class="voting flex flex-col items-center">
@@ -128,12 +131,16 @@
                                 <div class="hidden md:block text-center whitespace-nowrap text-xs xl:text-sm font-semibold">@userName</div>
                             </div>
                         </div>
-                        <div class="xl:flex-grow prose">
+                        <div id=@($"preview-{answer.Id}") class="preview xl:flex-grow prose">
                             @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Choices.FirstOrDefault()?.Message.Content))
                         </div>
+                        <div id=@($"edit-{answer.Id}") class="edit w-full pl-2 hidden"></div>
                     </div>
-                    <div class="mt-4 flex justify-end text-gray-700 dark:text-gray-200 text-sm">
-                        answered <time class="ml-2" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
+                    <div class="mt-6 flex justify-between">
+                        <div class="pl-10 md:pl-20 xl:pl-32"><span class="edit-link cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500"></span></div>
+                        <div class="text-gray-700 dark:text-gray-200 text-sm">
+                            answered <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
+                        </div>
                     </div>
                 </div>
                 @if (Question.GetAnswerComments(answer.Id).Count > 0)

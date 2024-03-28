@@ -67,6 +67,15 @@
                         </div>
                     </div>
                 }
+                else
+                {
+                    <div class="float-right">
+                        <a href=@QuestionPath class="whitespace-nowrap font-medium text-indigo-700 dark:text-indigo-300 hover:text-indigo-500">
+                            full question page
+                            <span aria-hidden="true"> &rarr;</span>
+                        </a>
+                    </div>
+                }
                 
                 <div id="answers" class="mt-8">
                     @if (question.Answers.Count > 0)

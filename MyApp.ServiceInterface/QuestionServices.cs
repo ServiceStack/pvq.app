@@ -61,6 +61,11 @@ public class QuestionServices(AppConfig appConfig,
         };
     }
 
+    public async Task<object> Any(EditQuestion request)
+    {
+        return new EditQuestionResponse();
+    }
+
     public async Task<EmptyResponse> Any(DeleteQuestion request)
     {
         await questions.DeleteQuestionFilesAsync(request.Id);
@@ -99,6 +104,27 @@ public class QuestionServices(AppConfig appConfig,
         return new AnswerQuestionResponse();
     }
 
+    /* /100/000
+     *   001.a.model.json <OpenAI>
+     * Edit 1:
+     *   001.h.model.json <Post>
+     *   edit.a.001-model_20240301-1200.json // original model answer, Modified Date <OpenAI>
+     * Edit 2:
+     *   001.h.model.json <Post> #2
+     *   edit.a.001-model_20240301-130303.json // #1 edit model answer, Modified Date <Post>
+     *   edit.a.001-model_20240301-120101.json // #0 original model answer, Modified Date <OpenAI>
+     */
+    public async Task<object> Any(EditAnswer request)
+    {
+        var answerFile = await questions.GetAnswerFileAsync(request.Id);
+        if (answerFile == null)
+            throw HttpError.NotFound("Answer does not exist");
+        
+        await questions.SaveAnswerEditAsync(answerFile, GetUserName(), request.Body, request.EditReason);
+
+        return new EditAnswerResponse();
+    }
+
     public async Task<object> Any(GetQuestionFile request)
     {
         var questionFiles = await questions.GetQuestionFilesAsync(request.Id);
@@ -106,6 +132,29 @@ public class QuestionServices(AppConfig appConfig,
         if (file == null)
             throw HttpError.NotFound($"Question {request.Id} not found");
         return new HttpResult(file, MimeTypes.Json);
+    }
+
+    public async Task<object> Any(GetAnswerBody request)
+    {
+        var answerFile = await questions.GetAnswerFileAsync(request.Id);
+        if (answerFile == null)
+            throw HttpError.NotFound("Answer does not exist");
+
+        var json = await answerFile.ReadAllTextAsync();
+        if (answerFile.Name.Contains(".a."))
+        {
+            var obj = (Dictionary<string,object>)JSON.parse(json);
+            var choices = (List<object>) obj["choices"];
+            var choice = (Dictionary<string,object>)choices[0];
+            var message = (Dictionary<string,object>)choice["message"];
+            var body = (string)message["content"];
+            return new HttpResult(body, MimeTypes.PlainText);
+        }
+        else
+        {
+            var answer = json.FromJson<Post>();
+            return new HttpResult(answer.Body, MimeTypes.PlainText);
+        }
     }
 
     public async Task Any(CreateWorkerAnswer request)
