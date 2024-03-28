@@ -49,7 +49,7 @@ public class LeaderboardServices : Service
             .Sum(y => y.WinRate);
 
 
-        var leaderBoard = new LeaderBoard
+        var leaderBoard = new CalculateLeaderboardResponse
         {
             MostLikedModels = statsByUser.Where(x => IsHuman(x.Id) == false)
                 .OrderByDescending(x => x.GetScore())
@@ -110,7 +110,7 @@ public class LeaderboardServices : Service
     }
 }
 
-public class LeaderBoard
+public class CalculateLeaderboardResponse
 {
     public List<ModelTotalScore> MostLikedModels { get; set; }
     public List<ModelTotalStartUpVotes> MostLikedModelsByLlm { get; set; }
@@ -168,7 +168,7 @@ public class LeaderBoardWinRateByTag
     public double WinRate { get; set; }
 }
 
-public class CalculateLeaderBoard
+public class CalculateLeaderBoard : IReturn<CalculateLeaderboardResponse>, IGet
 {
     
 }
