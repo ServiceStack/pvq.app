@@ -239,6 +239,15 @@ public class CreateWorkerAnswer : IPost, IReturn<IdResponse>
 }
 
 [ValidateHasRole(Roles.Moderator)]
+public class RankAnswers : IPost, IReturn<IdResponse>
+{
+    [ValidateGreaterThan(0)]
+    public int PostId { get; set; }
+    
+    public Dictionary<string,int> Votes { get; set; }
+}
+
+[ValidateHasRole(Roles.Moderator)]
 public class GetQuestionFile : IGet, IReturn<string>
 {
     public int Id { get; set; }
