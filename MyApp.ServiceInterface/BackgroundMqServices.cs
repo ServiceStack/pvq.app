@@ -59,6 +59,20 @@ public class BackgroundMqServices(R2VirtualFiles r2, ModelWorkerQueue modelWorke
             await Db.InsertAsync(request.CreatePost);
         }
 
+        if (request.UpdatePost != null)
+        {
+            var question = request.UpdatePost;
+            await Db.UpdateOnlyAsync(() => new Post {
+                Title = question.Title,
+                Tags = question.Tags,
+                Slug = question.Slug,
+                Summary = question.Summary,
+                ModifiedBy = question.ModifiedBy,
+                LastActivityDate = question.LastActivityDate,
+                LastEditDate = question.LastEditDate,
+            }, x => x.Id == request.UpdatePost.Id);
+        }
+
         if (request.DeletePost != null)
         {
             await Db.DeleteAsync<PostJob>(x => x.PostId == request.DeletePost);

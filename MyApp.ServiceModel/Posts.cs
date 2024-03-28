@@ -252,6 +252,17 @@ public class RankAnswers : IPost, IReturn<IdResponse>
     public Dictionary<string,int> Votes { get; set; }
 }
 
+[ValidateIsAuthenticated]
+public class GetQuestion : IGet, IReturn<GetQuestionResponse>
+{
+    public int Id { get; set; }
+}
+public class GetQuestionResponse
+{
+    public required Post Result { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
 [ValidateHasRole(Roles.Moderator)]
 public class GetQuestionFile : IGet, IReturn<string>
 {
@@ -285,8 +296,12 @@ public class AskQuestionResponse
 }
 
 [ValidateIsAuthenticated]
-public class EditQuestion : IPost, IReturn<EditQuestionResponse>
+public class UpdateQuestion : IPost, IReturn<UpdateQuestionResponse>
 {
+    [Input(Type="hidden")]
+    [ValidateGreaterThan(0)]
+    public int Id { get; set; }
+    
     [ValidateNotEmpty, ValidateMinimumLength(20), ValidateMaximumLength(120)]
     [Input(Type = "text", Help = "A summary of what your main question is asking"), FieldCss(Field="col-span-12")]
     public required string Title { get; set; }
@@ -298,9 +313,14 @@ public class EditQuestion : IPost, IReturn<EditQuestionResponse>
     [ValidateNotEmpty, ValidateMinimumLength(2, Message = "At least 1 tag required"), ValidateMaximumLength(120)]
     [Input(Type = "tag", Help = "Up to 5 tags relevant to your question"), FieldCss(Field="col-span-12")]
     public required List<string> Tags { get; set; }
+
+    [Input(Type="text", Placeholder="Short summary of this edit (e.g. corrected spelling, grammar, improved formatting)"),FieldCss(Field = "col-span-12")]
+    [ValidateNotEmpty, ValidateMinimumLength(4)]
+    public required string EditReason { get; set; }
 }
-public class EditQuestionResponse
+public class UpdateQuestionResponse
 {
+    public required Post Result { get; set; }
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
@@ -326,7 +346,7 @@ public class AnswerQuestionResponse
 
 [ValidateIsAuthenticated]
 [Description("Your Answer")]
-public class EditAnswer : IPost, IReturn<EditAnswerResponse>
+public class UpdateAnswer : IPost, IReturn<UpdateAnswerResponse>
 {
     [Input(Type="hidden")]
     [ValidateNotEmpty]
@@ -340,7 +360,7 @@ public class EditAnswer : IPost, IReturn<EditAnswerResponse>
     [ValidateNotEmpty, ValidateMinimumLength(4)]
     public required string EditReason { get; set; }
 }
-public class EditAnswerResponse
+public class UpdateAnswerResponse
 {
     public ResponseStatus? ResponseStatus { get; set; }
 }

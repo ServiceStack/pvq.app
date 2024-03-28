@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-03-28 17:46:07
+Date: 2024-03-28 22:08:39
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -382,7 +382,7 @@ export class AskQuestionResponse {
     /** @type {?ResponseStatus} */
     responseStatus;
 }
-export class EditQuestionResponse {
+export class UpdateQuestionResponse {
     /** @param {{responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {?ResponseStatus} */
@@ -400,9 +400,17 @@ export class AnswerQuestionResponse {
     /** @type {?ResponseStatus} */
     responseStatus;
 }
-export class EditAnswerResponse {
+export class UpdateAnswerResponse {
     /** @param {{responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
+export class GetQuestionResponse {
+    /** @param {{result?:Post,responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {Post} */
+    result;
     /** @type {?ResponseStatus} */
     responseStatus;
 }
@@ -586,18 +594,20 @@ export class AskQuestion {
     getMethod() { return 'POST' }
     createResponse() { return new AskQuestionResponse() }
 }
-export class EditQuestion {
-    /** @param {{title?:string,body?:string,tags?:string[]}} [init] */
+export class UpdateQuestion {
+    /** @param {{id?:number,title?:string,body?:string,tags?:string[]}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
     /** @type {string} */
     title;
     /** @type {string} */
     body;
     /** @type {string[]} */
     tags;
-    getTypeName() { return 'EditQuestion' }
+    getTypeName() { return 'UpdateQuestion' }
     getMethod() { return 'POST' }
-    createResponse() { return new EditQuestionResponse() }
+    createResponse() { return new UpdateQuestionResponse() }
 }
 export class DeleteQuestion {
     /** @param {{id?:number}} [init] */
@@ -621,7 +631,7 @@ export class AnswerQuestion {
     getMethod() { return 'POST' }
     createResponse() { return new AnswerQuestionResponse() }
 }
-export class EditAnswer {
+export class UpdateAnswer {
     /** @param {{id?:string,body?:string,editReason?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
@@ -630,9 +640,18 @@ export class EditAnswer {
     body;
     /** @type {string} */
     editReason;
-    getTypeName() { return 'EditAnswer' }
+    getTypeName() { return 'UpdateAnswer' }
     getMethod() { return 'POST' }
-    createResponse() { return new EditAnswerResponse() }
+    createResponse() { return new UpdateAnswerResponse() }
+}
+export class GetQuestion {
+    /** @param {{id?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    getTypeName() { return 'GetQuestion' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetQuestionResponse() }
 }
 export class GetQuestionFile {
     /** @param {{id?:number}} [init] */

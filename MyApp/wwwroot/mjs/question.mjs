@@ -1,9 +1,9 @@
 ﻿import { ref, watchEffect, nextTick, onMounted } from "vue"
 import { $$, $1, on, JsonServiceClient, EventBus } from "@servicestack/client"
-import { useClient, useAuth, useUtils } from "@servicestack/vue"
-import { UserPostData, PostVote } from "dtos.mjs"
+import { useClient, useAuth, useUtils, useFormatters } from "@servicestack/vue"
+import { UserPostData, PostVote, GetQuestion } from "dtos.mjs"
 import { mount, alreadyMounted } from "app.mjs"
-import { AnswerQuestion, PreviewMarkdown, GetAnswerBody } from "dtos.mjs"
+import { AnswerQuestion, UpdateQuestion, UpdateAnswer, PreviewMarkdown, GetAnswerBody } from "dtos.mjs"
 
 const svgPaths = {
     up: {
@@ -87,13 +87,184 @@ async function loadVoting(ctx) {
     }
 }
 
+const EditQuestion = {
+    template:`
+    <div v-if="editing">
+        <div v-if="user?.userName">
+            <div v-if="request.body">
+                <AutoForm ref="autoform" type="UpdateQuestion" v-model="request" header-class="" submit-label="Update Question" 
+                    :configureField="configureField" @success="onSuccess">
+                    <template #heading>
+                        <div class="pt-4 px-6 flex justify-between">
+                            <h3 class="text-2xl font-semibold">Edit Question</h3>
+                            <div>
+                                <img class="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-contain" :src="'/avatar/' + user.userName" :alt="user.userName">
+                            </div>
+                        </div>
+                    </template>
+                    <template #leftbuttons>
+                        <SecondaryButton @click="close">Cancel</SecondaryButton>            
+                    </template>
+                </AutoForm>
+                <div v-if="previewHtml">
+                    <h3 class="my-4 select-none text-xl font-semibold flex items-center cursor-pointer" @click="expandPreview=!expandPreview">
+                        <svg :class="['w-4 h-4 inline-block mr-1 transition-all',!expandPreview ? '-rotate-90' : '']" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M11.178 19.569a.998.998 0 0 0 1.644 0l9-13A.999.999 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569z"/></svg>
+                        Preview
+                    </h3>
+                    <div v-if="expandPreview" class="border-t border-gray-200 pt-4">
+                        <div id="question" class="flex-grow prose" v-html="previewHtml"></div>
+                    </div>
+                </div>
+            </div>
+            <div v-else>
+                <Loading />
+            </div>
+        </div>
+    </div>
+    <div v-else>
+        <div v-html="savedHtml" class="xl:flex-grow prose"></div>
+        <div class="pt-6 flex flex-1 items-end">
+            <dl class="question-footer flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
+                <div class="flex flex-wrap gap-x-2 gap-y-2">
+                    <a v-for="tag in request.tags" :href="'questions/tagged/' + encodeURIComponent(tag)" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">{{tag}}</a>
+                </div>
+                <div v-if="request.lastEditDate ?? request.creationDate" class="flex flex-grow px-4 sm:px-6 text-sm justify-end">
+                    <span>{{request.lastEditDate ? "edited" : "created"}}</span>
+                    <dd class="ml-2 text-gray-600 dark:text-gray-300">
+                        <time :datetime="request.lastEditDate ?? request.creationDate">{{formatDate(request.lastEditDate ?? request.creationDate)}}</time>
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+    `,
+    props:['id','previewHtml','bus'],
+    setup(props) {
+        const { formatDate } = useFormatters()
+        const { user } = useAuth()
+        const client = useClient()
+        const autoform = ref()
+        const editing = ref(true)
+        const expandPreview = ref(true)
+        const request = ref(new UpdateQuestion())
+        let original = null
+        request.value.id = props.id
+        const previewHtml = ref(props.previewHtml || '')
+        const savedHtml = ref(props.previewHtml || '')
+        let allTags = localStorage.getItem('data:tags.txt')?.split('\n') || []
+
+        const { createDebounce } = useUtils()
+        let lastBody = ''
+        let i = 0
+        let tagsInput = null
+
+        const debounceApi = createDebounce(async markdown => {
+            if (lastBody === request.value.body) return
+            lastBody = request.value.body
+            const api = await client.api(new PreviewMarkdown({ markdown }))
+            if (api.succeeded) {
+                previewHtml.value = api.response
+                nextTick(() => globalThis?.hljs?.highlightAll())
+            }
+        }, 100)
+
+        watchEffect(async () => {
+            debounceApi(request.value.body)
+        })
+
+        async function onSuccess(r) {
+            const api = await client.api(new PreviewMarkdown({ markdown:request.value.body }))
+            if (api.succeeded) {
+                savedHtml.value = api.response
+                setTimeout(() => globalThis?.hljs?.highlightAll(), 1)
+                editing.value = false
+                props.bus.publish('close', request.value)
+            }
+        }
+
+        onMounted(async () => {
+            props.bus.subscribe('edit', () => editing.value = true)
+            props.bus.subscribe('preview', () => editing.value = false)
+            const api = await client.api(new GetQuestion({ id: props.id }))
+            if (api.succeeded) {
+                original = api.response.result
+                Object.assign(request.value, original)
+            }
+            nextTick(() => globalThis?.hljs?.highlightAll())
+        })
+
+        function close() {
+            Object.assign(request.value, original) //revert changes
+            editing.value = false
+            props.bus.publish('close', original)
+        }
+
+        function configureField(inputProp) {
+            if (inputProp.type === 'tag') {
+                tagsInput = inputProp
+                inputProp.allowableValues = allTags
+            }
+        }
+
+        return { user, request, previewHtml, savedHtml, autoform, editing, expandPreview, configureField, onSuccess, close, formatDate }
+    }
+}
+
+async function loadEditQuestion(ctx) {
+    const { client, postId, userName, user, hasRole } = ctx
+
+    const el = $1(`[data-postid="${postId}"]`)
+    if (!el) return
+
+    const id = el.id
+    const answer = el,
+        editLink = el.querySelector('.edit-link'),
+        edit = el.querySelector('.edit'),
+        title = el.querySelector('h1 span'),
+        footer = el.querySelector('.question-footer'),
+        preview = el.querySelector('.preview'),
+        previewHtml = preview.innerHTML
+
+    if (!editLink) return // Locked Questions
+    editLink.innerHTML = 'edit'
+    let showEdit = false
+    const bus = new EventBus()
+    bus.subscribe('close', (dto) => {
+        title.innerHTML = dto.title
+        toggleEdit(false)
+    })
+
+    async function toggleEdit(editMode) {
+        if (editMode) {
+            if (!alreadyMounted(edit)) {
+                mount(edit, EditQuestion, { id:postId, previewHtml, bus })
+            }
+            preview.classList.add('hidden')
+            preview.innerHTML = ''
+            edit.classList.remove('hidden')
+            answer.scrollIntoView({ behavior: 'smooth' })
+            editLink.innerHTML = 'close'
+            footer.classList.add('hidden')
+        } else {
+            editLink.innerHTML = 'edit'
+        }
+        bus.publish(editMode ? 'edit' : 'preview')
+        showEdit = editMode
+    }
+
+    on(editLink, {
+        click() {
+            toggleEdit(!showEdit)
+        }
+    })
+}
 
 const EditAnswer = {
     template:`
     <div v-if="editing">
         <div v-if="user?.userName">
             <div v-if="request.body">
-                <AutoForm ref="autoform" type="EditAnswer" v-model="request" header-class="" submit-label="Update Answer" @success="onSuccess">
+                <AutoForm ref="autoform" type="UpdateAnswer" v-model="request" header-class="" submit-label="Update Answer" @success="onSuccess">
                     <template #heading>
                         <div class="pt-4 px-6 flex justify-between">
                             <h3 class="text-2xl font-semibold">Edit Answer</h3>
@@ -134,7 +305,7 @@ const EditAnswer = {
     </div>
     <div v-else v-html="savedHtml" class="xl:flex-grow prose"></div>
     `,
-    props:['id','title','body','refId','previewHtml','bus'],
+    props:['id','previewHtml','bus'],
     setup(props) {
 
         const { user } = useAuth()
@@ -192,7 +363,7 @@ const EditAnswer = {
     }
 }
 
-async function loadEditing(ctx) {
+async function loadEditAnswers(ctx) {
     const { client, postId, userName, user, hasRole } = ctx
     
     const isModerator = hasRole('Moderator')
@@ -207,6 +378,8 @@ async function loadEditing(ctx) {
               edit = el.querySelector('.edit'),
               preview = el.querySelector('.preview'),
               previewHtml = preview.innerHTML
+
+        if (!editLink) return // Locked Questions
         const answerId = answer.dataset.answer
         editLink.innerHTML = 'edit'
         let showEdit = false
@@ -238,9 +411,6 @@ async function loadEditing(ctx) {
         })
         
     })
-    
-    console.log(JSON.stringify(user.value))
-    console.log(isModerator, user.roles)
 }
 
 export default  {
@@ -249,11 +419,18 @@ export default  {
         const { user, hasRole } = useAuth()
         const userName = user.value?.userName
         const postId = parseInt($1('[data-postid]')?.getAttribute('data-postid'))
+
+        if (!localStorage.getItem('data:tags.txt')) {
+            fetch('/data/tags.txt')
+                .then(r => r.text())
+                .then(txt => localStorage.setItem('data:tags.txt', txt))
+        }
         
         if (!isNaN(postId)) {
             const ctx = { client, userName, postId, user, hasRole }
             await loadVoting(ctx)
-            await loadEditing(ctx)
+            await loadEditQuestion(ctx)
+            await loadEditAnswers(ctx)
         }
     }
 }

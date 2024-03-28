@@ -207,6 +207,30 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         await r2.WriteFileAsync(virtualPath, contents);
     }
     
+    public async Task SaveQuestionEditAsync(Post question)
+    {
+        var questionFiles = await GetQuestionFilesAsync(question.Id);
+        var questionFile = questionFiles.GetQuestionFile();
+        if (questionFile == null)
+            throw new FileNotFoundException($"Question {question.Id} does not exist", GetQuestionPath(question.Id));
+        var existingQuestionJson = await questionFile.ReadAllTextAsync();
+        var existingQuestion = existingQuestionJson.FromJson<Post>();
+
+        var (dir1, dir2, fileId) = question.Id.ToFileParts();
+        var tasks = new List<Task>();
+
+        if (existingQuestion.ModifiedBy == null || question.ModifiedBy != existingQuestion.ModifiedBy)
+        {
+            var datePart = question.LastEditDate!.Value.ToString("yyMMdd-HHmmss");
+            var editFile = "edit.q." + question.Id + "-" + question.ModifiedBy + "_" + datePart + ".json";
+            var editFilePath = $"{dir1}/{dir2}/{editFile}";
+            tasks.Add(SaveFileAsync(editFilePath, existingQuestionJson));
+        }
+
+        tasks.Add(SaveQuestionAsync(question));
+        await Task.WhenAll(tasks);
+    }
+
     public async Task SaveAnswerEditAsync(IVirtualFile existingAnswer, string userName, string body, string editReason)
     {
         var now = DateTime.UtcNow;

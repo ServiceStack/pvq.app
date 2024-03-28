@@ -3,10 +3,9 @@
 @inject MarkdownQuestions Markdown
 
 <template id="Post">@Question.Post.ToJson()</template>
-<template id="Meta">@Question.Meta.ToJson()</template>
 
 <div class="mt-8 mb-20 mx-auto sm:max-w-4xl sm:w-[56rem] xl:max-w-5xl xl:w-[64rem]" data-module="mjs/question.mjs">
-    <article data-postid=@Question.Id>
+    <article id="question" data-postid=@Question.Id>
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lg:text-4xl xl:text-5xl">
             <span class="block xl:inline">@Question.Post.Title</span>
         </h1>
@@ -57,35 +56,57 @@
                     <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
                 </div>
             </div>
-            <div id="question" class="lg:flex-grow prose">
+            <div id=@($"preview-{Question.Id}") class="pb-6 preview xl:flex-grow prose">
                 @BlazorHtml.Raw(Markdown.GenerateHtml(Question.Post.Body))
             </div>
+            <div id=@($"edit-{Question.Id}") class="edit w-full pl-2 hidden"></div>
         </div>
-        <div class="py-6 flex flex-1 items-end border-b border-gray-200 dark:border-gray-700">
-            <dl class="flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
-                <div class="flex flex-wrap gap-x-2 gap-y-2">
-                    @foreach (var tag in Question.Post.Tags.Safe())
-                    {
-                        <a href="questions/tagged/@tag.UrlEncode()" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">@tag</a>
-                    }
-                </div>
-                @if (Question.Post.LastEditDate != null)
-                {
+        <div class="pb-6 flex flex-1 items-end border-b border-gray-200 dark:border-gray-700">
+            <div class="pl-10 md:pl-20 w-full">
+                <dl class="question-footer flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
+                    <div class="flex flex-wrap gap-x-2 gap-y-2">
+                        @foreach (var tag in Question.Post.Tags.Safe())
+                        {
+                            <a href="questions/tagged/@tag.UrlEncode()" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">@tag</a>
+                        }
+                    </div>
                     <div class="flex flex-grow px-4 sm:px-6 text-sm justify-end">
                         @if (Question.Post is { Id: < 100_000_000, CreatedBy: null })
                         {
-                            <a class="text-indigo-700 dark:text-indigo-200 hover:underline" target="_blank" href=@StackOverflowUrl>edited</a>
+                            <a class="text-indigo-700 dark:text-indigo-200 hover:underline" target="_blank" href=@StackOverflowUrl>@(Question.Post.LastEditDate == null ? "created" : "edited")</a>
                         }
                         else
                         {
-                            <span>edited</span>
+                            <span>@(Question.Post.LastEditDate == null ? "created" : "edited")</span>
                         }
                         <dd class="ml-2 text-gray-600 dark:text-gray-300">
-                            <time datetime="@Markdown.GetDateTimestamp(Question.Post?.LastEditDate)">@Markdown.GetDateLabel(Question.Post?.LastEditDate)</time>
+                            <time datetime="@Markdown.GetDateTimestamp(Question.Post.GetModifiedDate())">@Markdown.GetDateLabel(Question.Post.GetModifiedDate())</time>
                         </dd>
                     </div>
+                </dl>
+                @if (Question.Post.LockedDate == null)
+                {
+                    <div class="mt-2 text-sm">
+                        <span class="edit-link cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Question"></span>
+                    </div>
                 }
-            </dl>
+                else
+                {
+                    <div class="mt-4 w-full border-l-4 border-red-400 bg-red-50 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2m-6 9c-1.1 0-2-.9-2-2s.9-2 2-2s2 .9 2 2s-.9 2-2 2M9 8V6c0-1.66 1.34-3 3-3s3 1.34 3 3v2z"/></svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    This question is locked.
+                                    <span class="ml-1 font-semibold">@Question.Post.LockedReason</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
         @if (Question.QuestionComments.Count > 0)
         {
@@ -137,7 +158,12 @@
                         <div id=@($"edit-{answer.Id}") class="edit w-full pl-2 hidden"></div>
                     </div>
                     <div class="mt-6 flex justify-between">
-                        <div class="pl-10 md:pl-20 xl:pl-32"><span class="edit-link cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500"></span></div>
+                        <div class="pl-10 md:pl-20 xl:pl-32">
+                            @if (Question.Post.LockedDate == null)
+                            {
+                                <span class="edit-link cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500"></span>
+                            }
+                        </div>
                         <div class="text-gray-700 dark:text-gray-200 text-sm">
                             answered <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
                         </div>

@@ -49,7 +49,6 @@ export default {
         })
         
         function onSuccess(r) {
-            console.log(r)
             if (r.redirectTo) {
                 location.href = r.redirectTo
             }
@@ -60,10 +59,6 @@ export default {
                 const txt = await (await fetch('/data/tags.txt')).text()
                 localStorage.setItem('data:tags.txt', txt)
                 allTags = txt.split('\n')
-                // TODO doesn't work
-                if (tagsInput != null) {
-                    tagsInput.allowableValues = allTags
-                }
             }
         })
         

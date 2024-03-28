@@ -10,15 +10,21 @@ public class QuestionServices(AppConfig appConfig,
     RendererCache rendererCache, 
     WorkerAnswerNotifier answerNotifier) : Service
 {
+    private List<string> ValidateQuestionTags(List<string>? tags)
+    {
+        var validTags = (tags ?? []).Select(x => x.Trim().ToLower()).Where(x => appConfig.AllTags.Contains(x)).ToList();
+
+        if (validTags.Count == 0)
+            throw new ArgumentException("At least 1 tag is required", nameof(tags));
+
+        if (validTags.Count > 5)
+            throw new ArgumentException("Maximum of 5 tags allowed", nameof(tags));
+        return validTags;
+    }
+
     public async Task<object> Any(AskQuestion request)
     {
-        var tags = (request.Tags ?? []).Select(x => x.Trim().ToLower()).Where(x => appConfig.AllTags.Contains(x)).ToList();
-
-        if (tags.Count == 0)
-            throw new ArgumentException("At least 1 tag is required", nameof(request.Tags));
-
-        if (tags.Count > 5)
-            throw new ArgumentException("Maximum of 5 tags allowed", nameof(request.Tags));
+        var tags = ValidateQuestionTags(request.Tags);
 
         var userName = GetUserName();
         var now = DateTime.UtcNow;
@@ -61,11 +67,6 @@ public class QuestionServices(AppConfig appConfig,
         };
     }
 
-    public async Task<object> Any(EditQuestion request)
-    {
-        return new EditQuestionResponse();
-    }
-
     public async Task<EmptyResponse> Any(DeleteQuestion request)
     {
         await questions.DeleteQuestionFilesAsync(request.Id);
@@ -105,16 +106,50 @@ public class QuestionServices(AppConfig appConfig,
     }
 
     /* /100/000
+     *   001.json <Post>
+     * Edit 1:
+     *   001.json <Post> Updated
+     *   edit.q.100000001-user_20240301-1200.json // original question
+     */
+    public async Task<object> Any(UpdateQuestion request)
+    {
+        var question = await Db.SingleByIdAsync<Post>(request.Id);
+        if (question == null)
+            throw HttpError.NotFound("Question does not exist");
+        
+        var userName = GetUserName();
+        var isModerator = Request.GetClaimsPrincipal().HasRole(Roles.Moderator);
+        if (!isModerator && question.CreatedBy != userName)
+            throw HttpError.Forbidden("Only moderators can update other user's questions.");
+
+        question.Title = request.Title;
+        question.Tags = ValidateQuestionTags(request.Tags);
+        question.Slug = request.Title.GenerateSlug(200);
+        question.Summary = request.Body.StripHtml().SubstringWithEllipsis(0, 200);
+        question.Body = request.Body;
+        question.ModifiedBy = userName;
+        question.LastActivityDate = DateTime.UtcNow;
+        question.LastEditDate = question.LastActivityDate;
+
+        MessageProducer.Publish(new DbWrites
+        {
+            UpdatePost = question,
+        });
+        await questions.SaveQuestionEditAsync(question);
+
+        return new UpdateQuestionResponse
+        {
+            Result = question
+        };
+    }
+
+    /* /100/000
      *   001.a.model.json <OpenAI>
      * Edit 1:
      *   001.h.model.json <Post>
-     *   edit.a.001-model_20240301-1200.json // original model answer, Modified Date <OpenAI>
-     * Edit 2:
-     *   001.h.model.json <Post> #2
-     *   edit.a.001-model_20240301-130303.json // #1 edit model answer, Modified Date <Post>
-     *   edit.a.001-model_20240301-120101.json // #0 original model answer, Modified Date <OpenAI>
+     *   edit.a.100000001-model_20240301-1200.json // original model answer, Modified Date <OpenAI>
      */
-    public async Task<object> Any(EditAnswer request)
+    public async Task<object> Any(UpdateAnswer request)
     {
         var answerFile = await questions.GetAnswerFileAsync(request.Id);
         if (answerFile == null)
@@ -127,7 +162,19 @@ public class QuestionServices(AppConfig appConfig,
 
         await questions.SaveAnswerEditAsync(answerFile, userName, request.Body, request.EditReason);
 
-        return new EditAnswerResponse();
+        return new UpdateAnswerResponse();
+    }
+
+    public async Task<object> Any(GetQuestion request)
+    {
+        var question = await Db.SingleByIdAsync<Post>(request.Id);
+        if (question == null)
+            throw HttpError.NotFound($"Question {request.Id} not found");
+
+        return new GetQuestionResponse
+        {
+            Result = question
+        };
     }
 
     public async Task<object> Any(GetQuestionFile request)
