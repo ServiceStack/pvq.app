@@ -1,0 +1,24 @@
+﻿@inject MarkdownQuestions Markdown
+
+<div class="comments">
+    @if (Comments.Count > 0)
+    {
+        <div class="border-t border-gray-200 dark:border-gray-700">
+            @foreach (var comment in Comments)
+            {
+                <div class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                    @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
+                    <span class="inline-block">
+                        <span class="px-1" aria-hidden="true">&middot;</span>
+                        <span class="text-indigo-700">@comment.CreatedBy</span>
+                        <span class="ml-1 text-gray-400"> @Markdown.GetDateLabel(comment.CreatedDate)</span>
+                    </span>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public required List<Comment> Comments { get; set; }
+}

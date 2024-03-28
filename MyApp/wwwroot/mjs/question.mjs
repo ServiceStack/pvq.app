@@ -1,9 +1,16 @@
-﻿import { ref, watchEffect, nextTick, onMounted } from "vue"
+﻿import { ref, computed, watchEffect, nextTick, onMounted } from "vue"
 import { $$, $1, on, JsonServiceClient, EventBus } from "@servicestack/client"
 import { useClient, useAuth, useUtils, useFormatters } from "@servicestack/vue"
 import { UserPostData, PostVote, GetQuestionFile } from "dtos.mjs"
 import { mount, alreadyMounted } from "app.mjs"
-import { AnswerQuestion, UpdateQuestion, UpdateAnswer, PreviewMarkdown, GetAnswerBody } from "dtos.mjs"
+import { AnswerQuestion, UpdateQuestion, UpdateAnswer, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta } from "dtos.mjs"
+
+let meta = null
+
+function getComments(id) {
+    if (!meta) return []
+    return meta.comments && meta.comments[id] || []
+}
 
 const svgPaths = {
     up: {
@@ -83,6 +90,67 @@ async function loadVoting(ctx) {
         origPostValues = api.response
         userPostVotes = Object.assign({}, origPostValues)
         $$('.voting').forEach(updateVote)
+    }
+}
+
+const AddComment = {
+    template:`
+        <div v-if="editing" class="mt-4 flex h-[5rem] w-full">
+            <div class="w-full">
+                <div v-if="error" class="text-sm pb-2 text-red-500">{{error}}</div>
+                <textarea class="w-full flex-grow" @keydown="keyDown" v-model="txt"></textarea>
+            </div>
+            <div class="pl-2">
+                <PrimaryButton class="whitespace-nowrap" @click="submit" :disabled="txt.length<15 || !client.loading">Add Comment</PrimaryButton>
+                <div v-if="txt.length > 0 && txt.length<15" class="mt-1 text-sm text-gray-400">
+                    {{15-txt.length}} characters to go
+                </div>
+            </div>
+        </div>
+        <div>
+            <div v-if="comments.length" class="border-t border-gray-200 dark:border-gray-700">
+                <div v-for="comment in comments" class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                    <span v-html="comment.body"></span>
+                    <span class="inline-block">
+                        <span class="px-1" aria-hidden="true">&middot;</span>
+                        <span class="text-indigo-700">{{comment.createdBy}}</span>
+                        <span class="ml-1 text-gray-400"> {{formatDate(comment.createdDate)}}</span>
+                    </span>
+                </div>
+            </div>
+            <div v-if="!editing" @click="editing=true" class="pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment">add comment</div>
+        </div>
+    `,
+    props:['id','bus'],
+    setup(props) {
+        const { formatDate } = useFormatters()
+        const client = useClient()
+        const txt = ref('')
+        const editing = ref(true)
+        const comments = ref(getComments(props.id))
+        const error = ref('')
+        
+        function keyDown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault()
+                return false
+            } else if (e.key === 'Escape') {
+                editing.value = false
+            }
+        }
+        
+        async function submit() {
+            const api = await client.api(new CreateComment({ id: `${props.id}`, body: txt.value }))
+            if (api.succeeded) {
+                txt.value = ''
+                editing.value = false
+                comments.value = api.response.comments || []
+            } else {
+                error.value = api.errorMessage
+            }
+        }
+        
+        return { txt, editing, comments, keyDown, submit, formatDate, client, error  }
     }
 }
 
@@ -187,7 +255,7 @@ const EditQuestion = {
             const api = await client.api(new GetQuestionFile({ id: props.id }))
             if (api.succeeded) {
                 original = JSON.parse(api.response)
-                console.log('original', original)
+                // console.log('original', original)
                 Object.assign(request.value, original)
             }
             nextTick(() => globalThis?.hljs?.highlightAll())
@@ -223,10 +291,13 @@ async function loadEditQuestion(ctx) {
         title = el.querySelector('h1 span'),
         footer = el.querySelector('.question-footer'),
         preview = el.querySelector('.preview'),
-        previewHtml = preview.innerHTML
+        previewHtml = preview.innerHTML,
+        addCommentLink = el.querySelector('.add-comment-link'),
+        comments = el.querySelector('.comments')
 
     if (!editLink) return // Locked Questions
     editLink.innerHTML = 'edit'
+    addCommentLink.innerHTML = 'add comment'
     let showEdit = false
     const bus = new EventBus()
     bus.subscribe('close', (dto) => {
@@ -255,6 +326,14 @@ async function loadEditQuestion(ctx) {
     on(editLink, {
         click() {
             toggleEdit(!showEdit)
+        }
+    })
+
+    on(addCommentLink, {
+        click() {
+            addCommentLink.classList.add('hidden')
+            comments.innerHTML = ''
+            mount(comments, AddComment, { id:postId, bus })
         }
     })
 }
@@ -374,14 +453,17 @@ async function loadEditAnswers(ctx) {
     $$(sel).forEach(el => {
         const id = el.id
         const answer = el,
-              editLink = el.querySelector('.edit-link'),
-              edit = el.querySelector('.edit'),
-              preview = el.querySelector('.preview'),
-              previewHtml = preview.innerHTML
+            editLink = el.querySelector('.edit-link'),
+            edit = el.querySelector('.edit'),
+            preview = el.querySelector('.preview'),
+            previewHtml = preview.innerHTML,
+            addCommentLink = el.querySelector('.add-comment-link'),
+            comments = el.querySelector('.comments')
 
         if (!editLink) return // Locked Questions
         const answerId = answer.dataset.answer
         editLink.innerHTML = 'edit'
+        addCommentLink.innerHTML = 'add comment'
         let showEdit = false
         const bus = new EventBus()
         bus.subscribe('close', () => toggleEdit(false))
@@ -403,13 +485,20 @@ async function loadEditAnswers(ctx) {
             bus.publish(editMode ? 'edit' : 'preview')
             showEdit = editMode
         }
-        
+
         on(editLink, {
             click() {
                 toggleEdit(!showEdit)
             }
         })
-        
+
+        on(addCommentLink, {
+            click() {
+                addCommentLink.classList.add('hidden')
+                mount(comments, AddComment, { id:postId, bus })
+            }
+        })
+
     })
 }
 
@@ -424,6 +513,11 @@ export default  {
             fetch('/data/tags.txt')
                 .then(r => r.text())
                 .then(txt => localStorage.setItem('data:tags.txt', txt))
+        }
+        
+        if (meta == null) {
+            client.get(new GetMeta({ id:`${postId}` }))
+                .then(r => meta = r)
         }
         
         if (!isNaN(postId)) {

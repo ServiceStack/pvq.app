@@ -90,7 +90,7 @@
                 </dl>
                 @if (Question.Post.LockedDate == null)
                 {
-                    <div class="mt-2 text-sm">
+                    <div class="mt-4 text-sm">
                         <span class="edit-link cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Question"></span>
                     </div>
                 }
@@ -110,24 +110,14 @@
                         </div>
                     </div>
                 }
+                
+                <div class="mt-4">
+                    <PostComments Comments=@Question.QuestionComments />
+                    <div class="add-comment-link pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></div>
+                </div>
+                
             </div>
         </div>
-        @if (Question.QuestionComments.Count > 0)
-        {
-            <div class="border-t border-gray-200 dark:border-gray-700">
-                @foreach (var comment in Question.QuestionComments)
-                {
-                    <div class="p-2 border-b border-gray-500 dark:border-gray-400 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
-                        @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
-                        <span class="inline-block">
-                            <span class="px-1" aria-hidden="true">&middot;</span>
-                            <span class="text-indigo-700">@comment.CreatedBy</span>
-                            <span class="ml-1 text-gray-400"> @Markdown.GetDateLabel(comment.CreatedDate)</span>
-                        </span>
-                    </div>
-                }
-            </div>
-        }
     </article>
     
     <div id="answers" class="mt-16">
@@ -166,12 +156,15 @@
                             @if (Question.Post.LockedDate == null)
                             {
                                 <span class="edit-link cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500"></span>
+                                <span class="add-comment-link ml-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></span>
                             }
                         </div>
                         <div class="text-gray-700 dark:text-gray-200 text-sm">
                             answered <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
                         </div>
                     </div>
+                    <div class="comments pl-10 md:pl-20 xl:pl-32"></div>
+                    
                 </div>
                 @if (Question.GetAnswerComments(answer.Id).Count > 0)
                 {

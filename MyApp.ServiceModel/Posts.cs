@@ -365,6 +365,28 @@ public class UpdateAnswerResponse
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
+[ValidateIsAuthenticated]
+public class CreateComment : IPost, IReturn<CreateCommentResponse>
+{
+    [ValidateNotEmpty]
+    public required string Id { get; set; }
+
+    [ValidateNotEmpty, ValidateMinimumLength(15)]
+    public required string Body { get; set; }
+}
+
+public class CreateCommentResponse
+{
+    public List<Comment> Comments { get; set; }
+    public ResponseStatus ResponseStatus { get; set; }
+}
+
+public class GetMeta : IGet, IReturn<Meta>
+{
+    [ValidateNotEmpty]
+    public required string Id { get; set; }
+}
+
 public class PreviewMarkdown : IPost, IReturn<string>
 {
     public string Markdown { get; set; }

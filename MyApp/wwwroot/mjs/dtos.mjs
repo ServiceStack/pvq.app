@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-03-28 22:08:39
+Date: 2024-03-29 03:16:57
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -382,12 +382,6 @@ export class AskQuestionResponse {
     /** @type {?ResponseStatus} */
     responseStatus;
 }
-export class UpdateQuestionResponse {
-    /** @param {{responseStatus?:ResponseStatus}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {?ResponseStatus} */
-    responseStatus;
-}
 export class EmptyResponse {
     /** @param {{responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -397,6 +391,14 @@ export class EmptyResponse {
 export class AnswerQuestionResponse {
     /** @param {{responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
+export class UpdateQuestionResponse {
+    /** @param {{result?:Post,responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {Post} */
+    result;
     /** @type {?ResponseStatus} */
     responseStatus;
 }
@@ -419,6 +421,14 @@ export class IdResponse {
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
     id;
+    /** @type {ResponseStatus} */
+    responseStatus;
+}
+export class CreateCommentResponse {
+    /** @param {{comments?:Comment[],responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {Comment[]} */
+    comments;
     /** @type {ResponseStatus} */
     responseStatus;
 }
@@ -594,21 +604,6 @@ export class AskQuestion {
     getMethod() { return 'POST' }
     createResponse() { return new AskQuestionResponse() }
 }
-export class UpdateQuestion {
-    /** @param {{id?:number,title?:string,body?:string,tags?:string[]}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {number} */
-    id;
-    /** @type {string} */
-    title;
-    /** @type {string} */
-    body;
-    /** @type {string[]} */
-    tags;
-    getTypeName() { return 'UpdateQuestion' }
-    getMethod() { return 'POST' }
-    createResponse() { return new UpdateQuestionResponse() }
-}
 export class DeleteQuestion {
     /** @param {{id?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -630,6 +625,23 @@ export class AnswerQuestion {
     getTypeName() { return 'AnswerQuestion' }
     getMethod() { return 'POST' }
     createResponse() { return new AnswerQuestionResponse() }
+}
+export class UpdateQuestion {
+    /** @param {{id?:number,title?:string,body?:string,tags?:string[],editReason?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    /** @type {string} */
+    title;
+    /** @type {string} */
+    body;
+    /** @type {string[]} */
+    tags;
+    /** @type {string} */
+    editReason;
+    getTypeName() { return 'UpdateQuestion' }
+    getMethod() { return 'POST' }
+    createResponse() { return new UpdateQuestionResponse() }
 }
 export class UpdateAnswer {
     /** @param {{id?:string,body?:string,editReason?:string}} [init] */
@@ -685,6 +697,26 @@ export class CreateWorkerAnswer {
     getTypeName() { return 'CreateWorkerAnswer' }
     getMethod() { return 'POST' }
     createResponse() { return new IdResponse() }
+}
+export class CreateComment {
+    /** @param {{id?:string,body?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    /** @type {string} */
+    body;
+    getTypeName() { return 'CreateComment' }
+    getMethod() { return 'POST' }
+    createResponse() { return new CreateCommentResponse() }
+}
+export class GetMeta {
+    /** @param {{id?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    getTypeName() { return 'GetMeta' }
+    getMethod() { return 'GET' }
+    createResponse() { return new Meta() }
 }
 export class UpdateUserProfile {
     constructor(init) { Object.assign(this, init) }

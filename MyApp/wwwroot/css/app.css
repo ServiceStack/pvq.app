@@ -1330,6 +1330,10 @@ select{
   height: 2rem;
 }
 
+.h-\[5rem\] {
+  height: 5rem;
+}
+
 .h-full {
   height: 100%;
 }
@@ -1994,6 +1998,11 @@ select{
 .border-blue-400 {
   --tw-border-opacity: 1;
   border-color: rgb(96 165 250 / var(--tw-border-opacity));
+}
+
+.border-gray-100 {
+  --tw-border-opacity: 1;
+  border-color: rgb(243 244 246 / var(--tw-border-opacity));
 }
 
 .border-gray-200 {

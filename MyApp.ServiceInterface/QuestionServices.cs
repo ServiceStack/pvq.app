@@ -32,23 +32,20 @@ public class QuestionServices(AppConfig appConfig,
         var slug = request.Title.GenerateSlug(200);
         var summary = request.Body.StripHtml().SubstringWithEllipsis(0, 200);
         
-        Post createPost()
+        Post createPost() => new()
         {
-            return new()
-            {
-                Id = postId,
-                PostTypeId = 1,
-                Title = request.Title,
-                Tags = tags,
-                Slug = slug,
-                Summary = summary,
-                CreationDate = now,
-                CreatedBy = userName,
-                LastActivityDate = now,
-                Body = request.Body,
-                RefId = request.RefId,
-            };
-        }
+            Id = postId,
+            PostTypeId = 1,
+            Title = request.Title,
+            Tags = tags,
+            Slug = slug,
+            Summary = summary,
+            CreationDate = now,
+            CreatedBy = userName,
+            LastActivityDate = now,
+            Body = request.Body,
+            RefId = request.RefId,
+        };
 
         var post = createPost();
         var dbPost = createPost();
@@ -260,6 +257,53 @@ public class QuestionServices(AppConfig appConfig,
         await questions.SaveModelAnswerAsync(request.PostId, request.Model, json);
         
         answerNotifier.NotifyNewAnswer(request.PostId, request.Model);
+    }
+
+    public async Task<object> Any(CreateComment request)
+    {
+        var question = await Db.SingleByIdAsync<Post>(request.Id);
+        if (question == null)
+            throw HttpError.NotFound($"Question {request.Id} not found");
+
+        if (question.LockedDate != null)
+            throw HttpError.Conflict("Question is locked");
+
+        var postId = request.Id.LeftPart('-').ToInt();
+
+        var metaFile = await questions.GetMetaFileAsync(postId);
+        var metaJson = metaFile != null
+            ? await metaFile.ReadAllTextAsync()
+            : "{}";
+        
+        var meta = metaJson.FromJson<Meta>();
+        
+        meta.Comments ??= new();
+        meta.Comments[request.Id] ??= new();
+        meta.Comments[request.Id].Add(new Comment
+        {
+            Body = request.Body,
+            CreatedDate = DateTime.UtcNow,
+            CreatedBy = GetUserName(),
+        });
+
+        var updatedJson = questions.ToJson(meta);
+        await questions.SaveMetaFileAsync(postId, updatedJson);
+        
+        return new CreateCommentResponse
+        {
+            Comments = meta.Comments[request.Id]
+        };
+    }
+
+    public async Task<object> Any(GetMeta request)
+    {
+        var postId = request.Id.LeftPart('-').ToInt();
+        var metaFile = await questions.GetMetaFileAsync(postId);
+        var metaJson = metaFile != null
+            ? await metaFile.ReadAllTextAsync()
+            : "{}";
+        var meta = metaJson.FromJson<Meta>();
+        return meta;
     }
 
     private string GetUserName()
