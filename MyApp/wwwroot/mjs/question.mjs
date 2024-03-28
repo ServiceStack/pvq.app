@@ -178,6 +178,7 @@ const EditAnswer = {
             props.bus.subscribe('preview', () => editing.value = false)
             const api = await client.api(new GetAnswerBody({ id: props.id }))
             request.value.body = api.response || ''
+            nextTick(() => globalThis?.hljs?.highlightAll())
         })
 
         function close() {

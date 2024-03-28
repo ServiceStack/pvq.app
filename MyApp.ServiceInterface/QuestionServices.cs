@@ -119,8 +119,13 @@ public class QuestionServices(AppConfig appConfig,
         var answerFile = await questions.GetAnswerFileAsync(request.Id);
         if (answerFile == null)
             throw HttpError.NotFound("Answer does not exist");
-        
-        await questions.SaveAnswerEditAsync(answerFile, GetUserName(), request.Body, request.EditReason);
+
+        var userName = GetUserName();
+        var isModerator = Request.GetClaimsPrincipal().HasRole(Roles.Moderator);
+        if (!isModerator && !answerFile.Name.Contains(userName))
+            throw HttpError.Forbidden("Only moderators can update other user's answers.");
+
+        await questions.SaveAnswerEditAsync(answerFile, userName, request.Body, request.EditReason);
 
         return new EditAnswerResponse();
     }
