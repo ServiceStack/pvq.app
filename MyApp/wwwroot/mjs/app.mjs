@@ -15,7 +15,7 @@ const CustomElements = [
     'lite-youtube'
 ]
 
-const alreadyMounted = el => el.__vue_app__ 
+export const alreadyMounted = el => el.__vue_app__ 
 
 const mockArgs = { attrs:{}, slots:{}, emit:() => {}, expose: () => {} }
 function hasTemplate(el,component) {
