@@ -106,11 +106,7 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
     public async Task DeleteFileAsync(string virtualPath)
     {
         fs.DeleteFile(virtualPath);
-        await r2.AmazonS3.DeleteObjectAsync(new Amazon.S3.Model.DeleteObjectRequest
-        {
-            BucketName = r2.BucketName,
-            Key = r2.SanitizePath(virtualPath),
-        });
+        await r2.DeleteFileAsync(virtualPath);
     }
 
     public async Task WriteMetaAsync(Meta meta)
@@ -207,10 +203,18 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         await r2.WriteFileAsync(virtualPath, contents);
     }
     
+    public async Task<IVirtualFile?> GetQuestionFileAsync(int id)
+    {
+        var (dir1, dir2, fileId) = id.ToFileParts();
+        var questionPath = $"{dir1}/{dir2}/{fileId}.json";
+        var file = fs.GetFile(questionPath)
+                   ?? await r2.GetFileAsync(questionPath);
+        return file;
+    }
+
     public async Task SaveQuestionEditAsync(Post question)
     {
-        var questionFiles = await GetQuestionFilesAsync(question.Id);
-        var questionFile = questionFiles.GetQuestionFile();
+        var questionFile = await GetQuestionFileAsync(question.Id);
         if (questionFile == null)
             throw new FileNotFoundException($"Question {question.Id} does not exist", GetQuestionPath(question.Id));
         var existingQuestionJson = await questionFile.ReadAllTextAsync();
@@ -292,5 +296,59 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         fs.DeleteFiles(localQuestionFiles.Files.Select(x => x.VirtualPath));
         var remoteQuestionFiles = await GetRemoteQuestionFilesAsync(id);
         r2.DeleteFiles(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
+    }
+}
+
+// TODO: Use Native Methods on S3VirtualFiles in vNext
+public static class R2VirtualFilesExtensions
+{
+    public static ServiceStack.Aws.S3.S3VirtualDirectory? GetParentDirectory(R2VirtualFiles r2, string dirPath)
+    {
+        if (string.IsNullOrEmpty(dirPath))
+            return null;
+        
+        var parentDirPath = r2.GetDirPath(dirPath.TrimEnd(S3VirtualFiles.DirSep));
+        var parentDir = parentDirPath != null
+            ? GetParentDirectory(r2, parentDirPath)
+            : (ServiceStack.Aws.S3.S3VirtualDirectory)r2.RootDirectory;
+        return new ServiceStack.Aws.S3.S3VirtualDirectory(r2, dirPath, parentDir);
+    }
+
+    public static async Task<IVirtualFile?> GetFileAsync(this R2VirtualFiles r2, string virtualPath)
+    {
+        if (string.IsNullOrEmpty(virtualPath))
+            return null;
+
+        var filePath = r2.SanitizePath(virtualPath);
+        try
+        {
+            var response = await r2.AmazonS3.GetObjectAsync(new Amazon.S3.Model.GetObjectRequest
+            {
+                Key = filePath,
+                BucketName = r2.BucketName,
+            }).ConfigAwait();
+
+            var dirPath = r2.GetDirPath(filePath);
+            var dir = dirPath == null
+                ? r2.RootDirectory
+                : GetParentDirectory(r2, dirPath);
+            return new ServiceStack.Aws.S3.S3VirtualFile(r2, dir).Init(response);
+        }
+        catch (Amazon.S3.AmazonS3Exception ex)
+        {
+            if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return null;
+
+            throw;
+        }
+    }
+
+    public static async Task DeleteFileAsync(this R2VirtualFiles r2, string virtualPath)
+    {
+        await r2.AmazonS3.DeleteObjectAsync(new Amazon.S3.Model.DeleteObjectRequest
+        {
+            BucketName = r2.BucketName,
+            Key = r2.SanitizePath(virtualPath),
+        });
     }
 }

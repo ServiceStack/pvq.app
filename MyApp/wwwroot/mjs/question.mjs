@@ -1,7 +1,7 @@
 ﻿import { ref, watchEffect, nextTick, onMounted } from "vue"
 import { $$, $1, on, JsonServiceClient, EventBus } from "@servicestack/client"
 import { useClient, useAuth, useUtils, useFormatters } from "@servicestack/vue"
-import { UserPostData, PostVote, GetQuestion } from "dtos.mjs"
+import { UserPostData, PostVote, GetQuestionFile } from "dtos.mjs"
 import { mount, alreadyMounted } from "app.mjs"
 import { AnswerQuestion, UpdateQuestion, UpdateAnswer, PreviewMarkdown, GetAnswerBody } from "dtos.mjs"
 
@@ -82,7 +82,6 @@ async function loadVoting(ctx) {
     if (api.succeeded) {
         origPostValues = api.response
         userPostVotes = Object.assign({}, origPostValues)
-        console.log('origPostValues', origPostValues)
         $$('.voting').forEach(updateVote)
     }
 }
@@ -185,9 +184,10 @@ const EditQuestion = {
         onMounted(async () => {
             props.bus.subscribe('edit', () => editing.value = true)
             props.bus.subscribe('preview', () => editing.value = false)
-            const api = await client.api(new GetQuestion({ id: props.id }))
+            const api = await client.api(new GetQuestionFile({ id: props.id }))
             if (api.succeeded) {
-                original = api.response.result
+                original = JSON.parse(api.response)
+                console.log('original', original)
                 Object.assign(request.value, original)
             }
             nextTick(() => globalThis?.hljs?.highlightAll())

@@ -13,7 +13,7 @@ public class Post
 {
     public int Id { get; set; }
 
-    [ServiceStack.DataAnnotations.Required] public int PostTypeId { get; set; }
+    [Required] public int PostTypeId { get; set; }
 
     public int? AcceptedAnswerId { get; set; }
 

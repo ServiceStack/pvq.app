@@ -28,24 +28,34 @@ public class QuestionServices(AppConfig appConfig,
 
         var userName = GetUserName();
         var now = DateTime.UtcNow;
-        var post = new Post
+        var postId = (int)appConfig.GetNextPostId(); 
+        var slug = request.Title.GenerateSlug(200);
+        var summary = request.Body.StripHtml().SubstringWithEllipsis(0, 200);
+        
+        Post createPost()
         {
-            Id = (int)appConfig.GetNextPostId(),
-            PostTypeId = 1,
-            Title = request.Title,
-            Tags = tags,
-            Slug = request.Title.GenerateSlug(200),
-            Summary = request.Body.StripHtml().SubstringWithEllipsis(0,200),
-            CreationDate = now,
-            CreatedBy = userName,
-            LastActivityDate = now,
-            Body = request.Body,
-            RefId = request.RefId,
-        };
+            return new()
+            {
+                Id = postId,
+                PostTypeId = 1,
+                Title = request.Title,
+                Tags = tags,
+                Slug = slug,
+                Summary = summary,
+                CreationDate = now,
+                CreatedBy = userName,
+                LastActivityDate = now,
+                Body = request.Body,
+                RefId = request.RefId,
+            };
+        }
 
+        var post = createPost();
+        var dbPost = createPost();
+        dbPost.Body = null;
         MessageProducer.Publish(new DbWrites
         {
-            CreatePost = post,
+            CreatePost = dbPost,
             CreatePostJobs = questions.GetAnswerModelsFor(userName)
                 .Select(model => new PostJob
                 {
@@ -179,11 +189,20 @@ public class QuestionServices(AppConfig appConfig,
 
     public async Task<object> Any(GetQuestionFile request)
     {
-        var questionFiles = await questions.GetQuestionFilesAsync(request.Id);
-        var file = questionFiles.GetQuestionFile();
-        if (file == null)
+        var questionFile = await questions.GetQuestionFileAsync(request.Id);
+        if (questionFile == null)
             throw HttpError.NotFound($"Question {request.Id} not found");
-        return new HttpResult(file, MimeTypes.Json);
+        
+        //TODO: Remove Hack when all files are converted to camelCase
+        var json = await questionFile.ReadAllTextAsync();
+        if (json.Trim().StartsWith("{\"Id\":"))
+        {
+            var post = json.FromJson<Post>();
+            var camelCaseJson = questions.ToJson(post);
+            return new HttpResult(camelCaseJson, MimeTypes.Json);
+        }
+        
+        return new HttpResult(json, MimeTypes.Json);
     }
 
     public async Task<object> Any(GetAnswerBody request)

@@ -81,6 +81,10 @@
                         }
                         <dd class="ml-2 text-gray-600 dark:text-gray-300">
                             <time datetime="@Markdown.GetDateTimestamp(Question.Post.GetModifiedDate())">@Markdown.GetDateLabel(Question.Post.GetModifiedDate())</time>
+                            @if (Question.Post.ModifiedBy != null && Question.Post.ModifiedBy != Question.Post.CreatedBy)
+                            {
+                                <span class="px-1">by</span><b>@Question.Post.ModifiedBy</b>
+                            }
                         </dd>
                     </div>
                 </dl>
