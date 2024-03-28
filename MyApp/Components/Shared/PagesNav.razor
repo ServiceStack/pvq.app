@@ -1,4 +1,4 @@
-﻿<div class=@CssUtils.ClassNames(@class, "flex items-center justify-between border-gray-200 bg-white py-3")>
+﻿<div class=@CssUtils.ClassNames(@class, "flex items-center justify-between border-gray-200 bg-white dark:bg-black py-3")>
     @if (Pages > 1 && Total > 0 && Total > PageSize)
     {
         <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
@@ -24,7 +24,7 @@
                                 : "")
                             + (size == UsePageSize 
                                 ? "relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                                : "relative inline-flex items-center bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10");
+                                : "relative inline-flex items-center bg-white dark:bg-black px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10");
                         <NavLink href=@GetRoute(1, size) class=@cls>@size</NavLink>
                     }
                 </span>
