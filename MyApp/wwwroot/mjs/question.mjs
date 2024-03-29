@@ -5,7 +5,7 @@ import { mount, alreadyMounted } from "app.mjs"
 import {
     UserPostData, PostVote, GetQuestionFile,
     AnswerQuestion, UpdateQuestion, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta,
-    DeleteComment,
+    DeleteQuestion, DeleteComment,
 } from "dtos.mjs"
 
 let meta = null
@@ -18,7 +18,8 @@ const signInUrl = () => `/Account/Login?ReturnUrl=${location.pathname}`
 
 function formatDate(date) {
     const d = toDate(date)
-    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString()
+    return d.getDate() + ' ' + d.toLocaleString('en-US', { month: 'short' }) + ' at '
+        + `${d.getHours()}`.padStart(2,'0')+ `:${d.getMinutes()}`.padStart(2,'0')
 }
 
 const svgPaths = {
@@ -102,6 +103,30 @@ async function loadVoting(ctx) {
     }
 }
 
+const QuestionAside = {
+    template:`
+        <div v-if="isModerator" class="mt-2 flex justify-center">
+            <svg class="mr-1 align-sub text-gray-400 hover:text-gray-500 w-6 h-6 inline-block cursor-pointer" @click="deleteQuestion" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete question</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
+        </div>
+    `,
+    props:['id'],
+    setup(props) {
+        
+        const { hasRole } = useAuth()
+        const isModerator = hasRole('Moderator')
+        const client = useClient()
+        async function deleteQuestion() {
+            if (confirm('Are you sure?')) {
+                const api = await client.api(new DeleteQuestion({ id:props.id }))
+                if (api.succeeded) {
+                    location.href = '/questions'
+                }
+            }
+        }
+        return { deleteQuestion, isModerator }
+    }
+}
+
 const AddComment = {
     template:`
         <div v-if="editing" class="mt-4 pb-1 flex w-full">
@@ -116,7 +141,7 @@ const AddComment = {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                       </svg>
                     </button>
-                    <textarea class="w-full h-[4.5rem] text-sm" @keydown="keyDown" v-model="txt"></textarea>
+                    <textarea ref="input" class="w-full h-[4.5rem] text-sm" @keydown="keyDown" v-model="txt"></textarea>
                 </div>
             </div>
             <div class="pl-2">
@@ -130,7 +155,7 @@ const AddComment = {
         <div>
             <div v-if="comments.length" class="border-t border-gray-200 dark:border-gray-700">
                 <div v-for="comment in comments" :data-createdby="comment.createdBy" :data-created="comment.created" class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
-                    <svg v-if="isModerator || comment.createdBy === userName" class="mr-1 text-gray-400 hover:text-gray-500 w-4 h-4 inline-block cursor-pointer" @click="removeComment(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete comment</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
+                    <svg v-if="isModerator || comment.createdBy === userName" class="mr-1 align-sub text-gray-400 hover:text-gray-500 w-4 h-4 inline-block cursor-pointer" @click="removeComment(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete comment</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
                     <span v-html="comment.body"></span>
                     <span class="inline-block">
                         <span class="px-1" aria-hidden="true">&middot;</span>
@@ -139,7 +164,7 @@ const AddComment = {
                     </span>
                 </div>
             </div>
-            <div v-if="!editing" @click="editing=true" class="pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment">add comment</div>
+            <div v-if="!editing" @click="startEditing" class="pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment">add comment</div>
         </div>
     `,
     props:['id','bus'],
@@ -153,6 +178,7 @@ const AddComment = {
         const editing = ref(true)
         const comments = ref(getComments(props.id))
         const error = ref('')
+        const input = ref()
         
         function keyDown(e) {
             if (e.key === 'Enter') {
@@ -193,7 +219,16 @@ const AddComment = {
             }
         }
         
-        return { userName, isModerator, txt, editing, comments, keyDown, formatDate, loading, error, submit, close, removeComment }
+        function startEditing() {
+            editing.value = true
+            nextTick(() => input.value.focus())
+        }
+        
+        onMounted(() => {
+            input.value.focus()
+        })
+        
+        return { userName, isModerator, txt, input, editing, comments, keyDown, formatDate, loading, error, submit, close, removeComment, startEditing }
     }
 }
 
@@ -338,8 +373,9 @@ async function loadEditQuestion(ctx) {
         preview = el.querySelector('.preview'),
         previewHtml = preview.innerHTML,
         addCommentLink = el.querySelector('.add-comment-link'),
-        comments = el.querySelector('.comments')
-
+        comments = el.querySelector('.comments'),
+        questionAside = el.querySelector('.question-aside')
+    
     if (!editLink) return // Locked Questions
     editLink.innerHTML = 'edit'
     addCommentLink.innerHTML = 'add comment'
@@ -349,6 +385,8 @@ async function loadEditQuestion(ctx) {
         title.innerHTML = dto.title
         toggleEdit(false)
     })
+    
+    mount(questionAside, QuestionAside, { id:postId })
 
     async function toggleEdit(editMode) {
         if (editMode) {

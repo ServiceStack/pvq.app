@@ -51,9 +51,9 @@
                                                 @User.GetDisplayName()
                                             </span>
                                             <img id="user-avatar" class="ml-1 h-8 w-8 rounded-full" src="/avatar/@User.GetDisplayName()" alt="">
-                                            <div class="flex items-center" data-rep=@AppConfig.GetReputation(User.GetDisplayName())>
-                                                <b class="px-1 text-2xl text-yellow-500">&bull;</b>
-                                                <span class="text-sm">@AppConfig.GetReputation(User.GetDisplayName())</span>
+                                            <div class="flex items-center">
+                                                <svg class="mx-1 h-4 w-4 text-yellow-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                                                <span data-rep=@AppConfig.GetReputation(User.GetDisplayName()) class="text-sm">@AppConfig.GetReputation(User.GetDisplayName())</span>
                                             </div>
                                         </NavLink>
                                     </div>

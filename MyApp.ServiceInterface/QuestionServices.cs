@@ -1,4 +1,5 @@
-﻿using MyApp.Data;
+﻿using System.Net;
+using MyApp.Data;
 using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.OrmLite;
@@ -75,7 +76,7 @@ public class QuestionServices(AppConfig appConfig,
         };
     }
 
-    public async Task<EmptyResponse> Any(DeleteQuestion request)
+    public async Task<object> Any(DeleteQuestion request)
     {
         await questions.DeleteQuestionFilesAsync(request.Id);
         rendererCache.DeleteCachedQuestionPostHtml(request.Id);
@@ -83,6 +84,14 @@ public class QuestionServices(AppConfig appConfig,
         {
             DeletePost = request.Id,
         });
+        MessageProducer.Publish(new SearchTasks
+        {
+            DeletePost = request.Id,
+        });
+
+        if (request.ReturnUrl != null && request.ReturnUrl.StartsWith('/') && request.ReturnUrl.IndexOf(':') < 0)
+            return HttpResult.Redirect(request.ReturnUrl, HttpStatusCode.TemporaryRedirect);
+        
         return new EmptyResponse();
     }
 

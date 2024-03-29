@@ -121,6 +121,14 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                 }
             }
         }
+        
+        if (request.DeletePost != null)
+        {
+            var id = request.DeletePost.Value;
+            log.LogInformation("Deleting Post '{PostId}' from Search Index...", id);
+            using var db = HostContext.AppHost.GetDbConnection(Databases.Search);
+            await db.ExecuteNonQueryAsync($"DELETE FROM PostFts where RefId = '{id}' or RefId LIKE '{id}-%'");
+        }
     }
     
     async Task<Post> ToPostAsync(IVirtualFile file)

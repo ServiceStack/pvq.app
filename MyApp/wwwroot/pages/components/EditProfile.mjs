@@ -7,7 +7,7 @@ export default {
             <FileInput id="profileUrl" label="Avatar" v-model="user.profileUrl" />
         </div>
         
-        <div class="mt-4 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-right sm:px-12">
+        <div class="mt-4 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-right">
             <div class="flex justify-between space-x-3">
                 <div></div>
                 <div>

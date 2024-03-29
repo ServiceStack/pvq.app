@@ -40,8 +40,14 @@
             {
                 <div class="flex mr-4">
                     <img class="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-contain" src="/avatar/@Question.Post.CreatedBy" alt=@($"{Question.Post.CreatedBy} avatar")>
-                    <div>
-                        <b class="ml-2">@Question.Post.CreatedBy</b>
+                    <div class="-mt-2 ml-1">
+                        <div>
+                            <b class="ml-1 text-sm">@Question.Post.CreatedBy</b>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                            <span data-rep-user=@Question.Post.CreatedBy class="text-xs font-semibold">@AppConfig.GetReputation(Question.Post.CreatedBy)</span>
+                        </div>
                     </div>
                 </div>
             }
@@ -50,11 +56,12 @@
             <div class="w-20">
                 <div id="@Question.Post.Id" class="voting flex flex-col items-center pr-2">
                     <!-- bx:up-arrow bxs:up-arrow <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19"/> -->
-                    <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
+                    <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
                     <b class="score text-xl" data-score=@Question.QuestionScore>@Question.QuestionScore</b>
                     <!-- bx:down-arrow bxs:down-arrow <path fill="currentColor" d="M11.178 19.569a.998.998 0 0 0 1.644 0l9-13A.999.999 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569z"/> -->
-                    <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
+                    <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
                 </div>
+                <div class="question-aside"></div>
             </div>
             <div id=@($"preview-{Question.Id}") class="pb-6 preview xl:flex-grow prose">
                 @BlazorHtml.Raw(Markdown.GenerateHtml(Question.Post.Body))
@@ -138,13 +145,17 @@
                     <div class="flex">
                         <div class="md:w-32 pr-2">
                             <div id=@answer.Id class="voting flex flex-col items-center">
-                                <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
+                                <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
                                 <b class="score text-xl" data-score=@Question.GetAnswerScore(answer.Id)>@Question.GetAnswerScore(answer.Id)</b>
-                                <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
+                                <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
                             </div>
                             <div class="mt-8 flex flex-col items-center">
                                 <img class="w-10 h-10 xl:w-20 xl:h-20 bg-cover inline-block" src="@userName.GetAvatarUrl()">
-                                <div class="hidden md:block text-center whitespace-nowrap text-xs xl:text-sm font-semibold">@userName</div>
+                                <div class="mt-1 hidden md:block text-center whitespace-nowrap text-xs xl:text-sm font-semibold">@userName</div>
+                                <div class="mt-1 flex items-center">
+                                    <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                                    <span data-rep-user=@userName class="text-xs font-semibold">@AppConfig.GetReputation(userName)</span>
+                                </div>
                             </div>
                         </div>
                         <div id=@($"preview-{answer.Id}") class="preview xl:flex-grow prose">

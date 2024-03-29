@@ -72,4 +72,5 @@ public class DbWrites
 public class SearchTasks
 {
     public int? AddPostToIndex { get; set; }
+    public int? DeletePost { get; set; }
 }
