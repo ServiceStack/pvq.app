@@ -5,7 +5,7 @@ import { mount, alreadyMounted } from "app.mjs"
 import {
     UserPostData, PostVote, GetQuestionFile,
     AnswerQuestion, UpdateQuestion, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta,
-    DeleteQuestion, DeleteComment,
+    DeleteQuestion, DeleteComment, GetUserReputations,
 } from "dtos.mjs"
 
 let meta = null
@@ -80,6 +80,8 @@ async function loadVoting(ctx) {
             if (!api.succeeded) {
                 setValue(refId, prevValue)
                 updateVote(el)
+            } else {
+                setTimeout(() => loadUserReputations(ctx), 2000)
             }
         }
 
@@ -608,6 +610,34 @@ async function loadEditAnswers(ctx) {
     })
 }
 
+async function loadUserReputations(ctx) {
+    const { client, postId, userName, user, hasRole } = ctx
+
+    const userNames = new Set()
+    if (userName) userNames.add(userName)
+    $$('[data-rep-user]').forEach(x => {
+        userNames.add(x.dataset.repUser)
+    })
+    console.log('userNames', userNames.size, userNames)
+    if (userNames.size > 0) {
+        const api = await client.api(new GetUserReputations({ userNames: Array.from(userNames) }))
+        if (api.succeeded) {
+            const results = api.response.results
+            Object.keys(api.response.results).forEach(userName => {
+                $$(`[data-rep-user="${userName}"]`).forEach(el => {
+                    console.log('updating rep', userName, results[userName])
+                    el.innerHTML = results[userName] || 1
+                })
+            })
+            if (userName) {
+                $$('[data-rep]').forEach(el => {
+                    el.innerHTML = results[userName] || 1
+                })
+            }
+        }
+    }
+}
+
 export default  {
     async load() {
         const client = new JsonServiceClient()
@@ -628,9 +658,12 @@ export default  {
         
         if (!isNaN(postId)) {
             const ctx = { client, userName, postId, user, hasRole }
-            await loadVoting(ctx)
-            await loadEditQuestion(ctx)
-            await loadEditAnswers(ctx)
+            await Promise.all([
+                loadVoting(ctx),
+                loadEditQuestion(ctx),
+                loadEditAnswers(ctx),
+                loadUserReputations(ctx)
+            ])
         }
     }
 }

@@ -350,6 +350,16 @@ public class QuestionServices(AppConfig appConfig,
         return meta;
     }
 
+    public object Any(GetUserReputations request)
+    {
+        var to = new GetUserReputationsResponse();
+        foreach (var userName in request.UserNames.Safe())
+        {
+            to.Results[userName] = appConfig.GetReputation(userName);
+        }
+        return to;
+    }
+
     private string GetUserName()
     {
         var userName = Request.GetClaimsPrincipal().GetUserName()

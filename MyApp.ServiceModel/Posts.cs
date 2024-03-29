@@ -435,3 +435,13 @@ public class DeleteQuestion : IGet, IReturn<EmptyResponse>
 }
 
 public class GetRequestInfo : IGet, IReturn<string> {}
+
+public class GetUserReputations : IGet, IReturn<GetUserReputationsResponse>
+{
+    public List<string> UserNames { get; set; } = [];
+}
+public class GetUserReputationsResponse
+{
+    public Dictionary<string, int> Results { get; set; } = [];
+    public ResponseStatus? ResponseStatus { get; set; }
+}

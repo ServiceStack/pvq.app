@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-03-29 18:01:15
+Date: 2024-03-29 23:35:25
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -68,12 +68,14 @@ export class Post {
     lockedReason;
 }
 export class StatTotals {
-    /** @param {{id?:string,postId?:number,favoriteCount?:number,viewCount?:number,upVotes?:number,downVotes?:number,startingUpVotes?:number}} [init] */
+    /** @param {{id?:string,postId?:number,createdBy?:string,favoriteCount?:number,viewCount?:number,upVotes?:number,downVotes?:number,startingUpVotes?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
     id;
     /** @type {number} */
     postId;
+    /** @type {?string} */
+    createdBy;
     /** @type {number} */
     favoriteCount;
     /** @type {number} */
@@ -434,6 +436,14 @@ export class CommentsResponse {
     /** @type {ResponseStatus} */
     responseStatus;
 }
+export class GetUserReputationsResponse {
+    /** @param {{results?:{ [index: string]: number; },responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {{ [index: string]: number; }} */
+    results;
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
 export class UpdateUserProfileResponse {
     /** @param {{responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -607,10 +617,12 @@ export class AskQuestion {
     createResponse() { return new AskQuestionResponse() }
 }
 export class DeleteQuestion {
-    /** @param {{id?:number}} [init] */
+    /** @param {{id?:number,returnUrl?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {number} */
     id;
+    /** @type {?string} */
+    returnUrl;
     getTypeName() { return 'DeleteQuestion' }
     getMethod() { return 'GET' }
     createResponse() { return new EmptyResponse() }
@@ -732,6 +744,15 @@ export class GetMeta {
     getTypeName() { return 'GetMeta' }
     getMethod() { return 'GET' }
     createResponse() { return new Meta() }
+}
+export class GetUserReputations {
+    /** @param {{userNames?:string[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string[]} */
+    userNames;
+    getTypeName() { return 'GetUserReputations' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetUserReputationsResponse() }
 }
 export class UpdateUserProfile {
     constructor(init) { Object.assign(this, init) }
