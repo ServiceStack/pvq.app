@@ -62,6 +62,22 @@ public class Post
     public string? LockedReason { get; set; }
 }
 
+public static class PostUtils
+{
+    public static string GetPostType(this Post post) => post.PostTypeId switch
+    {
+        1 => "Question",
+        2 => "Answer",
+        3 => "Wiki",
+        4 => "TagWiki",
+        5 => "ModeratorNomination",
+        6 => "WikiPlaceholder",
+        7 => "PrivilegeWiki",
+        8 => "TagWikiExcerpt",
+        _ => "Unknown"
+    };
+}
+
 public class PostJob
 {
     [AutoIncrement]
@@ -170,9 +186,10 @@ public class Answer
 public class Comment
 {
     public string Body { get; set; }
+    public long Created { get; set; } //timestamp ms 
     public string CreatedBy { get; set; }
     public int? UpVotes { get; set; }
-    public DateTime CreatedDate { get; set; }
+    public int? Reports { get; set; }
 }
 
 public class QuestionAndAnswers
@@ -366,7 +383,7 @@ public class UpdateAnswerResponse
 }
 
 [ValidateIsAuthenticated]
-public class CreateComment : IPost, IReturn<CreateCommentResponse>
+public class CreateComment : IPost, IReturn<CommentsResponse>
 {
     [ValidateNotEmpty]
     public required string Id { get; set; }
@@ -375,10 +392,21 @@ public class CreateComment : IPost, IReturn<CreateCommentResponse>
     public required string Body { get; set; }
 }
 
-public class CreateCommentResponse
+public class CommentsResponse
 {
     public List<Comment> Comments { get; set; }
     public ResponseStatus ResponseStatus { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class DeleteComment : IPost, IReturn<CommentsResponse>
+{
+    [ValidateNotEmpty]
+    public required string Id { get; set; }
+    [ValidateNotEmpty]
+    public string CreatedBy { get; set; }
+    [ValidateGreaterThan(0)]
+    public long Created { get; set; }
 }
 
 public class GetMeta : IGet, IReturn<Meta>

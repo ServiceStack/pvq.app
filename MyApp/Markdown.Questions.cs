@@ -7,7 +7,9 @@ public class MarkdownQuestions(ILogger<MarkdownQuestions> log, IWebHostEnvironme
 {
     public override string Id => "questions";
 
-    public string GetDateLabel(DateTime? date) => X.Map(date ?? DateTime.UtcNow, d => d.ToString("MMMM d, yyyy"))!;
+    public string GetDateLabel(DateTimeOffset dateTimeOffset) => GetDateLabel(dateTimeOffset.DateTime);
+    public string GetDateLabel(DateTime? date) => GetDateLabel(date ?? DateTime.UtcNow);
+    public string GetDateLabel(DateTime date) => date.ToString("MMM d 'at' HH:mm");
     public string GetDateTimestamp(DateTime? date) => X.Map(date ?? DateTime.UtcNow, d => d.ToString("O"))!;
 
     public string GenerateHtml(string? markdown)

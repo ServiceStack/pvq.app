@@ -2,6 +2,7 @@
 using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.OrmLite;
+using ServiceStack.Text;
 
 namespace MyApp.ServiceInterface;
 
@@ -269,22 +270,12 @@ public class QuestionServices(AppConfig appConfig,
 
     public async Task<object> Any(CreateComment request)
     {
-        var postId = request.Id.LeftPart('-').ToInt();
-        var postType = request.Id.IndexOf('-') >= 0 ? "Answer" : "Question";
-
-        var question = await Db.SingleByIdAsync<Post>(postId);
-        if (question == null)
-            throw HttpError.NotFound($"{postType} {postId} not found");
-
+        var question = await AssertValidQuestion(request.Id);
         if (question.LockedDate != null)
-            throw HttpError.Conflict($"{postType} is locked");
+            throw HttpError.Conflict($"{question.GetPostType()} is locked");
 
-        var metaFile = await questions.GetMetaFileAsync(postId);
-        var metaJson = metaFile != null
-            ? await metaFile.ReadAllTextAsync()
-            : "{}";
-        
-        var meta = metaJson.FromJson<Meta>();
+        var postId = question.Id;
+        var meta = await questions.GetMetaAsync(postId);
         
         meta.Comments ??= new();
         var comments = meta.Comments.GetOrAdd(request.Id, key => new());
@@ -292,17 +283,51 @@ public class QuestionServices(AppConfig appConfig,
         comments.Add(new Comment
         {
             Body = body,
-            CreatedDate = DateTime.UtcNow,
+            Created = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             CreatedBy = GetUserName(),
         });
 
-        var updatedJson = questions.ToJson(meta);
-        await questions.SaveMetaFileAsync(postId, updatedJson);
+        await questions.SaveMetaAsync(postId, meta);
         
-        return new CreateCommentResponse
+        return new CommentsResponse
         {
             Comments = comments
         };
+    }
+
+    private async Task<Post> AssertValidQuestion(string refId)
+    {
+        var postId = refId.LeftPart('-').ToInt();
+        var postType = refId.IndexOf('-') >= 0 ? "Answer" : "Question";
+
+        var question = await Db.SingleByIdAsync<Post>(postId);
+        if (question == null)
+            throw HttpError.NotFound($"{postType} {postId} not found");
+
+        return question;
+    }
+
+    public async Task<object> Any(DeleteComment request)
+    {
+        var question = await AssertValidQuestion(request.Id);
+
+        var userName = GetUserName();
+        var isModerator = Request.GetClaimsPrincipal().HasRole(Roles.Moderator);
+        if (userName != request.CreatedBy && !isModerator)
+            throw HttpError.Forbidden("Only Moderators can delete other user's comments");
+        
+        var postId = question.Id;
+        var meta = await questions.GetMetaAsync(postId);
+        
+        meta.Comments ??= new();
+        if (meta.Comments.TryGetValue(request.Id, out var comments))
+        {
+            comments.RemoveAll(x => x.Created == request.Created && x.CreatedBy == request.CreatedBy);
+            await questions.SaveMetaAsync(postId, meta);
+            return new CommentsResponse { Comments = comments };
+        }
+
+        return new CommentsResponse { Comments = [] };
     }
 
     public async Task<object> Any(GetMeta request)

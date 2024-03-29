@@ -1338,8 +1338,8 @@ select{
   height: 2rem;
 }
 
-.h-\[5rem\] {
-  height: 5rem;
+.h-\[4\.5rem\] {
+  height: 4.5rem;
 }
 
 .h-full {
@@ -3405,6 +3405,11 @@ select{
 .hover\:text-cyan-800:hover {
   --tw-text-opacity: 1;
   color: rgb(21 94 117 / var(--tw-text-opacity));
+}
+
+.hover\:text-gray-400:hover {
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity));
 }
 
 .hover\:text-gray-500:hover {

@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-03-29 03:16:57
+Date: 2024-03-29 18:01:15
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -116,16 +116,18 @@ export class Choice {
     message;
 }
 export class Comment {
-    /** @param {{body?:string,createdBy?:string,upVotes?:number,createdDate?:string}} [init] */
+    /** @param {{body?:string,created?:number,createdBy?:string,upVotes?:number,reports?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
     body;
+    /** @type {number} */
+    created;
     /** @type {string} */
     createdBy;
     /** @type {?number} */
     upVotes;
-    /** @type {string} */
-    createdDate;
+    /** @type {?number} */
+    reports;
 }
 export class Answer {
     /** @param {{id?:string,object?:string,created?:number,model?:string,choices?:Choice[],usage?:{ [index: string]: number; },temperature?:number,comments?:Comment[]}} [init] */
@@ -424,7 +426,7 @@ export class IdResponse {
     /** @type {ResponseStatus} */
     responseStatus;
 }
-export class CreateCommentResponse {
+export class CommentsResponse {
     /** @param {{comments?:Comment[],responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {Comment[]} */
@@ -707,7 +709,20 @@ export class CreateComment {
     body;
     getTypeName() { return 'CreateComment' }
     getMethod() { return 'POST' }
-    createResponse() { return new CreateCommentResponse() }
+    createResponse() { return new CommentsResponse() }
+}
+export class DeleteComment {
+    /** @param {{id?:string,createdBy?:string,created?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    /** @type {string} */
+    createdBy;
+    /** @type {number} */
+    created;
+    getTypeName() { return 'DeleteComment' }
+    getMethod() { return 'POST' }
+    createResponse() { return new CommentsResponse() }
 }
 export class GetMeta {
     /** @param {{id?:string}} [init] */

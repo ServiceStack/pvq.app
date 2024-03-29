@@ -1,4 +1,5 @@
-﻿@inject MarkdownQuestions Markdown
+﻿@using ServiceStack.Text
+@inject MarkdownQuestions Markdown
 
 <div class="comments">
     @if (Comments.Count > 0)
@@ -11,7 +12,7 @@
                     <span class="inline-block">
                         <span class="px-1" aria-hidden="true">&middot;</span>
                         <span class="text-indigo-700">@comment.CreatedBy</span>
-                        <span class="ml-1 text-gray-400"> @Markdown.GetDateLabel(comment.CreatedDate)</span>
+                        <span class="ml-1 text-gray-400"> @Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeMilliseconds(comment.Created))</span>
                     </span>
                 </div>
             }

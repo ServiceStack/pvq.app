@@ -221,11 +221,28 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         return file;
     }
 
+    public async Task<Meta> GetMetaAsync(int id)
+    {
+        var metaFile = await GetMetaFileAsync(id);
+        var metaJson = metaFile != null
+            ? await metaFile.ReadAllTextAsync()
+            : "{}";
+        
+        var meta = metaJson.FromJson<Meta>();
+        return meta;
+    }
+
     public async Task SaveMetaFileAsync(int id, string metaJson)
     {
         var (dir1, dir2, fileId) = id.ToFileParts();
         var metaPath = $"{dir1}/{dir2}/{fileId}.meta.json";
         await SaveFileAsync(metaPath, metaJson);
+    }
+
+    public async Task SaveMetaAsync(int postId, Meta meta)
+    {
+        var updatedJson = ToJson(meta);
+        await SaveMetaFileAsync(postId, updatedJson);
     }
 
     public async Task SaveQuestionEditAsync(Post question)

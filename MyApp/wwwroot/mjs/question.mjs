@@ -1,9 +1,12 @@
 ﻿import { ref, computed, watchEffect, nextTick, onMounted } from "vue"
-import { $$, $1, on, JsonServiceClient, EventBus } from "@servicestack/client"
-import { useClient, useAuth, useUtils, useFormatters } from "@servicestack/vue"
-import { UserPostData, PostVote, GetQuestionFile } from "dtos.mjs"
+import { $$, $1, on, JsonServiceClient, EventBus, toDate } from "@servicestack/client"
+import { useClient, useAuth, useUtils } from "@servicestack/vue"
 import { mount, alreadyMounted } from "app.mjs"
-import { AnswerQuestion, UpdateQuestion, UpdateAnswer, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta } from "dtos.mjs"
+import {
+    UserPostData, PostVote, GetQuestionFile,
+    AnswerQuestion, UpdateQuestion, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta,
+    DeleteComment,
+} from "dtos.mjs"
 
 let meta = null
 
@@ -12,6 +15,11 @@ function getComments(id) {
     return meta.comments && meta.comments[id] || []
 }
 const signInUrl = () => `/Account/Login?ReturnUrl=${location.pathname}`
+
+function formatDate(date) {
+    const d = toDate(date)
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString()
+}
 
 const svgPaths = {
     up: {
@@ -96,7 +104,7 @@ async function loadVoting(ctx) {
 
 const AddComment = {
     template:`
-        <div v-if="editing" class="mt-4 flex h-[5rem] w-full">
+        <div v-if="editing" class="mt-4 pb-1 flex w-full">
             <div class="w-full">
                 <div v-if="error" class="text-sm pb-2 text-red-500">{{error}}</div>
                 <div class="w-full flex-grow relative">
@@ -108,24 +116,26 @@ const AddComment = {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                       </svg>
                     </button>
-                    <textarea class="w-full" @keydown="keyDown" v-model="txt"></textarea>
+                    <textarea class="w-full h-[4.5rem] text-sm" @keydown="keyDown" v-model="txt"></textarea>
                 </div>
             </div>
             <div class="pl-2">
-                <PrimaryButton class="whitespace-nowrap" @click="submit" :disabled="txt.length<15 || !client.loading">Add Comment</PrimaryButton>
-                <div v-if="txt.length > 0 && txt.length<15" class="mt-1 text-sm text-gray-400">
+                <PrimaryButton class="whitespace-nowrap" @click="submit" :disabled="txt.length<15 || loading">Add Comment</PrimaryButton>
+                <Loading v-if="loading" class="pt-2 !mb-0" />
+                <div v-else-if="txt.length > 0 && txt.length<15" class="mt-1 text-sm text-gray-400">
                     {{15-txt.length}} characters to go
                 </div>
             </div>
         </div>
         <div>
             <div v-if="comments.length" class="border-t border-gray-200 dark:border-gray-700">
-                <div v-for="comment in comments" class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                <div v-for="comment in comments" :data-createdby="comment.createdBy" :data-created="comment.created" class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                    <svg v-if="isModerator || comment.createdBy === userName" class="mr-1 text-gray-400 hover:text-gray-500 w-4 h-4 inline-block cursor-pointer" @click="removeComment(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete comment</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
                     <span v-html="comment.body"></span>
                     <span class="inline-block">
                         <span class="px-1" aria-hidden="true">&middot;</span>
                         <span class="text-indigo-700">{{comment.createdBy}}</span>
-                        <span class="ml-1 text-gray-400"> {{formatDate(comment.createdDate)}}</span>
+                        <span class="ml-1 text-gray-400"> {{formatDate(comment.created)}}</span>
                     </span>
                 </div>
             </div>
@@ -134,8 +144,11 @@ const AddComment = {
     `,
     props:['id','bus'],
     setup(props) {
-        const { formatDate } = useFormatters()
+        const { user, hasRole } = useAuth()
+        const userName = user.value?.userName
+        const isModerator = hasRole('Moderator')
         const client = useClient()
+        const loading = client.loading
         const txt = ref('')
         const editing = ref(true)
         const comments = ref(getComments(props.id))
@@ -166,7 +179,21 @@ const AddComment = {
             }
         }
         
-        return { txt, editing, comments, keyDown, formatDate, client, error, submit, close  }
+        async function removeComment(comment) {
+            if (confirm('Are you sure?')) {
+                const api = await client.apiVoid(new DeleteComment({ 
+                    id:`${props.id}`, 
+                    created: comment.created,
+                    createdBy: comment.createdBy,
+                }))
+                if (api.succeeded) {
+                    comments.value = api.response.comments || []
+                    close()
+                }
+            }
+        }
+        
+        return { userName, isModerator, txt, editing, comments, keyDown, formatDate, loading, error, submit, close, removeComment }
     }
 }
 
@@ -224,7 +251,6 @@ const EditQuestion = {
     `,
     props:['id','createdBy','previewHtml','bus'],
     setup(props) {
-        const { formatDate } = useFormatters()
         const { user } = useAuth()
         const client = useClient()
         const autoform = ref()
@@ -415,7 +441,8 @@ const EditAnswer = {
     props:['id','createdBy','previewHtml','bus'],
     setup(props) {
 
-        const { user } = useAuth()
+        const { user, hasRole } = useAuth()
+        const isModerator = hasRole('Moderator')
         const rep = document.querySelector('[data-rep]')?.dataset?.rep || 1
         const canUpdate = computed(() => rep.value >= 100 || props.createdBy === user.value?.userName)
         const client = useClient()
@@ -465,8 +492,15 @@ const EditAnswer = {
             editing.value = false
             props.bus.publish('close')
         }
+        
+        async function remove() {
+            if (confirm('Are you sure you want to delete this Comment?')) {
+                client.apiVoid(new DeleteComment({ id:props.id }))
+                    .then(() => location.reload())
+            }
+        }
 
-        return { editing, user, canUpdate, request, previewHtml, savedHtml, autoform, expandPreview, signInUrl, onSuccess, close }
+        return { editing, user, isModerator, canUpdate, request, previewHtml, savedHtml, autoform, expandPreview, signInUrl, onSuccess, close }
     }
 }
 
