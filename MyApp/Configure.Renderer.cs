@@ -80,6 +80,11 @@ public class RenderServices(
             {
                 log.LogInformation("Regenerating Meta for Post {Id}...", id);
                 await RegenerateMeta(dbAnalytics, id, remoteFiles, dbStatTotals, allPostVotes);
+                
+                // TODO improve
+                MessageProducer.Publish(new DbWrites {
+                    UpdateReputations = true
+                });
             }
 
             // Update Local Files with new or modified remote files

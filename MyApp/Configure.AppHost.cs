@@ -60,14 +60,9 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         
         FileSystemVirtualFiles.AssertDirectory(HostingEnvironment.ContentRootPath.CombineWith(AppConfig.Instance.CacheDir));
         FileSystemVirtualFiles.AssertDirectory(HostingEnvironment.ContentRootPath.CombineWith(AppConfig.Instance.ProfilesDir));
-        
+
         using var db = GetDbConnection();
-        AppConfig.Instance.ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null
-            || x.UserName == "most-voted" || x.UserName == "accepted"));
-        var maxPostId = db.Scalar<int>("SELECT MAX(Id) FROM Post");
-        AppConfig.Instance.SetInitialPostId(Math.Max(100_000_000, maxPostId));
-        AppConfig.Instance.UsersReputation = new(db.Dictionary<string, int>(db.From<UserInfo>()
-            .Select(x => new { x.UserName, x.Reputation })));
+        AppConfig.Instance.Init(db);
         
         var allTagsFile = new FileInfo(Path.Combine(HostingEnvironment.WebRootPath, "data/tags.txt"));
         if (!allTagsFile.Exists)

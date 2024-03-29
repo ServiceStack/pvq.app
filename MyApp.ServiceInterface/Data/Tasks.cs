@@ -64,6 +64,7 @@ public class DbWrites
     public FailJob? FailJob { get; set; }
     public ApplicationUser? UserRegistered { get; set; }
     public ApplicationUser? UserSignedIn { get; set; }
+    public bool? UpdateReputations { get; set; }
 }
 
 [Tag(Tag.Tasks)]
