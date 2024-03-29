@@ -1,4 +1,6 @@
-﻿namespace MyApp.Data;
+﻿using System.Collections.Concurrent;
+
+namespace MyApp.Data;
 
 public class AppConfig
 {
@@ -8,6 +10,7 @@ public class AppConfig
     public string CacheDir { get; set; }
     public string ProfilesDir { get; set; }
     public string? GitPagesBaseUrl { get; set; }
+    public ConcurrentDictionary<string,int> UsersReputation { get; set; } = new();
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
     public ApplicationUser DefaultUser { get; set; } = new()
@@ -33,4 +36,9 @@ public class AppConfig
     public void SetInitialPostId(long initialValue) => this.nextPostId = initialValue;
     public long LastPostId => Interlocked.Read(ref nextPostId);
     public long GetNextPostId() => Interlocked.Increment(ref nextPostId);
+    
+    public int GetReputation(string? userName) => 
+        userName == null || !UsersReputation.TryGetValue(userName, out var reputation) 
+            ? 1 
+            : reputation;
 }

@@ -10,4 +10,6 @@ public class ApplicationUser : IdentityUser
     public string? DisplayName { get; set; }
     public string? ProfilePath { get; set; }
     public string? Model { get; set; }
+    public string? LastLoginIp { get; set; }
+    public DateTime? LastLoginDate { get; set; }
 }

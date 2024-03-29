@@ -14,6 +14,11 @@
     <Heading1>Confirm email</Heading1>
 
     <StatusMessage Message="@statusMessage" />
+    
+    @if (statusMessage?.StartsWith("Thank you") == true)
+    {
+        <NavLink class=@CssUtils.ClassNames(SecondaryButton.Classes, "mt-2") href="Account/Login">Sign In</NavLink>
+    }
 </div>
 
 @code {

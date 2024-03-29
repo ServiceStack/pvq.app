@@ -127,7 +127,11 @@ public class QuestionServices(AppConfig appConfig,
         var userName = GetUserName();
         var isModerator = Request.GetClaimsPrincipal().HasRole(Roles.Moderator);
         if (!isModerator && question.CreatedBy != userName)
-            throw HttpError.Forbidden("Only moderators can update other user's questions.");
+        {
+            var userInfo = await Db.SingleAsync<UserInfo>(x => x.UserName == userName);
+            if (userInfo.Reputation < 10)
+                throw HttpError.Forbidden("You need at least 10 reputation to Edit other User's Questions.");
+        }
 
         question.Title = request.Title;
         question.Tags = ValidateQuestionTags(request.Tags);
@@ -165,7 +169,11 @@ public class QuestionServices(AppConfig appConfig,
         var userName = GetUserName();
         var isModerator = Request.GetClaimsPrincipal().HasRole(Roles.Moderator);
         if (!isModerator && !answerFile.Name.Contains(userName))
-            throw HttpError.Forbidden("Only moderators can update other user's answers.");
+        {
+            var userInfo = await Db.SingleAsync<UserInfo>(x => x.UserName == userName);
+            if (userInfo.Reputation < 100)
+                throw HttpError.Forbidden("You need at least 100 reputation to Edit other User's Answers.");
+        }
 
         await questions.SaveAnswerEditAsync(answerFile, userName, request.Body, request.EditReason);
 
@@ -261,14 +269,15 @@ public class QuestionServices(AppConfig appConfig,
 
     public async Task<object> Any(CreateComment request)
     {
-        var question = await Db.SingleByIdAsync<Post>(request.Id);
+        var postId = request.Id.LeftPart('-').ToInt();
+        var postType = request.Id.IndexOf('-') >= 0 ? "Answer" : "Question";
+
+        var question = await Db.SingleByIdAsync<Post>(postId);
         if (question == null)
-            throw HttpError.NotFound($"Question {request.Id} not found");
+            throw HttpError.NotFound($"{postType} {postId} not found");
 
         if (question.LockedDate != null)
-            throw HttpError.Conflict("Question is locked");
-
-        var postId = request.Id.LeftPart('-').ToInt();
+            throw HttpError.Conflict($"{postType} is locked");
 
         var metaFile = await questions.GetMetaFileAsync(postId);
         var metaJson = metaFile != null
@@ -278,10 +287,11 @@ public class QuestionServices(AppConfig appConfig,
         var meta = metaJson.FromJson<Meta>();
         
         meta.Comments ??= new();
-        meta.Comments[request.Id] ??= new();
-        meta.Comments[request.Id].Add(new Comment
+        var comments = meta.Comments.GetOrAdd(request.Id, key => new());
+        var body = request.Body.Replace("\r\n", " ").Replace('\n', ' ');
+        comments.Add(new Comment
         {
-            Body = request.Body,
+            Body = body,
             CreatedDate = DateTime.UtcNow,
             CreatedBy = GetUserName(),
         });
@@ -291,7 +301,7 @@ public class QuestionServices(AppConfig appConfig,
         
         return new CreateCommentResponse
         {
-            Comments = meta.Comments[request.Id]
+            Comments = comments
         };
     }
 

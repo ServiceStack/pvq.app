@@ -89,20 +89,57 @@ public class Migration1000 : MigrationBase
         public string? Error { get; set; }
         public int RetryCount { get; set; }
     }
+    
+    public class UserInfo
+    {
+        [PrimaryKey]
+        public string UserId { get; set; }
+        [Index(Unique = true)]
+        public string UserName { get; set; }
+        [Default(1)]
+        public int Reputation { get; set; }
+        [Default(0)]
+        public int QuestionsCount { get; set; }
+        [Default(0)]
+        public int EditQuestionsCount { get; set; }
+        [Default(0)]
+        public int AnswersCount { get; set; }
+        [Default(0)]
+        public int EditAnswersCount { get; set; }
+        [Default(0)]
+        public int UpVotesCount { get; set; }
+        [Default(0)]
+        public int DownVotesCount { get; set; }
+        [Default(0)]
+        public int CommentsCount { get; set; }
+        [Default(0)]
+        public int EditCommentsCount { get; set; }
+        [Default(0)]
+        public int ReportsCount { get; set; }
+        [Default(0)]
+        public int ReportsReceived { get; set; } // Questions, Answers & Comments with Reports
+        public DateTime? LastActivityDate { get; set; }
+    }
 
     public override void Up()
     {
+        Db.CreateTable<UserInfo>();
         Db.CreateTable<Vote>();
         Db.CreateTable<Job>();
         Db.CreateTable<StatTotals>();
         Db.CreateTable<PostJob>();
+        
+        Db.ExecuteSql("INSERT INTO UserInfo (UserId, UserName) SELECT Id, UserName FROM AspNetUsers");
     }
 
     public override void Down()
     {
+        Db.DeleteAll<UserInfo>();
+        
         Db.DropTable<PostJob>();
         Db.DropTable<StatTotals>();
         Db.DropTable<Job>();
         Db.DropTable<Vote>();
+        Db.DropTable<UserInfo>();
     }
 }

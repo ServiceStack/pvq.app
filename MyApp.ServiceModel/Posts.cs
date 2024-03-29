@@ -263,7 +263,7 @@ public class GetQuestionResponse
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
-[ValidateHasRole(Roles.Moderator)]
+[ValidateIsAuthenticated]
 public class GetQuestionFile : IGet, IReturn<string>
 {
     public int Id { get; set; }

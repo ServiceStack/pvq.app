@@ -5,7 +5,7 @@
 <template id="Post">@Question.Post.ToJson()</template>
 
 <div class="mt-8 mb-20 mx-auto sm:max-w-4xl sm:w-[56rem] xl:max-w-5xl xl:w-[64rem]" data-module="mjs/question.mjs">
-    <article id="question" data-postid=@Question.Id>
+    <article id="question" data-postid=@Question.Id data-createdby=@Question.Post.CreatedBy>
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lg:text-4xl xl:text-5xl">
             <span class="block xl:inline">@Question.Post.Title</span>
         </h1>
@@ -63,7 +63,7 @@
         </div>
         <div class="pb-6 flex flex-1 items-end border-b border-gray-200 dark:border-gray-700">
             <div class="pl-10 md:pl-20 w-full">
-                <dl class="question-footer flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
+                <div class="question-footer flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
                     <div class="flex flex-wrap gap-x-2 gap-y-2">
                         @foreach (var tag in Question.Post.Tags.Safe())
                         {
@@ -87,7 +87,7 @@
                             }
                         </dd>
                     </div>
-                </dl>
+                </div>
                 @if (Question.Post.LockedDate == null)
                 {
                     <div class="mt-4 text-sm">
@@ -113,7 +113,10 @@
                 
                 <div class="mt-4">
                     <PostComments Comments=@Question.QuestionComments />
-                    <div class="add-comment-link pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></div>
+                    @if (Question.Post.LockedDate == null)
+                    {
+                        <div class="add-comment-link pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></div>
+                    }
                 </div>
                 
             </div>
@@ -130,7 +133,8 @@
         <div>
             @foreach (var answer in Question.Answers)
             {
-                <div data-answer=@answer.Id class="py-8 border-b border-gray-200 dark:border-gray-700">
+                var userName = AppConfig.GetUserName(answer.Model);
+                <article data-answer=@answer.Id data-createdby=@userName class="py-8 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex">
                         <div class="md:w-32 pr-2">
                             <div id=@answer.Id class="voting flex flex-col items-center">
@@ -138,9 +142,6 @@
                                 <b class="score text-xl" data-score=@Question.GetAnswerScore(answer.Id)>@Question.GetAnswerScore(answer.Id)</b>
                                 <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
                             </div>
-                            @{
-                                var userName = AppConfig.GetUserName(answer.Model);
-                            }
                             <div class="mt-8 flex flex-col items-center">
                                 <img class="w-10 h-10 xl:w-20 xl:h-20 bg-cover inline-block" src="@userName.GetAvatarUrl()">
                                 <div class="hidden md:block text-center whitespace-nowrap text-xs xl:text-sm font-semibold">@userName</div>
@@ -151,37 +152,35 @@
                         </div>
                         <div id=@($"edit-{answer.Id}") class="edit w-full pl-2 hidden"></div>
                     </div>
-                    <div class="mt-6 flex justify-between">
-                        <div class="pl-10 md:pl-20 xl:pl-32">
+                    
+                    <div class="flex flex-1 items-end">
+                        <div class="ml-8 sm:pl-6 xl:ml-20 xl:pl-12 w-full">
+                            <div class="answer-footer flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
+
+                                <div class="flex flex-grow px-4 sm:px-6 text-sm justify-end">
+                                    <div class="text-gray-700 dark:text-gray-200 text-sm">
+                                        answered <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
+                                    </div>
+                                </div>
+
+                            </div>
                             @if (Question.Post.LockedDate == null)
                             {
-                                <span class="edit-link cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500"></span>
-                                <span class="add-comment-link ml-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></span>
+                                <div class="mt-4 text-sm">
+                                    <span class="edit-link cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Question"></span>
+                                </div>
                             }
-                        </div>
-                        <div class="text-gray-700 dark:text-gray-200 text-sm">
-                            answered <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
-                        </div>
-                    </div>
-                    <div class="comments pl-10 md:pl-20 xl:pl-32"></div>
-                    
-                </div>
-                @if (Question.GetAnswerComments(answer.Id).Count > 0)
-                {
-                    <div class="border-t border-gray-200 dark:border-gray-700">
-                        @foreach (var comment in Question.GetAnswerComments(answer.Id))
-                        {
-                            <div class="p-2 border-b border-gray-500 dark:border-gray-400 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
-                                @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
-                                <span class="inline-block">
-                                    <span class="px-1" aria-hidden="true">&middot;</span>
-                                    <span class="text-indigo-700">@comment.CreatedBy</span>
-                                    <span class="ml-1 text-gray-400"> @Markdown.GetDateLabel(comment.CreatedDate)</span>
-                                </span>
+                            
+                            <div class="mt-4">
+                                <PostComments Comments=@Question.GetAnswerComments(answer.Id) />
+                                @if (Question.Post.LockedDate == null)
+                                {
+                                    <div class="add-comment-link pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></div>
+                                }
                             </div>
-                        }
+                        </div>
                     </div>
-                }
+                </article>
             }
         </div>
     </div>

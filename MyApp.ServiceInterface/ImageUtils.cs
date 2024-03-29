@@ -1,4 +1,4 @@
-﻿using MyApp.ServiceModel;
+﻿using MyApp.Data;
 using ServiceStack;
 using ServiceStack.Host;
 using ServiceStack.Web;

@@ -9,6 +9,7 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IDbConnectionFactory DbFactory
 
 <PageTitle>Log in</PageTitle>
 
@@ -96,6 +97,13 @@
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
+            using var db = await DbFactory.OpenDbConnectionAsync();
+            await db.UpdateOnlyAsync(() => new ApplicationUser
+            {
+                LastLoginIp = HttpContext.GetRemoteIp(),
+                LastLoginDate = DateTime.UtcNow,
+            }, where: x => x.NormalizedUserName == Input.UserName.ToUpper());
+
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.RequiresTwoFactor)

@@ -14,6 +14,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IDbConnectionFactory DbFactory
 
 <PageTitle>Register</PageTitle>
 
@@ -66,6 +67,9 @@
 </div>
 
 @code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
     private IEnumerable<IdentityError>? identityErrors;
 
     [SupplyParameterFromForm]
@@ -79,6 +83,8 @@
     public async Task RegisterUser(EditContext editContext)
     {
         var user = CreateUser();
+        user.LastLoginIp = HttpContext.GetRemoteIp();
+        user.LastLoginDate = DateTime.UtcNow;
 
         await UserStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
         var emailStore = GetEmailStore();
@@ -95,6 +101,14 @@
         Logger.LogInformation("User created a new account with password.");
 
         var userId = await UserManager.GetUserIdAsync(user);
+
+        using var db = await DbFactory.OpenDbConnectionAsync();
+        await db.InsertAsync(new UserInfo
+        {
+            UserId = userId,
+            UserName = Input.UserName,
+        });
+        
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
         var callbackUrl = NavigationManager.GetUriWithQueryParameters(
@@ -109,9 +123,12 @@
                 "Account/RegisterConfirmation",
                 new() { ["email"] = Input.Email, ["returnUrl"] = ReturnUrl });
         }
-
-        await SignInManager.SignInAsync(user, isPersistent: false);
-        RedirectManager.RedirectTo(ReturnUrl);
+        else
+        {
+            await SignInManager.SignInAsync(user, isPersistent: false);
+        
+            RedirectManager.RedirectTo(ReturnUrl);
+        }
     }
 
     private ApplicationUser CreateUser()

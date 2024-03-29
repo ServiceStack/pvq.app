@@ -1,6 +1,7 @@
 ﻿@inherits AppAuthComponentBase
 @implements IDisposable
 @inject NavigationManager NavigationManager
+@inject AppConfig AppConfig
 
 <header class="border-b border-gray-200 dark:border-gray-800 pr-3">
     <div class="flex flex-wrap items-center">
@@ -45,11 +46,15 @@
                                     <div>
                                         <NavLink href="Account/Manage"
                                             class="max-w-xs bg-white dark:bg-black rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 lg:p-2 lg:rounded-md lg:hover:bg-gray-50 dark:lg:hover:bg-gray-900 dark:ring-offset-black" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
-                                            <img id="user-avatar" class="h-8 w-8 rounded-full" src="/avatar/@User.GetDisplayName()" alt="">
                                             <span class="hidden ml-3 text-gray-700 dark:text-gray-300 text-sm font-medium lg:block">
                                                 <span class="sr-only">Open user menu for </span>
                                                 @User.GetDisplayName()
                                             </span>
+                                            <img id="user-avatar" class="ml-1 h-8 w-8 rounded-full" src="/avatar/@User.GetDisplayName()" alt="">
+                                            <div class="flex items-center" data-rep=@AppConfig.GetReputation(User.GetDisplayName())>
+                                                <b class="px-1 text-2xl text-yellow-500">&bull;</b>
+                                                <span class="text-sm">@AppConfig.GetReputation(User.GetDisplayName())</span>
+                                            </div>
                                         </NavLink>
                                     </div>
                                 </div>

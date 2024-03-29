@@ -11,6 +11,7 @@ function getComments(id) {
     if (!meta) return []
     return meta.comments && meta.comments[id] || []
 }
+const signInUrl = () => `/Account/Login?ReturnUrl=${location.pathname}`
 
 const svgPaths = {
     up: {
@@ -98,7 +99,17 @@ const AddComment = {
         <div v-if="editing" class="mt-4 flex h-[5rem] w-full">
             <div class="w-full">
                 <div v-if="error" class="text-sm pb-2 text-red-500">{{error}}</div>
-                <textarea class="w-full flex-grow" @keydown="keyDown" v-model="txt"></textarea>
+                <div class="w-full flex-grow relative">
+                    <button type="button" @click="close" title="Discard comment"
+                            :class="['absolute top-1 right-1 bg-white dark:bg-black','rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:ring-offset-black']">
+                      <span class="sr-only">Close</span>
+                      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                           aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                    <textarea class="w-full" @keydown="keyDown" v-model="txt"></textarea>
+                </div>
             </div>
             <div class="pl-2">
                 <PrimaryButton class="whitespace-nowrap" @click="submit" :disabled="txt.length<15 || !client.loading">Add Comment</PrimaryButton>
@@ -135,8 +146,13 @@ const AddComment = {
                 e.preventDefault()
                 return false
             } else if (e.key === 'Escape') {
-                editing.value = false
+                close()
             }
+        }
+        
+        function close() {
+            editing.value = false
+            txt.value = ''
         }
         
         async function submit() {
@@ -150,7 +166,7 @@ const AddComment = {
             }
         }
         
-        return { txt, editing, comments, keyDown, submit, formatDate, client, error  }
+        return { txt, editing, comments, keyDown, formatDate, client, error, submit, close  }
     }
 }
 
@@ -159,10 +175,11 @@ const EditQuestion = {
     <div v-if="editing">
         <div v-if="user?.userName">
             <div v-if="request.body">
+                <Alert class="mb-2" v-if="!canUpdate">You need at least 10 reputation to Edit other User's Questions.</Alert>
                 <AutoForm ref="autoform" type="UpdateQuestion" v-model="request" header-class="" submit-label="Update Question" 
                     :configureField="configureField" @success="onSuccess">
                     <template #heading>
-                        <div class="pt-4 px-6 flex justify-between">
+                        <div class="pt-4 pb-2 px-6 flex justify-between">
                             <h3 class="text-2xl font-semibold">Edit Question</h3>
                             <div>
                                 <img class="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-contain" :src="'/avatar/' + user.userName" :alt="user.userName">
@@ -205,7 +222,7 @@ const EditQuestion = {
         </div>
     </div>
     `,
-    props:['id','previewHtml','bus'],
+    props:['id','createdBy','previewHtml','bus'],
     setup(props) {
         const { formatDate } = useFormatters()
         const { user } = useAuth()
@@ -219,6 +236,8 @@ const EditQuestion = {
         const previewHtml = ref(props.previewHtml || '')
         const savedHtml = ref(props.previewHtml || '')
         let allTags = localStorage.getItem('data:tags.txt')?.split('\n') || []
+        const rep = document.querySelector('[data-rep]')?.dataset?.rep || 1
+        const canUpdate = computed(() => rep.value >= 10 || props.createdBy === user.value?.userName)
 
         const { createDebounce } = useUtils()
         let lastBody = ''
@@ -274,7 +293,7 @@ const EditQuestion = {
             }
         }
 
-        return { user, request, previewHtml, savedHtml, autoform, editing, expandPreview, configureField, onSuccess, close, formatDate }
+        return { user, canUpdate, request, previewHtml, savedHtml, autoform, editing, expandPreview, configureField, onSuccess, close, formatDate }
     }
 }
 
@@ -285,7 +304,7 @@ async function loadEditQuestion(ctx) {
     if (!el) return
 
     const id = el.id
-    const answer = el,
+    const question = el,
         editLink = el.querySelector('.edit-link'),
         edit = el.querySelector('.edit'),
         title = el.querySelector('h1 span'),
@@ -308,12 +327,12 @@ async function loadEditQuestion(ctx) {
     async function toggleEdit(editMode) {
         if (editMode) {
             if (!alreadyMounted(edit)) {
-                mount(edit, EditQuestion, { id:postId, previewHtml, bus })
+                mount(edit, EditQuestion, { id:postId, createdBy:question.dataset.createdby, previewHtml, bus })
             }
             preview.classList.add('hidden')
             preview.innerHTML = ''
             edit.classList.remove('hidden')
-            answer.scrollIntoView({ behavior: 'smooth' })
+            question.scrollIntoView({ behavior: 'smooth' })
             editLink.innerHTML = 'close'
             footer.classList.add('hidden')
         } else {
@@ -325,15 +344,23 @@ async function loadEditQuestion(ctx) {
 
     on(editLink, {
         click() {
-            toggleEdit(!showEdit)
+            if (!userName) {
+                location.href = signInUrl()
+            } else {
+                toggleEdit(!showEdit)
+            }
         }
     })
 
     on(addCommentLink, {
         click() {
-            addCommentLink.classList.add('hidden')
-            comments.innerHTML = ''
-            mount(comments, AddComment, { id:postId, bus })
+            if (!userName) {
+                location.href = signInUrl()
+            } else {
+                addCommentLink.classList.add('hidden')
+                comments.innerHTML = ''
+                mount(comments, AddComment, { id:postId, bus })
+            }
         }
     })
 }
@@ -343,9 +370,10 @@ const EditAnswer = {
     <div v-if="editing">
         <div v-if="user?.userName">
             <div v-if="request.body">
+                <Alert class="mb-2" v-if="!canUpdate">You need at least 100 reputation to Edit other User's Answers.</Alert>
                 <AutoForm ref="autoform" type="UpdateAnswer" v-model="request" header-class="" submit-label="Update Answer" @success="onSuccess">
                     <template #heading>
-                        <div class="pt-4 px-6 flex justify-between">
+                        <div class="pt-4 pb-2 px-6 flex justify-between">
                             <h3 class="text-2xl font-semibold">Edit Answer</h3>
                             <div>
                                 <img class="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-contain" :src="'/avatar/' + user.userName" :alt="user.userName">
@@ -384,10 +412,12 @@ const EditAnswer = {
     </div>
     <div v-else v-html="savedHtml" class="xl:flex-grow prose"></div>
     `,
-    props:['id','previewHtml','bus'],
+    props:['id','createdBy','previewHtml','bus'],
     setup(props) {
 
         const { user } = useAuth()
+        const rep = document.querySelector('[data-rep]')?.dataset?.rep || 1
+        const canUpdate = computed(() => rep.value >= 100 || props.createdBy === user.value?.userName)
         const client = useClient()
         const autoform = ref()
         const editing = ref(true)
@@ -436,9 +466,7 @@ const EditAnswer = {
             props.bus.publish('close')
         }
 
-        const signInUrl = () => `/Account/Login?ReturnUrl=${location.pathname}`
-
-        return { editing, user, request, previewHtml, savedHtml, autoform, expandPreview, signInUrl, onSuccess, close }
+        return { editing, user, canUpdate, request, previewHtml, savedHtml, autoform, expandPreview, signInUrl, onSuccess, close }
     }
 }
 
@@ -446,9 +474,7 @@ async function loadEditAnswers(ctx) {
     const { client, postId, userName, user, hasRole } = ctx
     
     const isModerator = hasRole('Moderator')
-    const sel = isModerator
-        ? `[data-answer]`
-        : `[data-answer='${postId}-${userName}']`
+    const sel = `[data-answer]`
     
     $$(sel).forEach(el => {
         const id = el.id
@@ -471,7 +497,7 @@ async function loadEditAnswers(ctx) {
         async function toggleEdit(editMode) {
             if (editMode) {
                 if (!alreadyMounted(edit)) {
-                    mount(edit, EditAnswer, { id:answerId, previewHtml, bus })
+                    mount(edit, EditAnswer, { id:answerId, createdBy:answer.dataset.createdby, previewHtml, bus })
                 }
                 preview.classList.add('hidden')
                 preview.innerHTML = ''
@@ -488,14 +514,22 @@ async function loadEditAnswers(ctx) {
 
         on(editLink, {
             click() {
-                toggleEdit(!showEdit)
+                if (!userName) {
+                    location.href = signInUrl()
+                } else {
+                    toggleEdit(!showEdit)
+                }
             }
         })
 
         on(addCommentLink, {
             click() {
-                addCommentLink.classList.add('hidden')
-                mount(comments, AddComment, { id:postId, bus })
+                if (!userName) {
+                    location.href = signInUrl()
+                } else {
+                    addCommentLink.classList.add('hidden')
+                    mount(comments, AddComment, { id:answerId, bus })
+                }
             }
         })
 
