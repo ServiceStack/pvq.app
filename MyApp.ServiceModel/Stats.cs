@@ -48,7 +48,7 @@ public class StatTotals
 
     private sealed class StatTotalsEqualityComparer : IEqualityComparer<StatTotals>
     {
-        public bool Equals(StatTotals x, StatTotals y)
+        public bool Equals(StatTotals? x, StatTotals? y)
         {
             if (ReferenceEquals(x, y)) return true;
             if (ReferenceEquals(x, null)) return false;

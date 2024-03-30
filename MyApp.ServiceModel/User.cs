@@ -50,3 +50,11 @@ public class UserInfo
     public int ReportsReceived { get; set; } // Questions, Answers & Comments with Reports
     public DateTime? LastActivityDate { get; set; }
 }
+
+public class CreateAvatar : IGet, IReturn<string>
+{
+    [ValidateNotEmpty]
+    public string UserName { get; set; }
+    public string? TextColor { get; set; }
+    public string? BgColor { get; set; }
+}

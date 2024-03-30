@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.Formats.Png;
 
 namespace MyApp.ServiceInterface;
 
-public class UserServices(R2VirtualFiles r2) : Service
+public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Service
 {
     private const string AppData = "/App_Data";
     
@@ -60,7 +60,8 @@ public class UserServices(R2VirtualFiles r2) : Service
             {
                 if (profilePath.StartsWith("data:"))
                 {
-                    return new HttpResult(profilePath, MimeTypes.ImageSvg);
+                    var svg = imageCreator.DataUriToSvg(profilePath);
+                    return new HttpResult(svg, MimeTypes.ImageSvg);
                 }
                 if (profilePath.StartsWith('/'))
                 {
@@ -113,5 +114,12 @@ public class UserServices(R2VirtualFiles r2) : Service
                 Score = score,
             }
         });
+    }
+
+    public object Any(CreateAvatar request)
+    {
+        var letter = char.ToUpper(request.UserName[0]);
+        var svg = imageCreator.CreateSvg(letter, request.BgColor, request.TextColor);
+        return new HttpResult(svg, MimeTypes.ImageSvg);
     }
 }

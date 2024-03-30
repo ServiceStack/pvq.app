@@ -81,7 +81,8 @@ async function loadVoting(ctx) {
                 setValue(refId, prevValue)
                 updateVote(el)
             } else {
-                setTimeout(() => loadUserReputations(ctx), 2000)
+                loadUserReputations(ctx)
+                setTimeout(() => loadUserReputations(ctx), 5000)
             }
         }
 
@@ -625,7 +626,7 @@ async function loadUserReputations(ctx) {
             const results = api.response.results
             Object.keys(api.response.results).forEach(userName => {
                 $$(`[data-rep-user="${userName}"]`).forEach(el => {
-                    console.log('updating rep', userName, results[userName])
+                    // console.log('updating rep', userName, results[userName])
                     el.innerHTML = results[userName] || 1
                 })
             })

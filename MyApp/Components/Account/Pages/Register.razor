@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using MyApp.Data
+@using MyApp.ServiceInterface
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
@@ -15,6 +16,7 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 @inject IDbConnectionFactory DbFactory
+@inject ImageCreator ImageCreator
 
 <PageTitle>Register</PageTitle>
 
@@ -85,6 +87,7 @@
         var user = CreateUser();
         user.LastLoginIp = HttpContext.GetRemoteIp();
         user.LastLoginDate = DateTime.UtcNow;
+        user.ProfilePath = ImageCreator.CreateSvgDataUri(char.ToUpper(Input.UserName[0]));
 
         await UserStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
         var emailStore = GetEmailStore();

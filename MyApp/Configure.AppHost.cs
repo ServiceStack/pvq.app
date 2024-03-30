@@ -18,6 +18,8 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             // Configure ASP.NET Core IOC Dependencies
             context.Configuration.GetSection(nameof(AppConfig)).Bind(AppConfig.Instance);
             services.AddSingleton(AppConfig.Instance);
+
+            services.AddSingleton<ImageCreator>();
             
             var r2AccountId = context.Configuration.GetValue("R2AccountId", Environment.GetEnvironmentVariable("R2_ACCOUNT_ID"));
             var r2AccessId = context.Configuration.GetValue("R2AccessKeyId", Environment.GetEnvironmentVariable("R2_ACCESS_KEY_ID"));
