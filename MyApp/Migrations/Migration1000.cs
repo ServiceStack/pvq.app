@@ -122,8 +122,35 @@ public class Migration1000 : MigrationBase
         public DateTime? LastActivityDate { get; set; }
     }
 
+    [EnumAsInt]
+    public enum NotificationType {}
+
+    public class Notification
+    {
+        [AutoIncrement]
+        public int Id { get; set; }
+    
+        [Index]
+        public string UserName { get; set; }
+    
+        public NotificationType Type { get; set; }
+    
+        public int PostId { get; set; }
+    
+        public string RefId { get; set; }
+    
+        public string Summary { get; set; }
+    
+        public string Href { get; set; }
+    
+        public DateTime CreatedDate { get; set; }
+    
+        public bool Read { get; set; }
+    }
+
     public override void Up()
     {
+        Db.CreateTable<Notification>();
         Db.CreateTable<UserInfo>();
         Db.CreateTable<Vote>();
         Db.CreateTable<Job>();
@@ -142,5 +169,6 @@ public class Migration1000 : MigrationBase
         Db.DropTable<Job>();
         Db.DropTable<Vote>();
         Db.DropTable<UserInfo>();
+        Db.DropTable<Notification>();
     }
 }

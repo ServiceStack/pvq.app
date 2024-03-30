@@ -445,3 +445,35 @@ public class GetUserReputationsResponse
     public Dictionary<string, int> Results { get; set; } = [];
     public ResponseStatus? ResponseStatus { get; set; }
 }
+
+[EnumAsInt]
+public enum NotificationType
+{
+    NewComment,
+    NewAnswer,
+    CommentMention,
+    AnswerMention,
+}
+
+public class Notification
+{
+    [AutoIncrement]
+    public int Id { get; set; }
+    
+    [Index]
+    public string UserName { get; set; }
+    
+    public NotificationType Type { get; set; }
+    
+    public int PostId { get; set; }
+    
+    public string RefId { get; set; }
+    
+    public string Summary { get; set; }
+    
+    public string Href { get; set; }
+    
+    public DateTime CreatedDate { get; set; }
+    
+    public bool Read { get; set; }
+}
