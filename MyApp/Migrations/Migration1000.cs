@@ -27,27 +27,28 @@ public class Migration1000 : MigrationBase
         /// </summary>
         public int Score { get; set; }
     }
-    
+
     public class StatTotals
     {
         // PostId (Question) or PostId-UserName (Answer)
         public required string Id { get; set; }
-    
-        [Index]
-        public int PostId { get; set; }
-    
+
+        [Index] public int PostId { get; set; }
+
+        [Index] public string? CreatedBy { get; set; }
+
         public int FavoriteCount { get; set; }
-    
+
         // post.ViewCount + Sum(PostView.PostId)
         public int ViewCount { get; set; }
-    
-        // post.Score + Sum(Vote(PostId).Score > 0) 
+
+        // Sum(Vote(PostId).Score > 0) 
         public int UpVotes { get; set; }
-    
+
         // Sum(Vote(PostId).Score < 0) 
         public int DownVotes { get; set; }
-    
-        // Model Ranking Score Meta.ModelVotes[PostId]
+
+        // post.Score || Meta.ModelVotes[PostId] (Model Ranking Score)
         public int StartingUpVotes { get; set; }
     }
 

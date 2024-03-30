@@ -27,6 +27,9 @@ public class StatTotals
     [Index]
     public int PostId { get; set; }
     
+    [Index]
+    public string? CreatedBy { get; set; }
+    
     public int FavoriteCount { get; set; }
     
     // post.ViewCount + Sum(PostView.PostId)
