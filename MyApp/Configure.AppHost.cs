@@ -39,7 +39,6 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
 #endif
             services.AddSingleton(c => new QuestionsProvider(
                 c.GetRequiredService<ILogger<QuestionsProvider>>(),
-                c.GetRequiredService<IMessageProducer>(),
                 new FileSystemVirtualFiles(questionsDir),
                 appFs));
 

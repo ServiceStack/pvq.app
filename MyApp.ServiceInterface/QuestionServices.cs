@@ -55,7 +55,7 @@ public class QuestionServices(AppConfig appConfig,
         MessageProducer.Publish(new DbWrites
         {
             CreatePost = dbPost,
-            CreatePostJobs = questions.GetAnswerModelsFor(userName)
+            CreatePostJobs = appConfig.GetAnswerModelsFor(userName)
                 .Select(model => new PostJob
                 {
                     PostId = post.Id,

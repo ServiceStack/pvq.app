@@ -59,6 +59,11 @@ public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelW
         if (request.CreatePost != null)
         {
             await Db.InsertAsync(request.CreatePost);
+            var createdBy = request.CreatePost.CreatedBy;
+            if (createdBy != null && request.CreatePost.PostTypeId == 1)
+            {
+                await appConfig.ResetUserQuestionsAsync(Db, createdBy);
+            }
         }
 
         if (request.UpdatePost != null)

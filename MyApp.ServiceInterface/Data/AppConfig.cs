@@ -15,22 +15,30 @@ public class AppConfig
     public string ProfilesDir { get; set; }
     public string? GitPagesBaseUrl { get; set; }
     public ConcurrentDictionary<string,int> UsersReputation { get; set; } = new();
+    public ConcurrentDictionary<string,int> UsersQuestions { get; set; } = new();
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
     public (string Model, int Questions)[] ModelsForQuestions =
     [
+#if DEBUG
         ("phi", 0),
-        ("gemma-2b", 0),
-        ("qwen-4b", 0),
+        ("gemma:2b", 0),
+        ("gemma", 3),
+        ("mixtral", 10),
+#else
+        ("phi", 0),
+        ("gemma:2b", 0),
+        ("qwen:4b", 0),
         ("codellama", 0),
-        ("deepseek-coder", 0),
+        ("deepseek-coder:6.7b", 0),
         ("mistral", 0),
         ("gemma", 3),
         ("mixtral", 10),
         // ("gpt4-turbo", 30),
         // ("gemini-pro", 50),
         // ("claude-opus", 100),
+#endif
     ];
 
     public int[] QuestionLevels = [0, 3, 10]; //, 30, 50, 100
@@ -46,6 +54,12 @@ public class AppConfig
     {
         var user = ModelUsers.FirstOrDefault(x => x.Model == model || x.UserName == model);
         return user ?? DefaultUser;
+    }
+    
+    public ApplicationUser? GetModelUser(string model)
+    {
+        var user = ModelUsers.Find(x => x.Model == model || x.UserName == model);
+        return user;
     }
     
     public string GetUserName(string model)
@@ -64,6 +78,11 @@ public class AppConfig
             ? 1 
             : reputation;
 
+    public int GetQuestionCount(string? userName) => 
+        userName == null || !UsersQuestions.TryGetValue(userName, out var count) 
+            ? 0 
+            : count;
+
     public void Init(IDbConnection db)
     {
         ModelUsers = db.Select(db.From<ApplicationUser>().Where(x => x.Model != null
@@ -72,7 +91,10 @@ public class AppConfig
         ResetInitialPostId(db);
 
         UpdateUsersReputation(db);
+        UpdateUsersQuestions(db);
+        
         ResetUsersReputation(db);
+        ResetUsersQuestions(db);
     }
 
     public void UpdateUsersReputation(IDbConnection db)
@@ -90,10 +112,11 @@ public class AppConfig
           where UserName = UserScores.CreatedBy");
     }
 
-    public void ResetUsersReputation(IDbConnection db)
+    public void UpdateUsersQuestions(IDbConnection db)
     {
-        UsersReputation = new(db.Dictionary<string, int>(db.From<UserInfo>()
-            .Select(x => new { x.UserName, x.Reputation })));
+        db.ExecuteNonQuery(@"update UserInfo set QuestionsCount = UserQuestions.total
+            from (select createdBy, count(*) as total from post where CreatedBy is not null group by 1) as UserQuestions
+          where UserName = UserQuestions.CreatedBy");
     }
 
     public void ResetInitialPostId(IDbConnection db)
@@ -101,4 +124,34 @@ public class AppConfig
         var maxPostId = db.Scalar<int>("SELECT MAX(Id) FROM Post");
         SetInitialPostId(Math.Max(100_000_000, maxPostId));
     }
+
+    public void ResetUsersReputation(IDbConnection db)
+    {
+        UsersReputation = new(db.Dictionary<string, int>(db.From<UserInfo>()
+            .Select(x => new { x.UserName, x.Reputation })));
+    }
+
+    public void ResetUsersQuestions(IDbConnection db)
+    {
+        UsersQuestions = new(db.Dictionary<string, int>(db.From<UserInfo>()
+            .Select(x => new { x.UserName, x.QuestionsCount })));
+    }
+
+    public async Task ResetUserQuestionsAsync(IDbConnection db, string userName)
+    {
+        var questionsCount = (int)await db.CountAsync<Post>(x => x.CreatedBy == userName);
+        UsersQuestions[userName] = questionsCount;
+        await db.UpdateOnlyAsync(() => 
+            new UserInfo { QuestionsCount = questionsCount }, x => x.UserName == userName);
+    }
+    
+    public List<string> GetAnswerModelsFor(string? userName)
+    {
+        var questionsCount = GetQuestionCount(userName);
+        var models = ModelsForQuestions.Where(x => x.Questions <= questionsCount)
+            .Select(x => x.Model)
+            .ToList();
+        return models;
+    }
+
 }

@@ -154,18 +154,22 @@ public class Migration1000 : MigrationBase
         Db.CreateTable<UserInfo>();
         Db.CreateTable<Vote>();
         Db.CreateTable<Job>();
-        Db.CreateTable<StatTotals>();
+        // Db.CreateTable<StatTotals>();
         Db.CreateTable<PostJob>();
         
         Db.ExecuteSql("INSERT INTO UserInfo (UserId, UserName) SELECT Id, UserName FROM AspNetUsers");
+        Db.ExecuteSql("ALTER TABLE StatTotals ADD COLUMN CreatedBy TEXT NULL");
+        Db.ExecuteSql("CREATE INDEX idx_createdby ON StatTotals (CreatedBy)");
     }
 
     public override void Down()
     {
         Db.DeleteAll<UserInfo>();
+        Db.ExecuteSql("ALTER TABLE StatTotals DROP COLUMN CreatedBy");
+        Db.ExecuteSql("DROP INDEX IF EXISTS StatTotals.idx_createdby");
         
         Db.DropTable<PostJob>();
-        Db.DropTable<StatTotals>();
+        // Db.DropTable<StatTotals>();
         Db.DropTable<Job>();
         Db.DropTable<Vote>();
         Db.DropTable<UserInfo>();

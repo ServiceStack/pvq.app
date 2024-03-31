@@ -2,12 +2,11 @@
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.IO;
-using ServiceStack.Messaging;
 using ServiceStack.Text;
 
 namespace MyApp.Data;
 
-public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer mqClient, IVirtualFiles fs, R2VirtualFiles r2)
+public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs, R2VirtualFiles r2)
 {
     public const int MostVotedScore = 10;
     public const int AcceptedScore = 9;
@@ -27,15 +26,6 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IMessageProducer 
         ["accepted"] = 9,
         ["most-voted"] = 10,
     };
-
-    public List<string> GetAnswerModelsFor(string? userName)
-    {
-#if DEBUG
-        return ["phi", "gemma:2b", "gemma", "mixtral"];
-#else
-        return ["phi", "gemma:2b", "qwen:4b", "codellama", "gemma", "deepseek-coder:6.7b", "mistral", "mixtral"];
-#endif
-    }
 
     public System.Text.Json.JsonSerializerOptions SystemJsonOptions = new(TextConfig.SystemJsonOptions)
     {

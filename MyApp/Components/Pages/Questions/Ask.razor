@@ -11,16 +11,30 @@
                 </h1>
             </div>
         </div>
-        <div class="sm:w-[56rem]" data-component="pages/Questions/Ask.mjs"></div>
+        @if (HttpContext.GetUserName() != null)
+        {
+            <div class="sm:w-[56rem]" data-component="pages/Questions/Ask.mjs"></div>
+        }
+        else
+        {
+            <p class="text-xl font-semibold">
+                Sign In to Ask Questions
+            </p>
+            <NavLink class=@CssUtils.ClassNames(PrimaryButton.Classes(ButtonStyle.Green), "mt-2") href="Account/Login?ReturnUrl=/questions/ask">Sign In</NavLink>
+        }
     </div>
     <div>
 
         <div class="w-76 ml-8 pt-4 pb-12">
             <div>
                 @{
-                    var totalQuestions = 2;
+                    var totalQuestions = AppConfig.GetQuestionCount(HttpContext.GetUserName());
+                    var questions = "question" + (totalQuestions == 1 ? "" : "s");
                 }
-                <p class="my-4 font-semibold text-gray-500">Total questions asked: @totalQuestions</p>
+                <p class="my-4 text-lg text-gray-500 text-right">
+                    <span class="font-semibold">@totalQuestions</span>
+                    @questions asked
+                </p>
         
                 <div class="flex">
                     <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -31,10 +45,11 @@
                 <p class="my-2 text-sm text-gray-500">ask more questions to unlock new assistants</p>
                 @foreach (var questionLevel in AppConfig.QuestionLevels)
                 {
+                    var qualified = totalQuestions >= questionLevel; 
                     @if (questionLevel > 0)
                     {
                         <p class="my-4 text-center font-semibold text-gray-500">
-                            @if (totalQuestions > questionLevel)
+                            @if (qualified)
                             {
                                 <text>
                                     @questionLevel or more questions
@@ -42,23 +57,22 @@
                             }
                             else
                             {
-                                <text>@(questionLevel - totalQuestions) more question@(questionLevel - totalQuestions == 1 ? "" : "s") to go</text>
+                                <text>@(questionLevel - totalQuestions) more @questions to go</text>
                             }
                         </p>
                     }
                     
-                    @if (totalQuestions > questionLevel)
+                    @if (qualified)
                     {
                         <svg class="mt-2 mr-2 w-6 h-6 text-green-600 float-right" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                             <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2M9.29 16.29L5.7 12.7a.996.996 0 1 1 1.41-1.41L10 14.17l6.88-6.88a.996.996 0 1 1 1.41 1.41l-7.59 7.59a.996.996 0 0 1-1.41 0"/>
                         </svg>                    
                     }
 
-                    <ul role="list" class=@CssUtils.ClassNames("border-2 py-2 px-4 rounded", 
-                        totalQuestions > questionLevel ? "border-green-600" : "border-gray-200")>
+                    <ul role="list" class=@CssUtils.ClassNames("border-2 py-2 px-4 rounded", qualified ? "border-green-600" : "border-gray-200")>
                         @foreach (var model in AppConfig.ModelsForQuestions.Where(x => x.Questions == questionLevel))
                         {
-                            var assistant = AppConfig.ModelUsers.Find(x => x.UserName == model.Model)!;
+                            var assistant = AppConfig.GetModelUser(model.Model)!;
                             <li class="mb-2">
                                 <div class="flex items-center gap-x-4">
                                     <img class="h-10 w-10" src="/avatar/@assistant.UserName" alt="">
@@ -78,5 +92,8 @@
 </div>
 
 @code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
     string Title => "Ask a Question";
 }

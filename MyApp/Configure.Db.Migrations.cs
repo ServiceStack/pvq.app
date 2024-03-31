@@ -139,7 +139,7 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "qwen-4b",
             Email = "qwen@email.com",
-            DisplayName = "Qwen 1.5",
+            DisplayName = "Qwen 1.5 4B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/qw/qwen-4b/qwen-4b.svg",
             Model = "qwen:4b", //4B
@@ -162,14 +162,14 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "Gemma 7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemma/gemma.svg",
-            Model = "gemma", //9B
+            Model = "gemma", //7B
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "deepseek-coder",
             Email = "deepseek-coder@email.com",
-            DisplayName = "DeepSeek Coder 6.7b",
+            DisplayName = "DeepSeek Coder 6.7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/de/deepseek-coder/deepseek-coder.jpg",
             Model = "deepseek-coder:6.7b", //16B
