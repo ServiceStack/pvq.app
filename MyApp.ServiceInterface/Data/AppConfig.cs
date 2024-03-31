@@ -19,13 +19,17 @@ public class AppConfig
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
-    public (string Model, int Questions)[] ModelsForQuestions =
+    public static (string Model, int Questions)[] ModelsForQuestions =
     [
 #if DEBUG
         ("phi", 0),
         ("gemma:2b", 0),
         ("gemma", 3),
         ("mixtral", 10),
+        ("gemini-pro", 20),
+        ("claude-3-sonnet-20240229", 50),
+        ("gpt-4-turbo-preview", 50),
+        ("claude-3-opus-20240229", 100),
 #else
         ("phi", 0),
         ("gemma:2b", 0),
@@ -35,13 +39,14 @@ public class AppConfig
         ("mistral", 0),
         ("gemma", 3),
         ("mixtral", 10),
-        // ("gpt4-turbo", 30),
-        // ("gemini-pro", 50),
-        // ("claude-opus", 100),
+        // ("gemini-pro", 20),
+        // ("claude-3-sonnet-20240229", 50),
+        // ("gpt-4-turbo-preview", 50),
+        // ("claude-3-opus-20240229", 100),
 #endif
     ];
 
-    public int[] QuestionLevels = [0, 3, 10]; //, 30, 50, 100
+    public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
     
     public ApplicationUser DefaultUser { get; set; } = new()
     {

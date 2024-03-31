@@ -45,7 +45,7 @@
                 <p class="my-2 text-sm text-gray-500">ask more questions to unlock new assistants</p>
                 @foreach (var questionLevel in AppConfig.QuestionLevels)
                 {
-                    var qualified = totalQuestions >= questionLevel; 
+                    var qualified = totalQuestions >= questionLevel || HttpContext.User.HasRole(Roles.Moderator); 
                     @if (questionLevel > 0)
                     {
                         <p class="my-4 text-center font-semibold text-gray-500">

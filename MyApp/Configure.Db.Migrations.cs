@@ -197,6 +197,46 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "gemini-pro",
+            Email = "gemini-pro@email.com",
+            DisplayName = "Gemini Pro",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ge/gemini-pro/gemini-pro.svg",
+            Model = "gemini-pro",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "gpt4-turbo",
+            Email = "gpt4-turbo@email.com",
+            DisplayName = "GPT-4 Turbo",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/gp/gpt4-turbo/gpt4-turbo.svg",
+            Model = "gpt-4-turbo-preview",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "claude-3-sonnet",
+            Email = "claude-3-sonnet@email.com",
+            DisplayName = "Claude 3 Sonnet",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/cl/claude-3-sonnet/claude-3-sonnet.svg",
+            Model = "claude-3-sonnet-20240229",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "claude-3-opus",
+            Email = "claude-3-opus@email.com",
+            DisplayName = "Claude 3 Opus",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/cl/claude-3-opus/claude-3-opus.svg",
+            Model = "claude-3-opus-20240229",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "servicestack",
             Email = "team@servicestack.net",
             DisplayName = "ServiceStack",
