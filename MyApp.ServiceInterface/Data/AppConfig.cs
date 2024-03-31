@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Data;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using MyApp.ServiceModel;
 using ServiceStack.OrmLite;
 
@@ -16,6 +17,24 @@ public class AppConfig
     public ConcurrentDictionary<string,int> UsersReputation { get; set; } = new();
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
+
+    public (string Model, int Questions)[] ModelsForQuestions =
+    [
+        ("phi", 0),
+        ("gemma-2b", 0),
+        ("qwen-4b", 0),
+        ("codellama", 0),
+        ("deepseek-coder", 0),
+        ("mistral", 0),
+        ("gemma", 3),
+        ("mixtral", 10),
+        // ("gpt4-turbo", 30),
+        // ("gemini-pro", 50),
+        // ("claude-opus", 100),
+    ];
+
+    public int[] QuestionLevels = [0, 3, 10]; //, 30, 50, 100
+    
     public ApplicationUser DefaultUser { get; set; } = new()
     {
         Model = "unknown",
@@ -58,7 +77,7 @@ public class AppConfig
 
     public void UpdateUsersReputation(IDbConnection db)
     {
-        db.ExecuteNonQueryAsync(@"update UserInfo set Reputation = UserScores.total
+        db.ExecuteNonQuery(@"update UserInfo set Reputation = UserScores.total
             from (select createdBy, sum(count) as total from
                 (select createdBy, count(*) as count from post where CreatedBy is not null group by 1
                 union

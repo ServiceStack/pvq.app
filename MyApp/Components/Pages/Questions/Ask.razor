@@ -1,4 +1,5 @@
 ﻿@page "/questions/ask"
+@inject AppConfig AppConfig
 
 <PageTitle>@Title</PageTitle>
 <div class="sm:flex flex-wrap justify-center px-2">
@@ -12,7 +13,68 @@
         </div>
         <div class="sm:w-[56rem]" data-component="pages/Questions/Ask.mjs"></div>
     </div>
-    <Aside/>
+    <div>
+
+        <div class="w-76 ml-8 pt-4 pb-12">
+            <div>
+                @{
+                    var totalQuestions = 2;
+                }
+                <p class="my-4 font-semibold text-gray-500">Total questions asked: @totalQuestions</p>
+        
+                <div class="flex">
+                    <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M5.455 15L1 18.5V3a1 1 0 0 1 1-1h15a1 1 0 0 1 1 1v12zm-.692-2H16V4H3v10.385zM8 17h10.237L20 18.385V8h1a1 1 0 0 1 1 1v13.5L17.546 19H9a1 1 0 0 1-1-1z"/>
+                    </svg>
+                    <h3 class="ml-2 text-2xl font-semibold">AI Assistants</h3>
+                </div>
+                <p class="my-2 text-sm text-gray-500">ask more questions to unlock new assistants</p>
+                @foreach (var questionLevel in AppConfig.QuestionLevels)
+                {
+                    @if (questionLevel > 0)
+                    {
+                        <p class="my-4 text-center font-semibold text-gray-500">
+                            @if (totalQuestions > questionLevel)
+                            {
+                                <text>
+                                    @questionLevel or more questions
+                                </text>
+                            }
+                            else
+                            {
+                                <text>@(questionLevel - totalQuestions) more question@(questionLevel - totalQuestions == 1 ? "" : "s") to go</text>
+                            }
+                        </p>
+                    }
+                    
+                    @if (totalQuestions > questionLevel)
+                    {
+                        <svg class="mt-2 mr-2 w-6 h-6 text-green-600 float-right" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2M9.29 16.29L5.7 12.7a.996.996 0 1 1 1.41-1.41L10 14.17l6.88-6.88a.996.996 0 1 1 1.41 1.41l-7.59 7.59a.996.996 0 0 1-1.41 0"/>
+                        </svg>                    
+                    }
+
+                    <ul role="list" class=@CssUtils.ClassNames("border-2 py-2 px-4 rounded", 
+                        totalQuestions > questionLevel ? "border-green-600" : "border-gray-200")>
+                        @foreach (var model in AppConfig.ModelsForQuestions.Where(x => x.Questions == questionLevel))
+                        {
+                            var assistant = AppConfig.ModelUsers.Find(x => x.UserName == model.Model)!;
+                            <li class="mb-2">
+                                <div class="flex items-center gap-x-4">
+                                    <img class="h-10 w-10" src="/avatar/@assistant.UserName" alt="">
+                                    <div>
+                                        <h3 class="text-base font-semibold leading-6 tracking-tight text-gray-900 dark:text-gray-100">@assistant.UserName</h3>
+                                        <p class="text-sm font-semibold leading-5 text-indigo-600 dark:text-indigo-300">@assistant.DisplayName</p>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+    </div>
 </div>
 
 @code {
