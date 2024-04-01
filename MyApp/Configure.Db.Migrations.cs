@@ -222,7 +222,17 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "GPT-4 Turbo",
             EmailConfirmed = true,
             ProfilePath = "/profiles/gp/gpt4-turbo/gpt4-turbo.svg",
-            Model = "gpt-4-turbo-preview",
+            Model = "gpt-4-turbo",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "claude-3-haiku",
+            Email = "claude-3-haiku@email.com",
+            DisplayName = "Claude 3 Haiku",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/cl/claude-3-haiku/claude-3-haiku.svg",
+            Model = "claude-3-haiku",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -232,7 +242,7 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "Claude 3 Sonnet",
             EmailConfirmed = true,
             ProfilePath = "/profiles/cl/claude-3-sonnet/claude-3-sonnet.svg",
-            Model = "claude-3-sonnet-20240229",
+            Model = "claude-3-sonnet",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -242,7 +252,7 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "Claude 3 Opus",
             EmailConfirmed = true,
             ProfilePath = "/profiles/cl/claude-3-opus/claude-3-opus.svg",
-            Model = "claude-3-opus-20240229",
+            Model = "claude-3-opus",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
