@@ -27,8 +27,9 @@ public class AppConfig
         ("gemma", 3),
         ("mixtral", 5),
         ("gemini-pro", 10),
-        ("claude-3-sonnet-20240229", 25),
-        ("gpt-4-turbo-preview", 50),
+        ("deepseek-coder:33b", 25),
+        ("claude-3-sonnet-20240229", 50),
+        ("gpt-4-turbo-preview", 75),
         ("claude-3-opus-20240229", 100),
 #else
         ("phi", 0),
@@ -40,8 +41,9 @@ public class AppConfig
         ("gemma", 3),
         ("mixtral", 5),
         // ("gemini-pro", 10),
-        // ("claude-3-sonnet-20240229", 25),
-        // ("gpt-4-turbo-preview", 50),
+        // ("deepseek-coder:33b", 25),
+        // ("claude-3-sonnet-20240229", 50),
+        // ("gpt-4-turbo-preview", 75),
         // ("claude-3-opus-20240229", 100),
 #endif
     ];
