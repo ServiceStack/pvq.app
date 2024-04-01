@@ -28,30 +28,6 @@ public class Migration1000 : MigrationBase
         public int Score { get; set; }
     }
 
-    public class StatTotals
-    {
-        // PostId (Question) or PostId-UserName (Answer)
-        public required string Id { get; set; }
-
-        [Index] public int PostId { get; set; }
-
-        [Index] public string? CreatedBy { get; set; }
-
-        public int FavoriteCount { get; set; }
-
-        // post.ViewCount + Sum(PostView.PostId)
-        public int ViewCount { get; set; }
-
-        // Sum(Vote(PostId).Score > 0) 
-        public int UpVotes { get; set; }
-
-        // Sum(Vote(PostId).Score < 0) 
-        public int DownVotes { get; set; }
-
-        // post.Score || Meta.ModelVotes[PostId] (Model Ranking Score)
-        public int StartingUpVotes { get; set; }
-    }
-
     public class Job
     {
         [AutoIncrement]
@@ -154,22 +130,16 @@ public class Migration1000 : MigrationBase
         Db.CreateTable<UserInfo>();
         Db.CreateTable<Vote>();
         Db.CreateTable<Job>();
-        // Db.CreateTable<StatTotals>();
         Db.CreateTable<PostJob>();
         
         Db.ExecuteSql("INSERT INTO UserInfo (UserId, UserName) SELECT Id, UserName FROM AspNetUsers");
-        Db.ExecuteSql("ALTER TABLE StatTotals ADD COLUMN CreatedBy TEXT NULL");
-        Db.ExecuteSql("CREATE INDEX idx_createdby ON StatTotals (CreatedBy)");
     }
 
     public override void Down()
     {
         Db.DeleteAll<UserInfo>();
-        Db.ExecuteSql("ALTER TABLE StatTotals DROP COLUMN CreatedBy");
-        Db.ExecuteSql("DROP INDEX IF EXISTS StatTotals.idx_createdby");
         
         Db.DropTable<PostJob>();
-        // Db.DropTable<StatTotals>();
         Db.DropTable<Job>();
         Db.DropTable<Vote>();
         Db.DropTable<UserInfo>();
