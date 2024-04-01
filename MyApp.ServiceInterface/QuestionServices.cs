@@ -243,7 +243,7 @@ public class QuestionServices(AppConfig appConfig,
         }
     }
 
-    public async Task Any(CreateWorkerAnswer request)
+    public async Task<object> Any(CreateWorkerAnswer request)
     {
         var json = request.Json;
         if (string.IsNullOrEmpty(json))
@@ -275,6 +275,13 @@ public class QuestionServices(AppConfig appConfig,
         await questions.SaveModelAnswerAsync(request.PostId, request.Model, json);
         
         answerNotifier.NotifyNewAnswer(request.PostId, request.Model);
+        
+        return new IdResponse { Id = $"{request.PostId}" };
+    }
+
+    public async Task<object> Any(RankAnswers request)
+    {
+        return new IdResponse { Id = $"{request.PostId}" };
     }
 
     public async Task<object> Any(CreateComment request)
