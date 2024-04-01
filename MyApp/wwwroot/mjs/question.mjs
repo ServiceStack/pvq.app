@@ -289,7 +289,8 @@ const EditQuestion = {
     `,
     props:['id','createdBy','previewHtml','bus'],
     setup(props) {
-        const { user } = useAuth()
+        const { user, hasRole } = useAuth()
+        const isModerator = hasRole('Moderator')
         const client = useClient()
         const autoform = ref()
         const editing = ref(true)
@@ -301,7 +302,7 @@ const EditQuestion = {
         const savedHtml = ref(props.previewHtml || '')
         let allTags = localStorage.getItem('data:tags.txt')?.split('\n') || []
         const rep = document.querySelector('[data-rep]')?.dataset?.rep || 1
-        const canUpdate = computed(() => rep.value >= 10 || props.createdBy === user.value?.userName)
+        const canUpdate = computed(() => rep.value >= 10 || props.createdBy === user.value?.userName || isModerator)
 
         const { createDebounce } = useUtils()
         let lastBody = ''
@@ -485,7 +486,7 @@ const EditAnswer = {
         const { user, hasRole } = useAuth()
         const isModerator = hasRole('Moderator')
         const rep = document.querySelector('[data-rep]')?.dataset?.rep || 1
-        const canUpdate = computed(() => rep.value >= 100 || props.createdBy === user.value?.userName)
+        const canUpdate = computed(() => rep.value >= 100 || props.createdBy === user.value?.userName || isModerator)
         const client = useClient()
         const autoform = ref()
         const editing = ref(true)
