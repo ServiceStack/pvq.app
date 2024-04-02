@@ -2,6 +2,7 @@
 using MyApp.Data;
 using ServiceStack;
 using MyApp.ServiceModel;
+using ServiceStack.IO;
 using ServiceStack.OrmLite;
 using ServiceStack.Text;
 
@@ -23,6 +24,23 @@ public class QuestionServices(AppConfig appConfig,
             throw new ArgumentException("Maximum of 5 tags allowed", nameof(tags));
         return validTags;
     }
+    
+    public async Task<object> Get(GetAllAnswers request)
+    {
+        var question = await questions.GetQuestionAsync(request.Id);
+        var modelNames = question.Question?.Answers.Where(x => !string.IsNullOrEmpty(x.Model)).Select(x => x.Model).ToList();
+        var humanAnswers = question.Question?.Answers.Where(x => string.IsNullOrEmpty(x.Model)).Select(x => x.Id.SplitOnFirst("-")[1]).ToList();
+        modelNames?.AddRange(humanAnswers ?? []);
+        var answers = question
+            .GetAnswerFiles()
+            .ToList();
+
+        return new GetAllAnswersResponse
+        {
+            Answers = modelNames ?? new List<string>()
+        };
+    }
+    
 
     public async Task<object> Any(AskQuestion request)
     {
@@ -219,6 +237,16 @@ public class QuestionServices(AppConfig appConfig,
         
         return new HttpResult(json, MimeTypes.Json);
     }
+    
+    public async Task<object> Get(GetAnswerFile request)
+    {
+        var answerFile = await questions.GetAnswerFileAsync(request.Id);
+        if (answerFile == null)
+            throw HttpError.NotFound("Answer does not exist");
+
+        var json = await answerFile.ReadAllTextAsync();
+        return new HttpResult(json, MimeTypes.Json);
+    }
 
     public async Task<object> Any(GetAnswerBody request)
     {
@@ -241,6 +269,30 @@ public class QuestionServices(AppConfig appConfig,
             var answer = json.FromJson<Post>();
             return new HttpResult(answer.Body, MimeTypes.PlainText);
         }
+    }
+
+    /// <summary>
+    /// DEBUG
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    public async Task<object> Any(CreateRankingPostJob request)
+    {
+        MessageProducer.Publish(new DbWrites
+        {
+            CreatePostJobs = new List<PostJob>
+            {
+                new PostJob
+                {
+                    PostId = request.PostId,
+                    Model = "rank",
+                    Title = $"rank-{request.PostId}",
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = nameof(DbWrites),
+                }
+            }
+        });
+        return "{ \"success\": true }";
     }
 
     public async Task<object> Any(CreateWorkerAnswer request)
@@ -373,4 +425,35 @@ public class QuestionServices(AppConfig appConfig,
                        ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
         return userName;
     }
+}
+
+
+/// <summary>
+/// DEBUG
+/// </summary>
+[ValidateIsAuthenticated]
+public class CreateRankingPostJob
+{
+    public int PostId { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class GetAnswerFile
+{
+    /// <summary>
+    /// Format is {PostId}-{UserName}
+    /// </summary>
+    public string Id { get; set; }
+}
+
+public class GetAllAnswersResponse
+{
+    public string Question { get; set; }
+    public List<string> Answers { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class GetAllAnswers : IReturn<GetAllAnswersResponse>, IGet
+{
+    public int Id { get; set; }
 }

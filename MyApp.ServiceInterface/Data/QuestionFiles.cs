@@ -88,7 +88,7 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         await Task.WhenAll(tasks);
     }
 
-    public string GetAnswerUserName(string answerFileName) => answerFileName[(FileId + ".a.").Length..].LeftPart('.');
+    public string GetAnswerUserName(string answerFileName) => answerFileName[(FileId + ".a.").Length..].LastLeftPart('.');
 
     public string GetAnswerId(string answerFileName) => Id + "-" + GetAnswerUserName(answerFileName);
 

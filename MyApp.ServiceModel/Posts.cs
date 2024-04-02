@@ -266,7 +266,14 @@ public class RankAnswers : IPost, IReturn<IdResponse>
     [ValidateGreaterThan(0)]
     public int PostId { get; set; }
     
-    public Dictionary<string,int> Votes { get; set; }
+    /// <summary>
+    /// Model used to rank the answers
+    /// </summary>
+    public string Model { get; set; }
+    
+    public Dictionary<string,int> ModelVotes { get; set; }
+    
+    public int? PostJobId { get; set; }
 }
 
 [ValidateIsAuthenticated]

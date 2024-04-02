@@ -11,7 +11,8 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
     public const int MostVotedScore = 10;
     public const int AcceptedScore = 9;
     public static List<string> ModelUserNames { get; } = [
-        "phi", "gemma-2b", "qwen-4b", "codellama", "gemma", "deepseek-coder", "mistral", "mixtral"
+        "phi", "gemma-2b", "qwen-4b", "codellama", "gemma", "deepseek-coder-6.7b", "mistral", "mixtral","gpt-4-turbo",
+        "claude-3-haiku","claude-3-sonnet","claude-3-opus"
     ];
     public static Dictionary<string,int> ModelScores = new()
     {
@@ -21,6 +22,8 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         ["codellama"] = 4, //7B
         ["gemma"] = 5, //7B
         ["deepseek-coder:6.7b"] = 5, //6.7B
+        ["deepseek-coder:6"] = 5, //TODO Remove once data is clean, some 6.7b models are saved as 6 due to finding the first decimal
+        ["deepseek-coder:33b"] = 6, //33B
         ["mistral"] = 7, //7B
         ["mixtral"] = 8, //47B
         ["accepted"] = 9,
