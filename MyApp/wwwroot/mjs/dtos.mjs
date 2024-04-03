@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-03-29 23:35:25
+Date: 2024-04-03 11:09:35
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -374,6 +374,14 @@ export class CalculateLeaderboardResponse {
     /** @type {ModelWinRate[]} */
     modelWinRate;
 }
+export class FindSimilarQuestionsResponse {
+    /** @param {{results?:Post[],responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {Post[]} */
+    results;
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
 export class AskQuestionResponse {
     /** @param {{id?:number,slug?:string,redirectTo?:string,responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -601,6 +609,15 @@ export class CalculateLeaderBoard {
     getMethod() { return 'GET' }
     createResponse() { return new CalculateLeaderboardResponse() }
 }
+export class FindSimilarQuestions {
+    /** @param {{text?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    text;
+    getTypeName() { return 'FindSimilarQuestions' }
+    getMethod() { return 'GET' }
+    createResponse() { return new FindSimilarQuestionsResponse() }
+}
 export class AskQuestion {
     /** @param {{title?:string,body?:string,tags?:string[],refId?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -712,6 +729,17 @@ export class CreateWorkerAnswer {
     getMethod() { return 'POST' }
     createResponse() { return new IdResponse() }
 }
+export class RankAnswers {
+    /** @param {{postId?:number,votes?:{ [index: string]: number; }}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    postId;
+    /** @type {{ [index: string]: number; }} */
+    votes;
+    getTypeName() { return 'RankAnswers' }
+    getMethod() { return 'POST' }
+    createResponse() { return new IdResponse() }
+}
 export class CreateComment {
     /** @param {{id?:string,body?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -790,6 +818,19 @@ export class PostVote {
     getTypeName() { return 'PostVote' }
     getMethod() { return 'POST' }
     createResponse() { }
+}
+export class CreateAvatar {
+    /** @param {{userName?:string,textColor?:string,bgColor?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    userName;
+    /** @type {?string} */
+    textColor;
+    /** @type {?string} */
+    bgColor;
+    getTypeName() { return 'CreateAvatar' }
+    getMethod() { return 'GET' }
+    createResponse() { return '' }
 }
 export class RenderComponent {
     /** @param {{ifQuestionModified?:number,regenerateMeta?:number,question?:QuestionAndAnswers,home?:RenderHome}} [init] */

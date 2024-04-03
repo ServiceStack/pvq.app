@@ -1,10 +1,10 @@
 ﻿using System.Net;
+using System.Text.RegularExpressions;
 using MyApp.Data;
 using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.IO;
 using ServiceStack.OrmLite;
-using ServiceStack.Text;
 
 namespace MyApp.ServiceInterface;
 
@@ -24,12 +24,12 @@ public class QuestionServices(AppConfig appConfig,
             throw new ArgumentException("Maximum of 5 tags allowed", nameof(tags));
         return validTags;
     }
-    
+
     public async Task<object> Get(GetAllAnswers request)
     {
         var question = await questions.GetQuestionAsync(request.Id);
         var modelNames = question.Question?.Answers.Where(x => !string.IsNullOrEmpty(x.Model)).Select(x => x.Model).ToList();
-        var humanAnswers = question.Question?.Answers.Where(x => string.IsNullOrEmpty(x.Model)).Select(x => x.Id.SplitOnFirst("-")[1]).ToList();
+        var humanAnswers = question.Question?.Answers.Where(x => string.IsNullOrEmpty(x.Model)).Select(x => x.Id.LeftPart("-")).ToList();
         modelNames?.AddRange(humanAnswers ?? []);
         var answers = question
             .GetAnswerFiles()
@@ -41,6 +41,30 @@ public class QuestionServices(AppConfig appConfig,
         };
     }
     
+    static Regex AlphaNumericRegex = new("[^a-zA-Z0-9]", RegexOptions.Compiled);
+    static Regex SingleWhiteSpaceRegex = new( @"\s+", RegexOptions.Multiline | RegexOptions.Compiled);
+
+    public async Task<object> Any(FindSimilarQuestions request)
+    {
+        var searchPhrase = AlphaNumericRegex.Replace(request.Text, " ");
+        searchPhrase = SingleWhiteSpaceRegex.Replace(searchPhrase, " ").Trim();
+        if (searchPhrase.Length < 15)
+            throw new ArgumentException("Search text must be at least 20 characters", nameof(request.Text));
+
+        using var dbSearch = HostContext.AppHost.GetDbConnection(Databases.Search);
+        var q = dbSearch.From<PostFts>()
+            .Where("Body match {0} AND instr(RefId,'-') == 0", searchPhrase)
+            .OrderBy("rank")
+            .Limit(10);
+        
+        var results = await dbSearch.SelectAsync(q);
+        var posts = await Db.PopulatePostsAsync(results);
+
+        return new FindSimilarQuestionsResponse
+        {
+            Results = posts
+        };
+    }
 
     public async Task<object> Any(AskQuestion request)
     {

@@ -293,6 +293,18 @@ public class GetQuestionFile : IGet, IReturn<string>
     public int Id { get; set; }
 }
 
+public class FindSimilarQuestions : IGet, IReturn<FindSimilarQuestionsResponse>
+{
+    [ValidateNotEmpty, ValidateMinimumLength(20)]
+    public string Text { get; set; }
+}
+
+public class FindSimilarQuestionsResponse
+{
+    public List<Post> Results { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
 [ValidateIsAuthenticated]
 public class AskQuestion : IPost, IReturn<AskQuestionResponse>
 {
