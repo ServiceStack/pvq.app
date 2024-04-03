@@ -4,7 +4,7 @@ if (!localStorage.getItem('data:tags.txt'))
 {
     fetch('/data/tags.txt')
         .then(r => r.text())
-        .then(txt => localStorage.setItem('data:tags.txt', txt));
+        .then(txt => localStorage.setItem('data:tags.txt', txt.replace(/\r\n/g,'\n')));
 }
 
 function metadataDate(metadataJson) {
