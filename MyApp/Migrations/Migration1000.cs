@@ -115,6 +115,8 @@ public class Migration1000 : MigrationBase
     
         public string RefId { get; set; }
     
+        public string PostTitle { get; set; }
+        
         public string Summary { get; set; }
     
         public string Href { get; set; }
@@ -123,9 +125,34 @@ public class Migration1000 : MigrationBase
     
         public bool Read { get; set; }
     }
+    
+    [EnumAsInt]
+    public enum AchievementType {}
+
+    public class Achievement
+    {
+        [AutoIncrement]
+        public int Id { get; set; }
+    
+        [Index]
+        public string UserName { get; set; }
+    
+        public AchievementType Type { get; set; }
+
+        public int PostId { get; set; }
+    
+        public string RefId { get; set; }
+    
+        public int Score { get; set; }
+    
+        public bool Read { get; set; }
+    
+        public DateTime CreatedDate { get; set; }
+    }
 
     public override void Up()
     {
+        Db.CreateTable<Achievement>();
         Db.CreateTable<Notification>();
         Db.CreateTable<UserInfo>();
         Db.CreateTable<Vote>();
@@ -144,5 +171,6 @@ public class Migration1000 : MigrationBase
         Db.DropTable<Vote>();
         Db.DropTable<UserInfo>();
         Db.DropTable<Notification>();
+        Db.DropTable<Achievement>();
     }
 }

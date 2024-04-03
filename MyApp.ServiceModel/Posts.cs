@@ -476,11 +476,43 @@ public class Notification
     
     public string RefId { get; set; }
     
-    public string Summary { get; set; }
+    public string PostTitle { get; set; } //100 chars
+        
+    public string Summary { get; set; } //100 chars
     
     public string Href { get; set; }
     
     public DateTime CreatedDate { get; set; }
     
     public bool Read { get; set; }
+}
+
+[EnumAsInt]
+public enum AchievementType
+{
+    AnswerUpVote,
+    AnswerDownVote,
+    QuestionUpVote,
+    QuestionDownVote,
+}
+
+public class Achievement
+{
+    [AutoIncrement]
+    public int Id { get; set; }
+    
+    [Index]
+    public string UserName { get; set; }
+    
+    public AchievementType Type { get; set; }
+
+    public int PostId { get; set; }
+    
+    public string RefId { get; set; }
+    
+    public int Score { get; set; }
+    
+    public bool Read { get; set; }
+    
+    public DateTime CreatedDate { get; set; }
 }
