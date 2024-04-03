@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Data;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using MyApp.ServiceModel;
 using ServiceStack.OrmLite;
 
@@ -27,10 +26,11 @@ public class AppConfig
         ("gemma", 3),
         ("mixtral", 5),
         ("gemini-pro", 10),
-        ("deepseek-coder:33b", 25),
-        ("claude-3-sonnet-20240229", 50),
-        ("gpt-4-turbo-preview", 75),
-        ("claude-3-opus-20240229", 100),
+        ("claude-3-haiku", 25),
+        ("deepseek-coder:33b", 50),
+        ("claude-3-sonnet", 75),
+        ("gpt-4-turbo", 100),
+        ("claude-3-opus", 200),
 #else
         ("phi", 0),
         ("gemma:2b", 0),
@@ -41,10 +41,11 @@ public class AppConfig
         ("gemma", 3),
         ("mixtral", 5),
         // ("gemini-pro", 10),
-        // ("deepseek-coder:33b", 25),
-        // ("claude-3-sonnet-20240229", 50),
-        // ("gpt-4-turbo-preview", 75),
-        // ("claude-3-opus-20240229", 100),
+        // ("claude-3-haiku", 25),
+        // ("deepseek-coder:33b", 50),
+        // ("claude-3-sonnet", 75),
+        // ("gpt-4-turbo", 100),
+        // ("claude-3-opus", 200),
 #endif
     ];
 
