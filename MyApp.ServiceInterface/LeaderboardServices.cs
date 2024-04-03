@@ -41,9 +41,13 @@ public class LeaderboardServices : Service
     private CalculateLeaderboardResponse CalculateLeaderboardResponse(List<StatTotals> statTotals, List<StatTotals> statsByUser, List<StatTotals> answers)
     {
         var statQuestions = statTotals.Where(x => !x.Id.Contains('-')).ToList();
+        
+        // There might not be answers to some questions which we want to exclude from the win rate
+        statQuestions = statQuestions.Where(x => answers.Any(y => y.PostId == x.PostId)).ToList();
 
         var overallWinRates = statsByUser.GroupBy(x => x.Id).Select(y =>
         {
+            // sum all the wins for this user
             var res = new LeaderBoardWinRate
             {
                 Id = y.Key,
