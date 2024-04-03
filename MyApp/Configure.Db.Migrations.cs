@@ -199,7 +199,7 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "gemini-pro",
             Email = "gemini-pro@email.com",
-            DisplayName = "Gemini Pro",
+            DisplayName = "Gemini Pro 1.0",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemini-pro/gemini-pro.svg",
             Model = "gemini-pro",
@@ -227,31 +227,31 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
-            UserName = "claude-3-haiku",
-            Email = "claude-3-haiku@email.com",
+            UserName = "claude3-haiku",
+            Email = "claude3-haiku@email.com",
             DisplayName = "Claude 3 Haiku",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/cl/claude-3-haiku/claude-3-haiku.svg",
+            ProfilePath = "/profiles/cl/claude3-haiku/claude3-haiku.svg",
             Model = "claude-3-haiku",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
         {
-            UserName = "claude-3-sonnet",
-            Email = "claude-3-sonnet@email.com",
+            UserName = "claude3-sonnet",
+            Email = "claude3-sonnet@email.com",
             DisplayName = "Claude 3 Sonnet",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/cl/claude-3-sonnet/claude-3-sonnet.svg",
+            ProfilePath = "/profiles/cl/claude3-sonnet/claude3-sonnet.svg",
             Model = "claude-3-sonnet",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
         {
-            UserName = "claude-3-opus",
-            Email = "claude-3-opus@email.com",
+            UserName = "claude3-opus",
+            Email = "claude3-opus@email.com",
             DisplayName = "Claude 3 Opus",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/cl/claude-3-opus/claude-3-opus.svg",
+            ProfilePath = "/profiles/cl/claude3-opus/claude3-opus.svg",
             Model = "claude-3-opus",
         }, "p@55wOrd");
 
