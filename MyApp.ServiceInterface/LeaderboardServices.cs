@@ -33,6 +33,13 @@ public class LeaderboardServices : Service
             FavoriteCount = x.Sum(y => y.FavoriteCount)
         }).ToList();
         
+        var leaderBoard = CalculateLeaderboardResponse(statTotals, statsByUser, answers);
+
+        return leaderBoard;
+    }
+
+    private CalculateLeaderboardResponse CalculateLeaderboardResponse(List<StatTotals> statTotals, List<StatTotals> statsByUser, List<StatTotals> answers)
+    {
         var statQuestions = statTotals.Where(x => !x.Id.Contains('-')).ToList();
 
         var overallWinRates = statsByUser.GroupBy(x => x.Id).Select(y =>
@@ -80,10 +87,9 @@ public class LeaderboardServices : Service
                     TotalScore = x.Sum(y => y.GetScore())
                 }).ToList()
         };
-        
         return leaderBoard;
     }
-    
+
     bool IsHuman(string id)
     {
         return id == "accepted" || id == "most-voted";
@@ -108,6 +114,36 @@ public class LeaderboardServices : Service
                         winner != null && winner.Id.Contains("-") && winner.Id.SplitOnFirst('-')[1] == name) 
                 / questionCount) * 100;
     }
+
+    public async Task<object> Any(GetLeaderboardStatsByTag request)
+    {
+        var statTotals = Db.Select<StatTotals>(@"SELECT st.*
+FROM main.StatTotals st
+         JOIN main.post p ON st.PostId = p.Id
+WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight OR p.Tags = @TagSolo)", new { TagSolo = $"[{request.Tag}]", 
+            TagRight = $"%,{request.Tag}", 
+            TagLeft = $"{request.Tag},%",
+            TagMiddle = $",{request.Tag},",
+        });
+        // filter to answers only
+        var answers = statTotals.Where(x => x.Id.Contains('-')).ToList();
+        // Sum up votes by model, first group by UserName
+        var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
+        {
+            Id = x.Key,
+            UpVotes = x.Sum(y => y.UpVotes),
+            DownVotes = x.Sum(y => y.DownVotes),
+            StartingUpVotes = x.Sum(y => y.StartingUpVotes),
+            FavoriteCount = x.Sum(y => y.FavoriteCount)
+        }).ToList();
+
+        return CalculateLeaderboardResponse(statTotals,statsByUser,answers);
+    }
+}
+
+public class GetLeaderboardStatsByTag
+{
+    public string Tag { get; set; }
 }
 
 public class CalculateLeaderboardResponse
