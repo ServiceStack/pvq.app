@@ -46,6 +46,7 @@
                 @foreach (var questionLevel in AppConfig.QuestionLevels)
                 {
                     var qualified = totalQuestions >= questionLevel || HttpContext.User.HasRole(Roles.Moderator); 
+                    var questionsToGo = "question" + (questionLevel - totalQuestions == 1 ? "" : "s");
                     @if (questionLevel > 0)
                     {
                         <p class="my-4 text-center font-semibold text-gray-500">
@@ -57,7 +58,7 @@
                             }
                             else
                             {
-                                <text>@(questionLevel - totalQuestions) more @questions to go</text>
+                                <text>@(questionLevel - totalQuestions) more @questionsToGo to go</text>
                             }
                         </p>
                     }

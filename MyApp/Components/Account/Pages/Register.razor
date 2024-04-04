@@ -34,7 +34,7 @@
                     <div>
                         <label for="email" class="@TextInput.LabelClasses">Username</label>
                         <div class="mt-1 relative rounded-md shadow-sm">
-                            <InputText id="user-name" type="text" @bind-Value="Input.UserName" class="@TextInput.InputClasses" autocomplete="username" aria-required="true" placeholder="username" />
+                            <InputText id="user-name" type="text" @bind-Value="Input.UserName" class="@TextInput.InputClasses" autocomplete="username" aria-required="true" placeholder="username in kebab-case" />
                         </div>
                         <ValidationMessage For="() => Input.UserName" class="mt-2 text-danger text-sm" />
                     </div>
