@@ -66,11 +66,14 @@ async function loadVoting(ctx) {
 
     $$('.voting').forEach(el => {
         const refId = el.id
+        const createdBy = el.closest('[data-createdby]')?.dataset.createdby
         async function vote(value) {
             if (!userName) {
                 location.href = `/Account/Login?ReturnUrl=${encodeURIComponent(location.pathname)}`
                 return
             }
+            if (userName === createdBy) 
+                return
 
             const prevValue = getValue(userPostVotes, refId)
             setValue(refId, value)
@@ -85,13 +88,20 @@ async function loadVoting(ctx) {
                 setTimeout(() => loadUserReputations(ctx), 5000)
             }
         }
+        function disableSelf(svg) {
+            if (userName === createdBy) {
+                svg.classList.remove('hover:text-green-600','cursor-pointer')
+                svg.classList.add('text-gray-400')
+            }
+            return svg
+        }
 
-        on(el.querySelector('.up'), {
+        on(disableSelf(el.querySelector('.up')), {
             click(e) {
                 vote(getValue(userPostVotes, refId) === 1 ? 0 : 1)
             }
         })
-        on(el.querySelector('.down'), {
+        on(disableSelf(el.querySelector('.down')), {
             click(e) {
                 vote(getValue(userPostVotes, refId) === -1 ? 0 : -1)
             }

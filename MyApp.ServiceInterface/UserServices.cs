@@ -99,11 +99,21 @@ public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Servic
 
     public async Task Any(PostVote request)
     {
-        var userName = Request.GetClaimsPrincipal().Identity!.Name!;
+        var userName = Request.GetClaimsPrincipal().GetUserName()!;
         if (string.IsNullOrEmpty(userName))
             throw new ArgumentNullException(nameof(userName));
+
         var postId = request.RefId.LeftPart('-').ToInt();
         var score = request.Up == true ? 1 : request.Down == true ? -1 : 0;
+        
+        var refUserName = request.RefId.IndexOf('-') >= 0
+            ? request.RefId.RightPart('-')
+            : await Db.ScalarAsync<string?>(Db.From<Post>().Where(x => x.Id == postId)
+                .Select(x => x.CreatedBy));
+
+        if (userName == refUserName)
+            throw new ArgumentException("Can't vote on your own post", nameof(request.RefId));
+        
         MessageProducer.Publish(new DbWrites
         {
             CreatePostVote = new()
@@ -112,6 +122,7 @@ public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Servic
                 PostId = postId,
                 UserName = userName,
                 Score = score,
+                RefUserName = refUserName,
             }
         });
     }

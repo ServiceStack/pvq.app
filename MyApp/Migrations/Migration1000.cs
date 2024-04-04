@@ -20,12 +20,20 @@ public class Migration1000 : MigrationBase
         [Required]
         public string RefId { get; set; }
 
+        /// <summary>
+        /// User who voted
+        /// </summary>
         public string UserName { get; set; }
     
         /// <summary>
         /// 1 for UpVote, -1 for DownVote
         /// </summary>
         public int Score { get; set; }
+    
+        /// <summary>
+        /// User who's Post (Q or A) was voted on
+        /// </summary>
+        public string? RefUserName { get; set; }
     }
 
     public class Job
