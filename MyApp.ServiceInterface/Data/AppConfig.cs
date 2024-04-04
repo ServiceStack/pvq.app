@@ -107,24 +107,24 @@ public class AppConfig
 
     public void UpdateUsersReputation(IDbConnection db)
     {
-        db.ExecuteNonQuery(@"update UserInfo set Reputation = UserScores.total
-            from (select createdBy, sum(count) as total from
-                (select createdBy, count(*) as count from post where CreatedBy is not null group by 1
-                union
-                select userName, count(*) as count from vote group by 1
-                union
-                select substring(id,instr(id,'-')+1) as userName, sum(UpVotes) as count from StatTotals where instr(id,'-') group by 1
-                union
-                select substring(id,instr(id,'-')+1) as userName, sum(DownVotes) as count from StatTotals where instr(id,'-') group by 1)
-                group by 1) as UserScores
-          where UserName = UserScores.CreatedBy");
+        db.ExecuteNonQuery(@"UPDATE UserInfo SET Reputation = UserScores.total
+            FROM (SELECT CreatedBy, sum(count) as total FROM
+                (SELECT CreatedBy, count(*) as count FROM post WHERE CreatedBy IS NOT NULL GROUP BY 1
+                UNION 
+                SELECT UserName, count(*) as count FROM Vote GROUP BY 1
+                UNION
+                SELECT CreatedBy, sum(UpVotes) as count FROM StatTotals WHERE CreatedBy IS NOT NULL GROUP BY 1
+                UNION
+                SELECT CreatedBy, sum(DownVotes) as count FROM StatTotals WHERE CreatedBy IS NOT NULL GROUP BY 1)
+                GROUP BY 1) as UserScores
+          WHERE UserName = UserScores.CreatedBy");
     }
 
     public void UpdateUsersQuestions(IDbConnection db)
     {
-        db.ExecuteNonQuery(@"update UserInfo set QuestionsCount = UserQuestions.total
-            from (select createdBy, count(*) as total from post where CreatedBy is not null group by 1) as UserQuestions
-          where UserName = UserQuestions.CreatedBy");
+        db.ExecuteNonQuery(@"UPDATE UserInfo SET QuestionsCount = UserQuestions.total
+            FROM (select createdBy, count(*) as total FROM post WHERE CreatedBy IS NOT NULL GROUP BY 1) as UserQuestions
+          WHERE UserName = UserQuestions.CreatedBy");
     }
 
     public void ResetInitialPostId(IDbConnection db)

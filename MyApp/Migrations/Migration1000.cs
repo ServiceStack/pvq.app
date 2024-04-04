@@ -160,6 +160,7 @@ public class Migration1000 : MigrationBase
         Db.CreateTable<PostJob>();
         
         Db.ExecuteSql("INSERT INTO UserInfo (UserId, UserName) SELECT Id, UserName FROM AspNetUsers");
+        Db.ExecuteSql("UPDATE StatTotals SET CreatedBy = substr(Id,instr(Id,'-')+1) WHERE instr(Id,'-') > 0 AND CreatedBy IS NULL");
     }
 
     public override void Down()
