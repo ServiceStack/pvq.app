@@ -35,7 +35,7 @@ public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelW
 
     public async Task Any(DbWrites request)
     {
-        var vote = request.RecordPostVote;
+        var vote = request.CreatePostVote;
         if (vote != null)
         {
             if (string.IsNullOrEmpty(vote.RefId))

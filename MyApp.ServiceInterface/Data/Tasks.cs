@@ -53,7 +53,7 @@ public class StartJob
 [Restrict(InternalOnly = true)]
 public class DbWrites
 {
-    public Vote? RecordPostVote { get; set; }
+    public Vote? CreatePostVote { get; set; }
     public Post? CreatePost { get; set; }
     public Post? UpdatePost { get; set; }
     public int? DeletePost { get; set; }

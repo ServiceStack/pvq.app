@@ -106,7 +106,7 @@ public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Servic
         var score = request.Up == true ? 1 : request.Down == true ? -1 : 0;
         MessageProducer.Publish(new DbWrites
         {
-            RecordPostVote = new()
+            CreatePostVote = new()
             {
                 RefId = request.RefId,
                 PostId = postId,
