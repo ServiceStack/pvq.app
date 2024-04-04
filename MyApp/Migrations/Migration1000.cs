@@ -151,6 +151,8 @@ public class Migration1000 : MigrationBase
     
         public string RefId { get; set; }
     
+        public string? RefUserName { get; set; }
+    
         public int Score { get; set; }
     
         public bool Read { get; set; }

@@ -7,7 +7,7 @@
         <div class="border-t border-gray-200 dark:border-gray-700">
             @foreach (var comment in Comments)
             {
-                <div class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                <div id=@($"{RefId}-{comment.Created}") class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
                     @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
                     <span class="inline-block">
                         <span class="px-1" aria-hidden="true">&middot;</span>
@@ -21,5 +21,6 @@
 </div>
 
 @code {
+    [Parameter] public required string RefId { get; set; }
     [Parameter] public required List<Comment> Comments { get; set; }
 }

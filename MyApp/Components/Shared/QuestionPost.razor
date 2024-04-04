@@ -119,7 +119,7 @@
                 }
                 
                 <div class="mt-4">
-                    <PostComments Comments=@Question.QuestionComments />
+                    <PostComments RefId=@($"{Question.Id}") Comments=@Question.QuestionComments />
                     @if (Question.Post.LockedDate == null)
                     {
                         <div class="add-comment-link pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></div>
@@ -183,7 +183,7 @@
                             }
                             
                             <div class="mt-4">
-                                <PostComments Comments=@Question.GetAnswerComments(answer.Id) />
+                                <PostComments RefId="@answer.Id" Comments=@Question.GetAnswerComments(answer.Id) />
                                 @if (Question.Post.LockedDate == null)
                                 {
                                     <div class="add-comment-link pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></div>

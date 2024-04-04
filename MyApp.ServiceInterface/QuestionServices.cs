@@ -155,12 +155,13 @@ public class QuestionServices(AppConfig appConfig,
             RefId = request.RefId,
         };
         
+        MessageProducer.Publish(new DbWrites {
+            CreateAnswer = post,
+            AnswerAddedToPost = request.PostId,
+        });
+        
         await questions.SaveHumanAnswerAsync(post);
         rendererCache.DeleteCachedQuestionPostHtml(post.Id);
-        
-        // Rewind last Id if it was latest question
-        var maxPostId = Db.Scalar<int>("SELECT MAX(Id) FROM Post");
-        AppConfig.Instance.SetInitialPostId(Math.Max(100_000_000, maxPostId));
         
         answerNotifier.NotifyNewAnswer(request.PostId, post.CreatedBy);
 
@@ -375,11 +376,21 @@ public class QuestionServices(AppConfig appConfig,
         meta.Comments ??= new();
         var comments = meta.Comments.GetOrAdd(request.Id, key => new());
         var body = request.Body.Replace("\r\n", " ").Replace('\n', ' ');
-        comments.Add(new Comment
+        var newComment = new Comment
         {
             Body = body,
             Created = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             CreatedBy = GetUserName(),
+        };
+        comments.Add(newComment);
+        
+        MessageProducer.Publish(new DbWrites
+        {
+            NewComment = new()
+            {
+                RefId = request.Id,
+                Comment = newComment,
+            },
         });
 
         await questions.SaveMetaAsync(postId, meta);

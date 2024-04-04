@@ -107,17 +107,21 @@ public class AppConfig
 
     public void UpdateUsersReputation(IDbConnection db)
     {
-        db.ExecuteNonQuery(@"UPDATE UserInfo SET Reputation = UserScores.total
-            FROM (SELECT CreatedBy, sum(count) as total FROM
-                (SELECT CreatedBy, count(*) as count FROM post WHERE CreatedBy IS NOT NULL GROUP BY 1
-                UNION 
-                SELECT UserName, count(*) as count FROM Vote GROUP BY 1
-                UNION
-                SELECT CreatedBy, sum(UpVotes) as count FROM StatTotals WHERE CreatedBy IS NOT NULL GROUP BY 1
-                UNION
-                SELECT CreatedBy, sum(DownVotes) as count FROM StatTotals WHERE CreatedBy IS NOT NULL GROUP BY 1)
-                GROUP BY 1) as UserScores
-          WHERE UserName = UserScores.CreatedBy");
+        // User Reputation Score:
+        // +1 point for each Question or Answer submitted
+        // +10 points for each Up Vote received on Question or Answer
+        // -1 point for each Down Vote received on Question or Answer
+        
+        db.ExecuteNonQuery(
+            @"UPDATE UserInfo SET Reputation = UserScores.total
+                FROM (SELECT CreatedBy, sum(score) as total FROM
+                        (SELECT CreatedBy, count(*) as score FROM StatTotals WHERE CreatedBy IS NOT NULL GROUP BY 1
+                         UNION
+                         SELECT RefUserName, count(*) * 10 as score FROM Vote WHERE RefUserName IS NOT NULL AND Score > 0 GROUP BY 1
+                         UNION 
+                         SELECT RefUserName, count(*) * -1 as score FROM Vote WHERE RefUserName IS NOT NULL AND Score < 0 GROUP BY 1)
+                      GROUP BY 1) as UserScores
+                WHERE UserName = UserScores.CreatedBy");
     }
 
     public void UpdateUsersQuestions(IDbConnection db)

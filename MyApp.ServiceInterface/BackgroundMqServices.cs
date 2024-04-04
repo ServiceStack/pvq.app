@@ -1,4 +1,5 @@
-﻿using MyApp.Data;
+﻿using Microsoft.Extensions.Logging;
+using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.IO;
@@ -6,7 +7,13 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelWorkerQueue modelWorkers, QuestionsProvider questions) : Service
+public class BackgroundMqServices(
+    ILogger<BackgroundMqServices> log,
+    AppConfig appConfig, 
+    R2VirtualFiles r2, 
+    ModelWorkerQueue modelWorkers, 
+    QuestionsProvider questions) 
+    : Service
 {
     public async Task Any(DiskTasks request)
     {
@@ -43,10 +50,36 @@ public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelW
             if (string.IsNullOrEmpty(vote.UserName))
                 throw new ArgumentNullException(nameof(vote.UserName));
 
-            await Db.DeleteAsync<Vote>(new { vote.RefId, vote.UserName });
+            var isAnswer = vote.RefId.IndexOf('-') >= 0;
+            var voteUp = isAnswer ? AchievementType.AnswerUpVote : AchievementType.QuestionUpVote; 
+            var voteDown = isAnswer ? AchievementType.AnswerDownVote : AchievementType.QuestionDownVote; 
+                
+            var rowsDeleted = await Db.DeleteAsync<Vote>(new { vote.RefId, vote.UserName });
+            if (rowsDeleted > 0 && vote.RefUserName != null)
+            {
+                // If they rescinded their previous vote, also remove the Ref User's previous achievement for that Q or A
+                await Db.ExecuteNonQueryAsync(
+                    "DELETE FROM Achievement WHERE UserName = @TargetUser AND RefUserName = @VoterUserName AND RefId = @RefId AND Type IN (@voteUp,@voteDown)",
+                    new { TargetUser = vote.RefUserName, VoterUserName = vote.UserName , vote.RefId, voteUp, voteDown });
+            }
+            
             if (vote.Score != 0)
             {
                 await Db.InsertAsync(vote);
+
+                if (vote.RefUserName != null)
+                {
+                    await Db.InsertAsync(new Achievement
+                    {
+                        UserName = vote.RefUserName,
+                        RefUserName = vote.UserName,
+                        PostId = vote.PostId,
+                        RefId = vote.RefId,
+                        Type = vote.Score > 0 ? voteUp : voteDown,
+                        Score = vote.Score > 0 ? 10 : -1, // 10 points for UpVote, -1 point for DownVote
+                        CreatedDate = DateTime.UtcNow,
+                    });
+                }
             }
             
             MessageProducer.Publish(new RenderComponent {
@@ -58,11 +91,33 @@ public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelW
 
         if (request.CreatePost != null)
         {
-            await Db.InsertAsync(request.CreatePost);
+            var postId = (int)await Db.InsertAsync(request.CreatePost, selectIdentity:true);
             var createdBy = request.CreatePost.CreatedBy;
             if (createdBy != null && request.CreatePost.PostTypeId == 1)
             {
                 await appConfig.ResetUserQuestionsAsync(Db, createdBy);
+            }
+
+            try
+            {
+                await Db.InsertAsync(new StatTotals
+                {
+                    Id = $"{postId}",
+                    PostId = postId,
+                    UpVotes = 0,
+                    DownVotes = 0,
+                    StartingUpVotes = 0,
+                    CreatedBy = request.CreatePost.CreatedBy,
+                });
+            }
+            catch (Exception e)
+            {
+                log.LogWarning("Couldn't insert StatTotals for Post {PostId}: '{Message}', updating instead...", postId, e.Message);
+                await Db.UpdateOnlyAsync(() => new StatTotals
+                {
+                    PostId = postId,
+                    CreatedBy = request.CreatePost.CreatedBy,
+                }, x => x.Id == $"{postId}");
             }
         }
 
@@ -157,13 +212,78 @@ public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelW
                 }
             }
         }
-        
+
+        var answer = request.CreateAnswer; 
+        if (answer is { RefId: not null, ParentId: not null })
+        {
+            var postId = answer.ParentId.Value;
+            if (!await Db.ExistsAsync(Db.From<StatTotals>().Where(x => x.Id == answer.RefId)))
+            {
+                await Db.InsertAsync(new StatTotals
+                {
+                    Id = answer.RefId,
+                    PostId = postId,
+                    ViewCount = 0,
+                    FavoriteCount = 0,
+                    UpVotes = 0,
+                    DownVotes = 0,
+                    StartingUpVotes = 0,
+                    CreatedBy = answer.CreatedBy,
+                });
+            }
+
+            var post = await Db.SingleByIdAsync<Post>(postId);
+            if (post?.CreatedBy != null)
+            {
+                await Db.InsertAsync(new Notification
+                {
+                    UserName = post.CreatedBy, 
+                    Type = NotificationType.NewAnswer,
+                    RefId = answer.RefId,
+                    PostId = postId,
+                    CreatedDate = answer.CreationDate,
+                    PostTitle = post.Title.SubstringWithEllipsis(0,100),
+                    Summary = answer.Summary.SubstringWithEllipsis(0,100),
+                    Href = $"/questions/{postId}/{post.Slug}#{answer.RefId}",
+                });
+            }
+        }
+
         if (request.AnswerAddedToPost != null)
         {
             await Db.UpdateAddAsync(() => new Post
             {
                 AnswerCount = 1,
             }, x => x.Id == request.AnswerAddedToPost.Value);
+        }
+
+        if (request.NewComment != null)
+        {
+            var refId = request.NewComment.RefId;
+            var postId = refId.LeftPart('-').ToInt();
+            var post = await Db.SingleByIdAsync<Post>(postId);
+            if (post != null)
+            {
+                var isAnswer = refId.IndexOf('-') > 0;
+                var createdBy = isAnswer
+                    ? (await Db.SingleByIdAsync<StatTotals>(refId))?.CreatedBy
+                    : post.CreatedBy;
+                if (createdBy != null)
+                {
+                    var comment = request.NewComment.Comment;
+                    await Db.InsertAsync(new Notification
+                    {
+                        UserName = createdBy, 
+                        Type = NotificationType.NewComment,
+                        RefId = refId,
+                        PostId = postId,
+                        CreatedDate = DateTimeOffset.FromUnixTimeMilliseconds(comment.Created).DateTime,
+                        PostTitle = post.Title.SubstringWithEllipsis(0,100),
+                        Summary = comment.Body.SubstringWithEllipsis(0,100),
+                        Href = $"/questions/{postId}/{post.Slug}#{refId}-{comment.Created}",
+                    });
+                }
+            }
         }
 
         if (request.UpdateReputations == true)

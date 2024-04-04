@@ -22,7 +22,7 @@ public static class Databases
 public class StatTotals
 {
     // PostId (Question) or PostId-UserName (Answer)
-    public required string Id { get; set; }
+    public string Id { get; set; }
     
     [Index]
     public int PostId { get; set; }

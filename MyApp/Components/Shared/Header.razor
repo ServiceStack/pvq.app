@@ -42,10 +42,10 @@
                     <AuthorizeView>
                         <Authorized>
                             <li>
-                                <div class="mx-3 relative">
+                                <div class="mr-2 relative">
                                     <div>
                                         <NavLink href="Account/Manage"
-                                            class="max-w-xs bg-white dark:bg-black rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 lg:p-2 lg:rounded-md lg:hover:bg-gray-50 dark:lg:hover:bg-gray-900 dark:ring-offset-black" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                                 class="max-w-xs bg-white dark:bg-black rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 lg:p-2 lg:rounded-md lg:hover:bg-gray-50 dark:lg:hover:bg-gray-900 dark:ring-offset-black" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
                                             <span class="hidden ml-3 text-gray-700 dark:text-gray-300 text-sm font-medium lg:block">
                                                 <span class="sr-only">Open user menu for </span>
                                                 @User.GetDisplayName()
@@ -58,6 +58,14 @@
                                         </NavLink>
                                     </div>
                                 </div>
+                            </li>
+                            <li class="mr-1 relative flex flex-wrap just-fu-start m-0">
+                                <svg class="w-6 h-6 cursor-pointer text-gray-400 hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14v-3h-3q-.75.95-1.787 1.475T12 18q-1.175 0-2.212-.525T8 16H5zm7-3q.95 0 1.725-.55T14.8 14H19V5H5v9h4.2q.3.9 1.075 1.45T12 16m-7 3h14z"/></svg>
+                                <svg class="-ml-1 -mt-2 h-4 w-4 text-red-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                            </li>
+                            <li class="mr-2 relative flex flex-wrap just-fu-start m-0">
+                                <svg class="w-6 h-6 cursor-pointer text-gray-400 hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M8 3h8v8h6v10H2V9h6zm2 16h4V5h-4zm6 0h4v-6h-4zm-8 0v-8H4v8z"/></svg>
+                                <svg class="-ml-2 -mt-2 h-4 w-4 text-red-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
                             </li>
                             <li class="mr-3 relative flex flex-wrap just-fu-start m-0">
                                 <form action="Account/Logout" method="post">

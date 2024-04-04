@@ -218,10 +218,11 @@ public class RenderServices(
                 Id = postId,
                 PostId = id,
                 ViewCount = (int)totalPostViews,
-                FavoriteCount = dbPost?.FavoriteCount ?? 0,
-                StartingUpVotes = dbPost?.Score ?? 0,
+                FavoriteCount = dbPost.FavoriteCount ?? 0,
+                StartingUpVotes = dbPost.Score,
                 UpVotes = livePostUpVotes,
                 DownVotes = livePostDownVotes,
+                CreatedBy = dbPost.CreatedBy,
             },
         };
         foreach (var answerFile in answerFiles)
@@ -238,6 +239,7 @@ public class RenderServices(
                 UpVotes = allPostVotes.Count(x => x.RefId == answerId && x.Score > 0),
                 DownVotes = allPostVotes.Count(x => x.RefId == answerId && x.Score < 0),
                 StartingUpVotes = answer?.Score ?? meta.ModelVotes.GetValueOrDefault(answerModel, 0),
+                CreatedBy = answerModel,
             };
             liveStats.Add(answerStats);
         }
@@ -259,6 +261,7 @@ public class RenderServices(
                     UpVotes = liveStat.UpVotes,
                     DownVotes = liveStat.DownVotes,
                     StartingUpVotes = liveStat.StartingUpVotes,
+                    CreatedBy = liveStat.CreatedBy,
                 }, x => x.Id == liveStat.Id);
             }
         }

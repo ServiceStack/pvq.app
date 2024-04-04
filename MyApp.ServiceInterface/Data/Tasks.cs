@@ -48,6 +48,12 @@ public class StartJob
     public string? WorkerIp { get; set; }
 }
 
+public class NewComment
+{
+    public string RefId { get; set; }
+    public Comment Comment { get; set; }
+}
+
 [Tag(Tag.Tasks)]
 [ExcludeMetadata]
 [Restrict(InternalOnly = true)]
@@ -59,7 +65,9 @@ public class DbWrites
     public int? DeletePost { get; set; }
     public List<PostJob>? CreatePostJobs { get; set; }
     public StartJob? StartJob { get; set; }
+    public Post? CreateAnswer { get; set; }
     public int? AnswerAddedToPost { get; set; }
+    public NewComment? NewComment { get; set; }
     public List<int>? CompleteJobIds { get; set; }
     public FailJob? FailJob { get; set; }
     public ApplicationUser? UserRegistered { get; set; }

@@ -468,10 +468,11 @@ public class GetUserReputationsResponse
 [EnumAsInt]
 public enum NotificationType
 {
-    NewComment,
-    NewAnswer,
-    CommentMention,
-    AnswerMention,
+    Unknown = 0,
+    NewComment = 1,
+    NewAnswer = 2,
+    CommentMention = 3,
+    AnswerMention = 4,
 }
 
 public class Notification
@@ -502,10 +503,11 @@ public class Notification
 [EnumAsInt]
 public enum AchievementType
 {
-    AnswerUpVote,
-    AnswerDownVote,
-    QuestionUpVote,
-    QuestionDownVote,
+    Unknown = 0,
+    AnswerUpVote = 1,
+    AnswerDownVote = 2,
+    QuestionUpVote = 3,
+    QuestionDownVote = 4,
 }
 
 public class Achievement
@@ -521,6 +523,8 @@ public class Achievement
     public int PostId { get; set; }
     
     public string RefId { get; set; }
+    
+    public string? RefUserName { get; set; }
     
     public int Score { get; set; }
     
