@@ -159,6 +159,14 @@ public class AppConfig
         var models = ModelsForQuestions.Where(x => x.Questions <= questionsCount)
             .Select(x => x.Model)
             .ToList();
+        if (models.Contains("gemma"))
+            models.RemoveAll(x => x == "gemma:2b");
+        if (models.Contains("deepseek-coder:33b"))
+            models.RemoveAll(x => x == "deepseek-coder:6.7b");
+        if (models.Contains("claude-3-opus"))
+            models.RemoveAll(x => x is "claude-3-haiku" or "claude-3-sonnet");
+        if (models.Contains("claude-3-sonnet"))
+            models.RemoveAll(x => x is "claude-3-haiku");
         return models;
     }
 
