@@ -25,19 +25,16 @@ public class QuestionServices(AppConfig appConfig,
         return validTags;
     }
 
-    public async Task<object> Get(GetAllAnswers request)
+    public async Task<object> Get(GetAllAnswerModels request)
     {
         var question = await questions.GetQuestionAsync(request.Id);
         var modelNames = question.Question?.Answers.Where(x => !string.IsNullOrEmpty(x.Model)).Select(x => x.Model).ToList();
         var humanAnswers = question.Question?.Answers.Where(x => string.IsNullOrEmpty(x.Model)).Select(x => x.Id.LeftPart("-")).ToList();
         modelNames?.AddRange(humanAnswers ?? []);
-        var answers = question
-            .GetAnswerFiles()
-            .ToList();
 
-        return new GetAllAnswersResponse
+        return new GetAllAnswerModelsResponse
         {
-            Answers = modelNames ?? new List<string>()
+            Results = modelNames ?? new List<string>()
         };
     }
     
@@ -476,14 +473,13 @@ public class GetAnswerFile
     public string Id { get; set; }
 }
 
-public class GetAllAnswersResponse
+public class GetAllAnswerModelsResponse
 {
-    public string Question { get; set; }
-    public List<string> Answers { get; set; }
+    public List<string> Results { get; set; }
 }
 
 [ValidateIsAuthenticated]
-public class GetAllAnswers : IReturn<GetAllAnswersResponse>, IGet
+public class GetAllAnswerModels : IReturn<GetAllAnswerModelsResponse>, IGet
 {
     public int Id { get; set; }
 }
