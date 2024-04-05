@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.Formats.Png;
 
 namespace MyApp.ServiceInterface;
 
-public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Service
+public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator imageCreator) : Service
 {
     private const string AppData = "/App_Data";
     
@@ -132,5 +132,51 @@ public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Servic
         var letter = char.ToUpper(request.UserName[0]);
         var svg = imageCreator.CreateSvg(letter, request.BgColor, request.TextColor);
         return new HttpResult(svg, MimeTypes.ImageSvg);
+    }
+
+    public async Task<object> Any(GetLatestNotifications request)
+    {
+        var userName = Request.GetClaimsPrincipal().GetUserName();
+        return new GetLatestNotificationsResponse
+        {
+            Results = await Db.SelectAsync(Db.From<Notification>()
+                .Where(x => x.UserName == userName)
+                .OrderByDescending(x => x.Id)
+                .Take(30))
+        };
+    }
+
+    public async Task<object> Any(GetLatestAchievements request)
+    {
+        var userName = Request.GetClaimsPrincipal().GetUserName();
+        return new GetLatestAchievementsResponse
+        {
+            Results = await Db.SelectAsync(Db.From<Achievement>()
+                .Where(x => x.UserName == userName)
+                .OrderByDescending(x => x.Id)
+                .Take(30))
+        };
+    }
+
+    public async Task<object> Any(MarkAsRead request)
+    {
+        request.UserName = Request.GetClaimsPrincipal().GetUserName()
+            ?? throw new ArgumentNullException(nameof(MarkAsRead.UserName));
+        MessageProducer.Publish(new DbWrites
+        {
+            MarkAsRead = request, 
+        });
+        return new EmptyResponse();
+    }
+    
+    public object Any(GetUsersInfo request)
+    {
+        return new GetUsersInfoResponse
+        {
+            UsersQuestions = appConfig.UsersQuestions.ToDictionary(),
+            UsersReputation = appConfig.UsersReputation.ToDictionary(),
+            UsersUnreadAchievements = appConfig.UsersUnreadAchievements.ToDictionary(),
+            UsersUnreadNotifications = appConfig.UsersUnreadNotifications.ToDictionary(),
+        };
     }
 }

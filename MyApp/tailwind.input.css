@@ -83,6 +83,11 @@ select{
     background-color: transparent !important;
 }
 
+/*custom*/
+.highlighted {
+    background-color: #ffe;
+}
+
 @tailwind utilities;
 
 @layer components {

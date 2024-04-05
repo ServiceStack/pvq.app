@@ -501,7 +501,7 @@ public class CopyContainerRenderer : HtmlObjectRenderer<CustomContainer>
         renderer.EnsureLine();
         if (renderer.EnableHtmlForBlock)
         {
-            renderer.Write(@$"<div class=""{Class} flex cursor-pointer mb-3"" onclick=""copy(this)"">
+            renderer.Write(@$"<div class=""{Class} flex cursor-pointer mb-3"" onclick=""copyCommand(this)"">
                 <div class=""flex-grow {BoxClass}"">
                     <div class=""pl-4 py-1 pb-1.5 align-middle {TextClass}"">");
         }

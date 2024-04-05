@@ -96,7 +96,6 @@ public class QuestionServices(AppConfig appConfig,
 
         var post = createPost();
         var dbPost = createPost();
-        dbPost.Body = null;
         MessageProducer.Publish(new DbWrites
         {
             CreatePost = dbPost,
@@ -152,7 +151,7 @@ public class QuestionServices(AppConfig appConfig,
             CreatedBy = userName,
             LastActivityDate = now,
             Body = request.Body,
-            RefId = request.RefId,
+            RefId = request.RefId, // Optional External Ref Id, not '{PostId}-{UserName}'
         };
         
         MessageProducer.Publish(new DbWrites {
@@ -421,6 +420,11 @@ public class QuestionServices(AppConfig appConfig,
         var isModerator = Request.GetClaimsPrincipal().HasRole(Roles.Moderator);
         if (userName != request.CreatedBy && !isModerator)
             throw HttpError.Forbidden("Only Moderators can delete other user's comments");
+        
+        MessageProducer.Publish(new DbWrites
+        {
+            DeleteComment = request, 
+        });
         
         var postId = question.Id;
         var meta = await questions.GetMetaAsync(postId);

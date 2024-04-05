@@ -28,4 +28,13 @@ public class UnitTest
 
         Assert.That(response.Result, Is.EqualTo("Hello, World!"));
     }
+
+    [Test]
+    public void Find_UserNames_in_Text()
+    {
+        var text = "There was @alice and @Bob and @charlie.\n@david-dee was there too @5. paging @mythz";
+        var userNames = text.FindUserNameMentions();
+        
+        Assert.That(userNames, Is.EquivalentTo(new[]{ "alice", "charlie", "david-dee", "mythz" }));
+    }
 }

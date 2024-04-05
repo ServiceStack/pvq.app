@@ -30,3 +30,13 @@ if (clearMetadata) {
             localStorage.setItem('/metadata/app.json', json)
         })
 }
+
+if (location.hash) {
+    setTimeout(() => {
+        const el = document.getElementById(location.hash.substring(1))
+        if (el) {
+            el.classList.add('highlighted')
+            el.scrollIntoView('smooth')
+        }
+    }, 500)
+}

@@ -132,6 +132,8 @@ public class Migration1000 : MigrationBase
         public DateTime CreatedDate { get; set; }
     
         public bool Read { get; set; }
+        
+        public string? RefUserName { get; set; }
     }
     
     [EnumAsInt]

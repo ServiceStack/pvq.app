@@ -3,7 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject AppConfig AppConfig
 
-<header class="border-b border-gray-200 dark:border-gray-800 pr-3">
+<header class="border-b border-gray-200 dark:border-gray-800 pr-3" data-module="mjs/header.mjs">
     <div class="flex flex-wrap items-center">
         <div class="absolute z-10 top-2 left-2 sm:static flex-shrink flex-grow-0">
             <div class="cursor-pointer">
@@ -59,13 +59,21 @@
                                     </div>
                                 </div>
                             </li>
-                            <li class="mr-1 relative flex flex-wrap just-fu-start m-0">
-                                <svg class="w-6 h-6 cursor-pointer text-gray-400 hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14v-3h-3q-.75.95-1.787 1.475T12 18q-1.175 0-2.212-.525T8 16H5zm7-3q.95 0 1.725-.55T14.8 14H19V5H5v9h4.2q.3.9 1.075 1.45T12 16m-7 3h14z"/></svg>
-                                <svg class="-ml-1 -mt-2 h-4 w-4 text-red-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                            <li class="relative flex flex-wrap just-fu-start m-0">
+                                <div onclick="toggleNotifications(this)" class="select-none group relative hover:bg-gray-100 dark:hover:bg-gray-800 p-4 cursor-pointer">
+                                    <svg class="w-6 h-6 text-gray-400 group-hover:text-gray-500 dark:group-hover:text-sky-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14v-3h-3q-.75.95-1.787 1.475T12 18q-1.175 0-2.212-.525T8 16H5zm7-3q.95 0 1.725-.55T14.8 14H19V5H5v9h4.2q.3.9 1.075 1.45T12 16m-7 3h14z"/>
+                                    </svg>
+                                    <svg class=@CssUtils.ClassNames("absolute right-1 top-1 h-4 w-4", AppConfig.HasUnreadNotifications(HttpContext?.User.GetUserName()) ? "text-red-500" : "text-transparent") viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                                </div>
+                                <div id="notifications-menu"></div>
                             </li>
-                            <li class="mr-2 relative flex flex-wrap just-fu-start m-0">
-                                <svg class="w-6 h-6 cursor-pointer text-gray-400 hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M8 3h8v8h6v10H2V9h6zm2 16h4V5h-4zm6 0h4v-6h-4zm-8 0v-8H4v8z"/></svg>
-                                <svg class="-ml-2 -mt-2 h-4 w-4 text-red-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                            <li onclick="toggleAchievements(this)" class="mr-2 relative flex flex-wrap just-fu-start m-0">
+                                <div class="group relative hover:bg-gray-100 dark:hover:bg-gray-800 p-4 cursor-pointer">
+                                    <svg class="w-6 h-6 cursor-pointer text-gray-400 group-hover:text-gray-500 dark:group-hover:text-sky-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M8 3h8v8h6v10H2V9h6zm2 16h4V5h-4zm6 0h4v-6h-4zm-8 0v-8H4v8z"/></svg>
+                                    <svg class=@CssUtils.ClassNames("absolute right-1 top-1 h-4 w-4", AppConfig.HasUnreadAchievements(HttpContext?.User.GetUserName()) ? "text-red-500" : "text-transparent") viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                                </div>
+                                <div id="achievements-menu"></div>
                             </li>
                             <li class="mr-3 relative flex flex-wrap just-fu-start m-0">
                                 <form action="Account/Logout" method="post">
@@ -104,6 +112,9 @@
 </header>
 
 @code {
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+    
     private string? currentUrl;
 
     [SupplyParameterFromQuery] 

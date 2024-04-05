@@ -15,6 +15,8 @@ public class AppConfig
     public string? GitPagesBaseUrl { get; set; }
     public ConcurrentDictionary<string,int> UsersReputation { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersQuestions { get; set; } = new();
+    public ConcurrentDictionary<string,int> UsersUnreadAchievements { get; set; } = new();
+    public ConcurrentDictionary<string,int> UsersUnreadNotifications { get; set; } = new();
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
@@ -103,6 +105,9 @@ public class AppConfig
         
         ResetUsersReputation(db);
         ResetUsersQuestions(db);
+        
+        ResetUsersUnreadAchievements(db);
+        ResetUsersUnreadNotifications(db);
     }
 
     public void UpdateUsersReputation(IDbConnection db)
@@ -149,6 +154,18 @@ public class AppConfig
             .Select(x => new { x.UserName, x.QuestionsCount })));
     }
 
+    public void ResetUsersUnreadNotifications(IDbConnection db)
+    {
+        UsersUnreadNotifications = new(db.Dictionary<string, int>(
+            "SELECT UserName, Count(*) AS Total FROM Notification WHERE Read = false GROUP BY UserName HAVING COUNT(*) > 0"));
+    }
+
+    public void ResetUsersUnreadAchievements(IDbConnection db)
+    {
+        UsersUnreadAchievements = new(db.Dictionary<string, int>(
+            "SELECT UserName, Count(*) AS Total FROM Achievement WHERE Read = false GROUP BY UserName HAVING COUNT(*) > 0"));
+    }
+
     public async Task ResetUserQuestionsAsync(IDbConnection db, string userName)
     {
         var questionsCount = (int)await db.CountAsync<Post>(x => x.CreatedBy == userName);
@@ -174,4 +191,23 @@ public class AppConfig
         return models;
     }
 
+    public void IncrNotificationsFor(string userName)
+    {
+        UsersUnreadNotifications.AddOrUpdate(userName, 1, (_, count) => count + 1);
+    }
+
+    public void IncrAchievementsFor(string userName)
+    {
+        UsersUnreadAchievements.AddOrUpdate(userName, 1, (_, count) => count + 1);
+    }
+
+    public bool HasUnreadNotifications(string? userName)
+    {
+        return userName != null && UsersUnreadNotifications.TryGetValue(userName, out var count) && count > 0;
+    }
+
+    public bool HasUnreadAchievements(string? userName)
+    {
+        return userName != null && UsersUnreadAchievements.TryGetValue(userName, out var count) && count > 0;
+    }
 }

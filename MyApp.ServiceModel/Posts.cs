@@ -471,8 +471,9 @@ public enum NotificationType
     Unknown = 0,
     NewComment = 1,
     NewAnswer = 2,
-    CommentMention = 3,
+    QuestionMention = 3,
     AnswerMention = 4,
+    CommentMention = 5,
 }
 
 public class Notification
@@ -498,6 +499,8 @@ public class Notification
     public DateTime CreatedDate { get; set; }
     
     public bool Read { get; set; }
+    
+    public string? RefUserName { get; set; }
 }
 
 [EnumAsInt]

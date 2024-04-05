@@ -50,6 +50,7 @@ public class StartJob
 
 public class NewComment
 {
+    // Post or AnswerId
     public string RefId { get; set; }
     public Comment Comment { get; set; }
 }
@@ -68,11 +69,13 @@ public class DbWrites
     public Post? CreateAnswer { get; set; }
     public int? AnswerAddedToPost { get; set; }
     public NewComment? NewComment { get; set; }
+    public DeleteComment? DeleteComment { get; set; }
     public List<int>? CompleteJobIds { get; set; }
     public FailJob? FailJob { get; set; }
     public ApplicationUser? UserRegistered { get; set; }
     public ApplicationUser? UserSignedIn { get; set; }
     public bool? UpdateReputations { get; set; }
+    public MarkAsRead? MarkAsRead { get; set; }
 }
 
 [Tag(Tag.Tasks)]

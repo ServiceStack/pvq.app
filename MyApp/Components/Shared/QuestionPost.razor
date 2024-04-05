@@ -52,9 +52,9 @@
                 </div>
             }
         </div>
-        <div class="flex">
+        <div id="@Question.Post.Id" class="flex">
             <div class="w-20">
-                <div id="@Question.Post.Id" class="voting flex flex-col items-center pr-2">
+                <div data-refid=@Question.Post.Id class="voting flex flex-col items-center pr-2">
                     <!-- bx:up-arrow bxs:up-arrow <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19"/> -->
                     <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
                     <b class="score text-xl" data-score=@Question.QuestionScore>@Question.QuestionScore</b>
@@ -142,9 +142,9 @@
             {
                 var userName = AppConfig.GetUserName(answer.Model);
                 <article data-answer=@answer.Id data-createdby=@userName class="py-8 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex">
+                    <div id=@answer.Id class="flex">
                         <div class="md:w-32 pr-2">
-                            <div id=@answer.Id class="voting flex flex-col items-center">
+                            <div data-refid=@answer.Id class="voting flex flex-col items-center">
                                 <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
                                 <b class="score text-xl" data-score=@Question.GetAnswerScore(answer.Id)>@Question.GetAnswerScore(answer.Id)</b>
                                 <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>

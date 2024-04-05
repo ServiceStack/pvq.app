@@ -91,9 +91,12 @@ public class BackgroundMqServices(
 
         if (request.CreatePost != null)
         {
-            var postId = (int)await Db.InsertAsync(request.CreatePost, selectIdentity:true);
-            var createdBy = request.CreatePost.CreatedBy;
-            if (createdBy != null && request.CreatePost.PostTypeId == 1)
+            var post = request.CreatePost;
+            var body = post.Body;
+            post.Body = null;
+            post.Id = (int)await Db.InsertAsync(post, selectIdentity:true);
+            var createdBy = post.CreatedBy;
+            if (createdBy != null && post.PostTypeId == 1)
             {
                 await appConfig.ResetUserQuestionsAsync(Db, createdBy);
             }
@@ -102,22 +105,55 @@ public class BackgroundMqServices(
             {
                 await Db.InsertAsync(new StatTotals
                 {
-                    Id = $"{postId}",
-                    PostId = postId,
+                    Id = $"{post.Id}",
+                    PostId = post.Id,
                     UpVotes = 0,
                     DownVotes = 0,
                     StartingUpVotes = 0,
-                    CreatedBy = request.CreatePost.CreatedBy,
+                    CreatedBy = post.CreatedBy,
                 });
             }
             catch (Exception e)
             {
-                log.LogWarning("Couldn't insert StatTotals for Post {PostId}: '{Message}', updating instead...", postId, e.Message);
+                log.LogWarning("Couldn't insert StatTotals for Post {PostId}: '{Message}', updating instead...", post.Id, e.Message);
                 await Db.UpdateOnlyAsync(() => new StatTotals
                 {
-                    PostId = postId,
-                    CreatedBy = request.CreatePost.CreatedBy,
-                }, x => x.Id == $"{postId}");
+                    PostId = post.Id,
+                    CreatedBy = post.CreatedBy,
+                }, x => x.Id == $"{post.Id}");
+            }
+
+            if (!string.IsNullOrEmpty(body))
+            {
+                var cleanBody = body.StripHtml();
+                var userNameMentions = cleanBody.FindUserNameMentions()
+                    .Where(x => x != createdBy).ToList();
+                if (userNameMentions.Count > 0)
+                {
+                    var existingUsers = await Db.SelectAsync(Db.From<ApplicationUser>()
+                        .Where(x => userNameMentions.Contains(x.UserName!)));
+                    
+                    foreach (var existingUser in existingUsers)
+                    {
+                        var firstMentionPos = cleanBody.IndexOf(existingUser.UserName!, StringComparison.Ordinal);
+                        if (firstMentionPos < 0) continue;
+
+                        var startPos = Math.Max(0, firstMentionPos - 50);
+                        await Db.InsertAsync(new Notification
+                        {
+                            UserName = existingUser.UserName!,
+                            Type = NotificationType.QuestionMention,
+                            RefId = $"{post.Id}",
+                            PostId = post.Id,
+                            CreatedDate = post.CreationDate,
+                            PostTitle = post.Title.SubstringWithEllipsis(0,100),
+                            Summary = cleanBody.SubstringWithEllipsis(startPos,100),
+                            Href = $"/questions/{post.Id}/{post.Slug}",
+                            RefUserName = createdBy,
+                        });
+                        appConfig.IncrNotificationsFor(existingUser.UserName!);
+                    }
+                }
             }
         }
 
@@ -214,14 +250,15 @@ public class BackgroundMqServices(
         }
 
         var answer = request.CreateAnswer; 
-        if (answer is { RefId: not null, ParentId: not null })
+        if (answer is { ParentId: not null, CreatedBy: not null })
         {
             var postId = answer.ParentId.Value;
-            if (!await Db.ExistsAsync(Db.From<StatTotals>().Where(x => x.Id == answer.RefId)))
+            var refId = $"{postId}-{answer.CreatedBy}";
+            if (!await Db.ExistsAsync(Db.From<StatTotals>().Where(x => x.Id == refId)))
             {
                 await Db.InsertAsync(new StatTotals
                 {
-                    Id = answer.RefId,
+                    Id = refId,
                     PostId = postId,
                     ViewCount = 0,
                     FavoriteCount = 0,
@@ -235,18 +272,58 @@ public class BackgroundMqServices(
             var post = await Db.SingleByIdAsync<Post>(postId);
             if (post?.CreatedBy != null)
             {
-                await Db.InsertAsync(new Notification
+                var answerHref = $"/questions/{postId}/{post.Slug}#{refId}";
+                if (post.CreatedBy != answer.CreatedBy)
                 {
-                    UserName = post.CreatedBy, 
-                    Type = NotificationType.NewAnswer,
-                    RefId = answer.RefId,
-                    PostId = postId,
-                    CreatedDate = answer.CreationDate,
-                    PostTitle = post.Title.SubstringWithEllipsis(0,100),
-                    Summary = answer.Summary.SubstringWithEllipsis(0,100),
-                    Href = $"/questions/{postId}/{post.Slug}#{answer.RefId}",
-                });
+                    await Db.InsertAsync(new Notification
+                    {
+                        UserName = post.CreatedBy, 
+                        Type = NotificationType.NewAnswer,
+                        RefId = refId,
+                        PostId = postId,
+                        CreatedDate = answer.CreationDate,
+                        PostTitle = post.Title.SubstringWithEllipsis(0,100),
+                        Summary = answer.Summary.SubstringWithEllipsis(0,100),
+                        Href = answerHref,
+                        RefUserName = answer.CreatedBy,
+                    });
+                    appConfig.IncrNotificationsFor(post.CreatedBy);
+                }
+
+                if (!string.IsNullOrEmpty(answer.Body))
+                {
+                    var cleanBody = answer.Body.StripHtml();
+                    var userNameMentions = cleanBody.FindUserNameMentions()
+                        .Where(x => x != post.CreatedBy && x != answer.CreatedBy).ToList();
+                    if (userNameMentions.Count > 0)
+                    {
+                        var existingUsers = await Db.SelectAsync(Db.From<ApplicationUser>()
+                            .Where(x => userNameMentions.Contains(x.UserName!)));
+                        
+                        foreach (var existingUser in existingUsers)
+                        {
+                            var firstMentionPos = cleanBody.IndexOf(existingUser.UserName!, StringComparison.Ordinal);
+                            if (firstMentionPos < 0) continue;
+
+                            var startPos = Math.Max(0, firstMentionPos - 50);
+                            await Db.InsertAsync(new Notification
+                            {
+                                UserName = existingUser.UserName!,
+                                Type = NotificationType.AnswerMention,
+                                RefId = $"{postId}",
+                                PostId = postId,
+                                CreatedDate = answer.CreationDate,
+                                PostTitle = post.Title.SubstringWithEllipsis(0,100),
+                                Summary = cleanBody.SubstringWithEllipsis(startPos,100),
+                                Href = answerHref,
+                                RefUserName = answer.CreatedBy,
+                            });
+                            appConfig.IncrNotificationsFor(existingUser.UserName!);
+                        }
+                    }
+                }
             }
+            
         }
 
         if (request.AnswerAddedToPost != null)
@@ -268,21 +345,69 @@ public class BackgroundMqServices(
                 var createdBy = isAnswer
                     ? (await Db.SingleByIdAsync<StatTotals>(refId))?.CreatedBy
                     : post.CreatedBy;
-                if (createdBy != null)
+
+                var comment = request.NewComment.Comment;
+                var commentRefId = $"{refId}-{comment.Created}";
+                var cleanBody = comment.Body.StripHtml();
+                var createdDate = DateTimeOffset.FromUnixTimeMilliseconds(comment.Created).DateTime;
+                var commentHref = $"/questions/{postId}/{post.Slug}#{commentRefId}";
+                
+                if (createdBy != null && createdBy != comment.CreatedBy)
                 {
-                    var comment = request.NewComment.Comment;
                     await Db.InsertAsync(new Notification
                     {
                         UserName = createdBy, 
                         Type = NotificationType.NewComment,
-                        RefId = refId,
+                        RefId = commentRefId,
                         PostId = postId,
-                        CreatedDate = DateTimeOffset.FromUnixTimeMilliseconds(comment.Created).DateTime,
+                        CreatedDate = createdDate,
                         PostTitle = post.Title.SubstringWithEllipsis(0,100),
-                        Summary = comment.Body.SubstringWithEllipsis(0,100),
-                        Href = $"/questions/{postId}/{post.Slug}#{refId}-{comment.Created}",
+                        Summary = cleanBody.SubstringWithEllipsis(0,100),
+                        Href = commentHref,
+                        RefUserName = comment.CreatedBy,
                     });
+                    appConfig.IncrNotificationsFor(createdBy);
                 }
+                
+                var userNameMentions = cleanBody.FindUserNameMentions()
+                    .Where(x => x != createdBy && x != comment.CreatedBy).ToList();
+                if (userNameMentions.Count > 0)
+                {
+                    var existingUsers = await Db.SelectAsync(Db.From<ApplicationUser>()
+                        .Where(x => userNameMentions.Contains(x.UserName!)));
+                        
+                    foreach (var existingUser in existingUsers)
+                    {
+                        var firstMentionPos = cleanBody.IndexOf(existingUser.UserName!, StringComparison.Ordinal);
+                        if (firstMentionPos < 0) continue;
+
+                        var startPos = Math.Max(0, firstMentionPos - 50);
+                        await Db.InsertAsync(new Notification
+                        {
+                            UserName = existingUser.UserName!,
+                            Type = NotificationType.CommentMention,
+                            RefId = commentRefId,
+                            PostId = postId,
+                            CreatedDate = createdDate,
+                            PostTitle = post.Title.SubstringWithEllipsis(0,100),
+                            Summary = cleanBody.SubstringWithEllipsis(startPos,100),
+                            Href = commentHref,
+                            RefUserName = comment.CreatedBy,
+                        });
+                        appConfig.IncrNotificationsFor(existingUser.UserName!);
+                    }
+                }
+            }
+        }
+
+        if (request.DeleteComment != null)
+        {
+            var refId = $"{request.DeleteComment.Id}-{request.DeleteComment.Created}";
+            var rowsAffected = await Db.DeleteAsync(Db.From<Notification>()
+                .Where(x => x.RefId == refId && x.RefUserName == request.DeleteComment.CreatedBy));
+            if (rowsAffected > 0)
+            {
+                appConfig.ResetUsersUnreadNotifications(Db);
             }
         }
 
@@ -291,6 +416,35 @@ public class BackgroundMqServices(
             // TODO improve
             appConfig.UpdateUsersReputation(Db);
             appConfig.ResetUsersReputation(Db);
+        }
+
+        if (request.MarkAsRead != null)
+        {
+            var userName = request.MarkAsRead.UserName;
+            if (request.MarkAsRead.AllNotifications == true)
+            {
+                await Db.UpdateOnlyAsync(() => new Notification { Read = true }, x => x.UserName == userName);
+                appConfig.UsersUnreadNotifications[userName] = 0;
+            }
+            else if (request.MarkAsRead.NotificationIds?.Count > 0)
+            {
+                await Db.UpdateOnlyAsync(() => new Notification { Read = true }, 
+                    x => x.UserName == userName && request.MarkAsRead.NotificationIds.Contains(x.Id));
+                appConfig.UsersUnreadNotifications[userName] = (int) await Db.CountAsync(
+                    Db.From<Notification>().Where(x => x.UserName == userName && !x.Read));
+            }
+            if (request.MarkAsRead.AllAchievements == true)
+            {
+                await Db.UpdateOnlyAsync(() => new Achievement { Read = true }, x => x.UserName == userName);
+                appConfig.UsersUnreadAchievements[userName] = 0;
+            }
+            else if (request.MarkAsRead.AchievementIds?.Count > 0)
+            {
+                await Db.UpdateOnlyAsync(() => new Achievement { Read = true }, 
+                    x => x.UserName == userName && request.MarkAsRead.AchievementIds.Contains(x.Id));
+                appConfig.UsersUnreadAchievements[userName] = (int) await Db.CountAsync(
+                    Db.From<Achievement>().Where(x => x.UserName == userName && !x.Read));
+            }
         }
     }
 

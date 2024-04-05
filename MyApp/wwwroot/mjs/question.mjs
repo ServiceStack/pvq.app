@@ -8,6 +8,7 @@ import {
     DeleteQuestion, DeleteComment, GetUserReputations,
 } from "dtos.mjs"
 
+const client = new JsonServiceClient()
 let meta = null
 
 function getComments(id) {
@@ -32,6 +33,27 @@ const svgPaths = {
         solid: '<path fill="currentColor" d="M11.178 19.569a.998.998 0 0 0 1.644 0l9-13A.999.999 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569z"/>',
     }
 }
+
+globalThis.removeComment = async function (el) {
+    const parentEl = el.parentElement, 
+          id = parentEl.dataset.id,
+          created = parseInt(parentEl.dataset.created),
+          createdBy = parentEl.dataset.createdby
+    if (confirm('Are you sure?')) {
+        const api = await client.apiVoid(new DeleteComment({
+            id,
+            created,
+            createdBy,
+        }))
+        if (api.succeeded) {
+            parentEl.parentElement.removeChild(parentEl)
+        } else {
+            alert(api.errorMessage)
+        }
+    }
+}
+
+
 
 async function loadVoting(ctx) {
     const { client, postId, userName, user, hasRole } = ctx
@@ -65,7 +87,7 @@ async function loadVoting(ctx) {
     }
 
     $$('.voting').forEach(el => {
-        const refId = el.id
+        const refId = el.dataset.refid
         const createdBy = el.closest('[data-createdby]')?.dataset.createdby
         async function vote(value) {
             if (!userName) {
@@ -652,7 +674,6 @@ async function loadUserReputations(ctx) {
 
 export default  {
     async load() {
-        const client = new JsonServiceClient()
         const { user, hasRole } = useAuth()
         const userName = user.value?.userName
         const postId = parseInt($1('[data-postid]')?.getAttribute('data-postid'))

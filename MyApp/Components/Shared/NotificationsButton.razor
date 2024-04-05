@@ -1,0 +1,41 @@
+﻿@inject AppConfig AppConfig
+
+<div id="notifications-menu"></div>
+
+<script type="module">
+import { mount, alreadyMounted } from "app.mjs"
+import { $1, EventBus } from "@@servicestack/client"
+
+const bus = new EventBus()
+
+const Menu = {
+  template:`
+<div class="hidden absolute top-12 right-0 z-10 mt-1 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+  <div class="py-1" role="none">
+    <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+    <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Account settings</a>
+    <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-1">Support</a>
+    <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-2">License</a>
+    <form method="POST" action="#" role="none">
+      <button type="submit" class="text-gray-700 block w-full px-4 py-2 text-left text-sm" role="menuitem" tabindex="-1" id="menu-item-3">Sign out</button>
+    </form>
+  </div>
+</div>  
+  `,
+  props:['bus'],
+  setup(props) {
+  }
+}
+  
+globalThis.toggleNotifications = function (el) {
+  const elMenu = $1("#notifications-menu")
+  if (!alreadyMounted(elMenu)) {
+    mount(Menu, elMenu, { bus })
+  }
+}
+</script>
+
+@code {
+  [CascadingParameter]
+  public HttpContext? HttpContext { get; set; }
+}

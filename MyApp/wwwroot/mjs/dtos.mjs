@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-03 11:09:35
+Date: 2024-04-06 01:27:24
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -314,6 +314,73 @@ export class ModelWinRate {
     /** @type {number} */
     winRate;
 }
+/** @typedef {'Unknown'|'NewComment'|'NewAnswer'|'QuestionMention'|'AnswerMention'|'CommentMention'} */
+export var NotificationType;
+(function (NotificationType) {
+    NotificationType["Unknown"] = "Unknown"
+    NotificationType["NewComment"] = "NewComment"
+    NotificationType["NewAnswer"] = "NewAnswer"
+    NotificationType["QuestionMention"] = "QuestionMention"
+    NotificationType["AnswerMention"] = "AnswerMention"
+    NotificationType["CommentMention"] = "CommentMention"
+})(NotificationType || (NotificationType = {}));
+export class Notification {
+    /** @param {{id?:number,userName?:string,type?:NotificationType,postId?:number,refId?:string,postTitle?:string,summary?:string,href?:string,createdDate?:string,read?:boolean,refUserName?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    /** @type {string} */
+    userName;
+    /** @type {NotificationType} */
+    type;
+    /** @type {number} */
+    postId;
+    /** @type {string} */
+    refId;
+    /** @type {string} */
+    postTitle;
+    /** @type {string} */
+    summary;
+    /** @type {string} */
+    href;
+    /** @type {string} */
+    createdDate;
+    /** @type {boolean} */
+    read;
+    /** @type {?string} */
+    refUserName;
+}
+/** @typedef {'Unknown'|'AnswerUpVote'|'AnswerDownVote'|'QuestionUpVote'|'QuestionDownVote'} */
+export var AchievementType;
+(function (AchievementType) {
+    AchievementType["Unknown"] = "Unknown"
+    AchievementType["AnswerUpVote"] = "AnswerUpVote"
+    AchievementType["AnswerDownVote"] = "AnswerDownVote"
+    AchievementType["QuestionUpVote"] = "QuestionUpVote"
+    AchievementType["QuestionDownVote"] = "QuestionDownVote"
+})(AchievementType || (AchievementType = {}));
+export class Achievement {
+    /** @param {{id?:number,userName?:string,type?:AchievementType,postId?:number,refId?:string,refUserName?:string,score?:number,read?:boolean,createdDate?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    /** @type {string} */
+    userName;
+    /** @type {AchievementType} */
+    type;
+    /** @type {number} */
+    postId;
+    /** @type {string} */
+    refId;
+    /** @type {?string} */
+    refUserName;
+    /** @type {number} */
+    score;
+    /** @type {boolean} */
+    read;
+    /** @type {string} */
+    createdDate;
+}
 export class HelloResponse {
     /** @param {{result?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -373,6 +440,12 @@ export class CalculateLeaderboardResponse {
     modelTotalScoreByTag;
     /** @type {ModelWinRate[]} */
     modelWinRate;
+}
+export class GetAllAnswerModelsResponse {
+    /** @param {{results?:string[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string[]} */
+    results;
 }
 export class FindSimilarQuestionsResponse {
     /** @param {{results?:Post[],responseStatus?:ResponseStatus}} [init] */
@@ -465,6 +538,22 @@ export class UserPostDataResponse {
     upVoteIds;
     /** @type {string[]} */
     downVoteIds;
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
+export class GetLatestNotificationsResponse {
+    /** @param {{results?:Notification[],responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {Notification[]} */
+    results;
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
+export class GetLatestAchievementsResponse {
+    /** @param {{results?:Achievement[],responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {Achievement[]} */
+    results;
     /** @type {?ResponseStatus} */
     responseStatus;
 }
@@ -609,6 +698,24 @@ export class CalculateLeaderBoard {
     getMethod() { return 'GET' }
     createResponse() { return new CalculateLeaderboardResponse() }
 }
+export class GetLeaderboardStatsByTag {
+    /** @param {{tag?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    tag;
+    getTypeName() { return 'GetLeaderboardStatsByTag' }
+    getMethod() { return 'POST' }
+    createResponse () { };
+}
+export class GetAllAnswerModels {
+    /** @param {{id?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    id;
+    getTypeName() { return 'GetAllAnswerModels' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetAllAnswerModelsResponse() }
+}
 export class FindSimilarQuestions {
     /** @param {{text?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -705,6 +812,15 @@ export class GetQuestionFile {
     getMethod() { return 'GET' }
     createResponse() { return '' }
 }
+export class GetAnswerFile {
+    /** @param {{id?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    getTypeName() { return 'GetAnswerFile' }
+    getMethod() { return 'GET' }
+    createResponse () { };
+}
 export class GetAnswerBody {
     /** @param {{id?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -713,6 +829,15 @@ export class GetAnswerBody {
     getTypeName() { return 'GetAnswerBody' }
     getMethod() { return 'GET' }
     createResponse() { return '' }
+}
+export class CreateRankingPostJob {
+    /** @param {{postId?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {number} */
+    postId;
+    getTypeName() { return 'CreateRankingPostJob' }
+    getMethod() { return 'POST' }
+    createResponse () { };
 }
 export class CreateWorkerAnswer {
     /** @param {{postId?:number,model?:string,json?:string,postJobId?:number}} [init] */
@@ -730,12 +855,16 @@ export class CreateWorkerAnswer {
     createResponse() { return new IdResponse() }
 }
 export class RankAnswers {
-    /** @param {{postId?:number,votes?:{ [index: string]: number; }}} [init] */
+    /** @param {{postId?:number,model?:string,modelVotes?:{ [index: string]: number; },postJobId?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {number} */
     postId;
+    /** @type {string} */
+    model;
     /** @type {{ [index: string]: number; }} */
-    votes;
+    modelVotes;
+    /** @type {?number} */
+    postJobId;
     getTypeName() { return 'RankAnswers' }
     getMethod() { return 'POST' }
     createResponse() { return new IdResponse() }
@@ -831,6 +960,33 @@ export class CreateAvatar {
     getTypeName() { return 'CreateAvatar' }
     getMethod() { return 'GET' }
     createResponse() { return '' }
+}
+export class GetLatestNotifications {
+    constructor(init) { Object.assign(this, init) }
+    getTypeName() { return 'GetLatestNotifications' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetLatestNotificationsResponse() }
+}
+export class GetLatestAchievements {
+    constructor(init) { Object.assign(this, init) }
+    getTypeName() { return 'GetLatestAchievements' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetLatestAchievementsResponse() }
+}
+export class MarkAsRead {
+    /** @param {{notificationIds?:number[],allNotifications?:boolean,achievementIds?:number[],allAchievements?:boolean}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?number[]} */
+    notificationIds;
+    /** @type {?boolean} */
+    allNotifications;
+    /** @type {?number[]} */
+    achievementIds;
+    /** @type {?boolean} */
+    allAchievements;
+    getTypeName() { return 'MarkAsRead' }
+    getMethod() { return 'POST' }
+    createResponse() { return new EmptyResponse() }
 }
 export class RenderComponent {
     /** @param {{ifQuestionModified?:number,regenerateMeta?:number,question?:QuestionAndAnswers,home?:RenderHome}} [init] */
