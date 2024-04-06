@@ -101,9 +101,9 @@ const NotificationsMenu = {
         
         async function markAll() {
             results.value.forEach(x => x.read = true)
-            await client.api(new MarkAsRead({ allNotifications: true }))
+            const api = await client.api(new MarkAsRead({ allNotifications: true }))
             if (api.succeeded) {
-                const alert = $1('#new-achievements')
+                const alert = $1('#new-notifications')
                 if (alert) {
                     alert.classList.remove('text-red-500')
                     alert.classList.add('text-transparent')
