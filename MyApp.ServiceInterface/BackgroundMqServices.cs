@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceInterface.App;
@@ -15,9 +14,8 @@ public class BackgroundMqServices(
     ILogger<BackgroundMqServices> log,
     AppConfig appConfig, 
     R2VirtualFiles r2, 
-    ModelWorkerQueue modelWorkers, 
-    QuestionsProvider questions) 
-    : Service
+    ModelWorkerQueue modelWorkers) 
+    : MqServicesBase(log, appConfig)
 {
     public async Task Any(DiskTasks request)
     {
@@ -44,50 +42,21 @@ public class BackgroundMqServices(
         }
     }
 
-    public async Task ExecuteAsync<T>(IExecuteCommandAsync<T> command, T request) where T : class
-    {
-        var commandName = command.GetType().Name;
-        var sw = Stopwatch.StartNew();
-        try
-        {
-            await command.ExecuteAsync(request);
-            log.LogDebug("{Command} took {ElapsedMilliseconds}ms to execute", commandName, sw.ElapsedMilliseconds);
-#if DEBUG
-            appConfig.AddCommandResult(new() {
-                Name = commandName,
-                Ms = sw.ElapsedMilliseconds,
-            });
-#endif            
-        }
-        catch (Exception e)
-        {
-            log.LogError(e, "{Command}({Request}) failed: {Message}", commandName, request.ToJsv(), e.Message);
-#if DEBUG
-            appConfig.AddCommandResult(new() {
-                Name = commandName,
-                Ms = sw.ElapsedMilliseconds,
-                Request = request,
-                Error = e.Message,
-            });
-#endif
-        }
-    }
-
     ILogger<T> GetLogger<T>() => services.GetRequiredService<ILogger<T>>();
 
     public async Task Any(DbWrites request)
     {
         if (request.CreatePostVote != null)
-            await ExecuteAsync(new CreatePostVotesCommand(appConfig, Db, MessageProducer), request.CreatePostVote);
+            await ExecuteAsync(new CreatePostVotesCommand(AppConfig, Db, MessageProducer), request.CreatePostVote);
 
         if (request.CreatePost != null)
-            await ExecuteAsync(new CreatePostCommand(GetLogger<CreatePostCommand>(), appConfig, Db), request.CreatePost);
+            await ExecuteAsync(new CreatePostCommand(GetLogger<CreatePostCommand>(), AppConfig, Db), request.CreatePost);
 
         if (request.UpdatePost != null)
             await ExecuteAsync(new UpdatePostCommand(Db), request.UpdatePost);
 
         if (request.DeletePost != null)
-            await ExecuteAsync(new DeletePostCommand(appConfig, Db), request.DeletePost);
+            await ExecuteAsync(new DeletePostCommand(AppConfig, Db), request.DeletePost);
         
         if (request.CreatePostJobs is { PostJobs.Count: > 0 })
             await ExecuteAsync(new CreatePostJobsCommand(Db, modelWorkers), request.CreatePostJobs);
@@ -102,25 +71,25 @@ public class BackgroundMqServices(
             await ExecuteAsync(new FailJobCommand(Db, modelWorkers), request.FailJob);
 
         if (request.CreateAnswer != null)
-            await ExecuteAsync(new CreateAnswerCommand(appConfig, Db), request.CreateAnswer);
+            await ExecuteAsync(new CreateAnswerCommand(AppConfig, Db), request.CreateAnswer);
         
         if (request.CreateNotification != null)
-            await ExecuteAsync(new CreateNotificationCommand(appConfig, Db), request.CreateNotification);
+            await ExecuteAsync(new CreateNotificationCommand(AppConfig, Db), request.CreateNotification);
 
         if (request.AnswerAddedToPost != null)
             await ExecuteAsync(new AnswerAddedToPostCommand(Db), request.AnswerAddedToPost);
 
         if (request.NewComment != null)
-            await ExecuteAsync(new NewCommentCommand(appConfig, Db), request.NewComment);
+            await ExecuteAsync(new NewCommentCommand(AppConfig, Db), request.NewComment);
 
         if (request.DeleteComment != null)
-            await ExecuteAsync(new DeleteCommentCommand(appConfig, Db), request.DeleteComment);
+            await ExecuteAsync(new DeleteCommentCommand(AppConfig, Db), request.DeleteComment);
 
         if (request.UpdateReputations != null)
-            await ExecuteAsync(new UpdateReputationsCommand(appConfig, Db), request.UpdateReputations);
+            await ExecuteAsync(new UpdateReputationsCommand(AppConfig, Db), request.UpdateReputations);
 
         if (request.MarkAsRead != null)
-            await ExecuteAsync(new MarkAsReadCommand(appConfig, Db), request.MarkAsRead);
+            await ExecuteAsync(new MarkAsReadCommand(AppConfig, Db), request.MarkAsRead);
     }
 
     public async Task Any(AnalyticsTasks request)
@@ -150,15 +119,15 @@ public class BackgroundMqServices(
     {
         var to = new ViewCommandsResponse
         {
-            LatestResults = new(appConfig.CommandResults),
-            LatestFailed = new(appConfig.CommandFailures),
-            Totals = new(appConfig.CommandTotals.Values)
+            LatestResults = new(AppConfig.CommandResults),
+            LatestFailed = new(AppConfig.CommandFailures),
+            Totals = new(AppConfig.CommandTotals.Values)
         };
         if (request.Clear == true)
         {
-            appConfig.CommandResults.Clear();
-            appConfig.CommandFailures.Clear();
-            appConfig.CommandTotals.Clear();
+            AppConfig.CommandResults.Clear();
+            AppConfig.CommandFailures.Clear();
+            AppConfig.CommandTotals.Clear();
         }
         return to;
     }

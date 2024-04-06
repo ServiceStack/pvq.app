@@ -49,7 +49,7 @@ public class CreatePostVotesCommand(AppConfig appConfig, IDbConnection db, IMess
         }
         
         mqClient.Publish(new RenderComponent {
-            RegenerateMeta = vote.PostId
+            RegenerateMeta = new() { ForPost = vote.PostId },
         });
     }
 }
