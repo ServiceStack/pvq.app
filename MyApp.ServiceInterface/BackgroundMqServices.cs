@@ -46,7 +46,7 @@ public class BackgroundMqServices(
 
     public async Task ExecuteAsync<T>(IExecuteCommandAsync<T> command, T request) where T : class
     {
-        var commandName = command.GetType().Name.LeftPart('`');
+        var commandName = command.GetType().Name;
         try
         {
             var sw = Stopwatch.StartNew();   
@@ -99,7 +99,7 @@ public class BackgroundMqServices(
         if (request.FailJob != null)
             await ExecuteAsync(new FailJobCommand(Db, modelWorkers), request.FailJob);
 
-        if (request.CreateAnswer is { ParentId: not null, CreatedBy: not null })
+        if (request.CreateAnswer != null)
             await ExecuteAsync(new CreateAnswerCommand(appConfig, Db), request.CreateAnswer);
         
         if (request.CreateNotification != null)

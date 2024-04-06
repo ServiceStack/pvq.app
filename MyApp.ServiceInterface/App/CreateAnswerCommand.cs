@@ -10,6 +10,11 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IExecu
 {
     public async Task ExecuteAsync(Post answer)
     {
+        if (answer.ParentId == null)
+            throw new ArgumentNullException(nameof(answer.ParentId));
+        if (answer.CreatedBy == null)
+            throw new ArgumentNullException(nameof(answer.CreatedBy));
+        
         var postId = answer.ParentId!.Value;
         var refId = $"{postId}-{answer.CreatedBy}";
         if (!await db.ExistsAsync(db.From<StatTotals>().Where(x => x.Id == refId)))
