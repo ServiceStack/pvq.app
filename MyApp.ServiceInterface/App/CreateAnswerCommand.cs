@@ -98,6 +98,7 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IExecu
                 Score = 1,
                 CreatedDate = DateTime.UtcNow,
             });
+            appConfig.IncrUnreadAchievementsFor(answer.CreatedBy);
         }
     }
 }

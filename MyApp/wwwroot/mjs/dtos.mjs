@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-06 11:14:32
+Date: 2024-04-06 13:26:31
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -350,12 +350,14 @@ export class Notification {
     /** @type {?string} */
     refUserName;
 }
-/** @typedef {'Unknown'|'AnswerUpVote'|'AnswerDownVote'|'QuestionUpVote'|'QuestionDownVote'} */
+/** @typedef {'Unknown'|'NewAnswer'|'AnswerUpVote'|'AnswerDownVote'|'NewQuestion'|'QuestionUpVote'|'QuestionDownVote'} */
 export var AchievementType;
 (function (AchievementType) {
     AchievementType["Unknown"] = "Unknown"
+    AchievementType["NewAnswer"] = "NewAnswer"
     AchievementType["AnswerUpVote"] = "AnswerUpVote"
     AchievementType["AnswerDownVote"] = "AnswerDownVote"
+    AchievementType["NewQuestion"] = "NewQuestion"
     AchievementType["QuestionUpVote"] = "QuestionUpVote"
     AchievementType["QuestionDownVote"] = "QuestionDownVote"
 })(AchievementType || (AchievementType = {}));

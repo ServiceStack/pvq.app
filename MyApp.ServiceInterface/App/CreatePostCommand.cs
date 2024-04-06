@@ -88,6 +88,7 @@ public class CreatePostCommand(ILogger log, AppConfig appConfig, IDbConnection d
                 Score = 1,
                 CreatedDate = DateTime.UtcNow,
             });
+            appConfig.IncrUnreadAchievementsFor(post.CreatedBy!);
         }
     }
 }

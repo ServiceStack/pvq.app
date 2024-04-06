@@ -40,7 +40,8 @@ const NotificationsMenu = {
     </div>
   <div class="max-h-[20rem] overflow-auto" role="none">
     <ul>
-        <li v-for="item in filteredResults" :key="item.id" :class="['px-2 py-2 text-xs font-normal hover:bg-indigo-100 dark:hover:bg-indigo-800 cursor-pointer border-b border-gray-200 dark:border-gray-700', item.read ? 'bg-gray-100 dark:bg-gray-700' : '']" @click="goto(item)">
+        <li v-for="item in filteredResults" :key="item.id" @click="goto(item)" :class="[item.read ? 'bg-gray-100 dark:bg-gray-700' : '', 
+            'px-2 py-2 text-xs font-normal hover:bg-indigo-100 dark:hover:bg-indigo-800 cursor-pointer border-b border-gray-200 dark:border-gray-700']">
             <div class="flex justify-between font-semibold text-gray-500">
                 <span class="">{{typeLabel(item.type)}}</span>
                 <span>{{formatDate(item.createdDate)}}</span>
@@ -49,7 +50,7 @@ const NotificationsMenu = {
             <div class="px-2 mt-2" :title="item.summary">{{item.summary}}</div>
         </li>
         <li v-if="!filteredResults.length">
-            <div class="px-2 py-2 text-xs font-normal text-gray-500">No notifications</div>
+            <div class="px-2 py-2 text-xs font-normal text-gray-500">empty</div>
         </li>
     </ul>
   </div>
@@ -70,6 +71,10 @@ const NotificationsMenu = {
             hide.value = false
             show.value = !show.value
             if (!show.value) timeout = setTimeout(() => hide.value = true, 700)
+        })
+        bus.subscribe('hideNotifications', () => {
+            show.value = false
+            hide.value = true
         })
         watch(show, () => {
             transition(rule1, transition1, show.value)
@@ -111,39 +116,111 @@ const NotificationsMenu = {
 
 const AchievementsMenu = {
     template: `
-<div :class="[show ? '' : 'hidden','absolute top-12 right-0 z-10 mt-1 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none']" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
-  <div class="py-1" role="none">
-    <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
-    <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Account settings</a>
-    <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-1">Support</a>
-    <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-2">License</a>
-    <form method="POST" action="#" role="none">
-      <button type="submit" class="text-gray-700 block w-full px-4 py-2 text-left text-sm" role="menuitem" tabindex="-1" id="menu-item-3">Sign out</button>
-    </form>
+<div v-if="!hide" :class="[transition1,'absolute top-12 right-0 z-10 mt-1 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none w-[30rem]']" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+    <div class="py-1 px-2 bg-gray-50 dark:bg-gray-900 flex justify-between text-sm items-center border-b border-gray-200 dark:border-gray-700">
+        <span class="py-1">
+            achievements
+        </span>
+    </div>
+  <div class="max-h-[20rem] overflow-auto" role="none">
+    <ul>
+        <li v-for="entry in filteredResults" :key="entry.title">
+            <div class="py-2 px-2 text-sm flex justify-between font-semibold border-b border-gray-200 dark:border-gray-700">
+                <span class="">{{entry.title}}</span>
+            </div>
+            <div v-for="item in entry.results" class="pr-2 py-2 text-xs hover:bg-indigo-100 dark:hover:bg-indigo-800 cursor-pointer border-b border-gray-200 dark:border-gray-700" @click="goto(item)">
+                <b v-if="item.score > 0" class="mr-2 inline-block w-10 text-right text-green-600">+ {{item.score}}</b>
+                <b v-else-if="item.score < 0" class="mr-2 inline-block w-10 text-right text-red-600">- {{item.score}}</b>
+                <span class="truncate" :title="item.title">{{item.title}}</span>
+            </div>
+        </li>
+        <li v-if="!filteredResults.length">
+            <div class="px-2 py-2 text-xs font-normal text-gray-500">empty</div>
+        </li>
+    </ul>
   </div>
 </div>  
   `,
     setup(props) {
+        const client = useClient()
         const show = ref(false)
-        
-        return { show }
+        const results = ref([])
+        const hide = ref(true)
+
+        const filteredResults = computed(() => {
+            const to = []
+            const sevenDaysAgo = new Date() - 7 * 24 * 60 * 60 * 1000
+            const last7days = results.value.filter(x => new Date(x.createdDate) >= sevenDaysAgo)
+            if (last7days.length > 0) {
+                to.push({ title: 'Last 7 days', results: last7days })
+            }
+            const thirtyDaysAgo = new Date() - 30 * 24 * 60 * 60 * 1000
+            const last30days = results.value.filter(x => new Date(x.createdDate) >= thirtyDaysAgo && !last7days.includes(x))
+            if (last30days.length > 0) {
+                to.push({ title: 'Last 30 days', results: last30days })
+            }
+            const title = last7days.length + last30days.length === 0 ? 'All time' : 'Older'
+            const remaining = results.value.filter(x => !last7days.includes(x) && !last30days.includes(x))
+            if (remaining.length > 0) {
+                to.push({ title, results: remaining })
+            }
+            return to
+        })
+
+        const transition1 = ref('transform opacity-0 scale-95')
+        let timeout = null
+        bus.subscribe('toggleAchievements', () => {
+            clearTimeout(timeout)
+            hide.value = false
+            show.value = !show.value
+            if (!show.value) timeout = setTimeout(() => hide.value = true, 700)
+        })
+        bus.subscribe('hideAchievements', () => {
+            show.value = false
+            hide.value = true
+        })
+        watch(show, () => {
+            transition(rule1, transition1, show.value)
+        })
+
+        onMounted(async () => {
+            const api = await client.api(new GetLatestAchievements())
+            if (api.succeeded) {
+                results.value = api.response.results || []
+            }
+        })
+
+        async function goto(item) {
+            location.href = item.href
+        }
+
+        return { transition1, hide, filteredResults, formatDate, goto }
     }
 }
 
 
-globalThis.toggleNotifications = function (el) {
+function toggleNotifications(el) {
     // console.log('toggleNotifications')
     bus.publish('toggleNotifications')
+    bus.publish('hideAchievements')
 }
-
-globalThis.toggleAchievements = function (el) {
+function toggleAchievements(el) {
     // console.log('toggleAchievements')
     bus.publish('toggleAchievements')
+    bus.publish('hideNotifications')
+    $1('#new-achievements').classList.remove('text-red-500')
+    $1('#new-achievements').classList.add('text-transparent')
 }
+
+globalThis.toggleNotifications = toggleNotifications
+globalThis.toggleAchievements = toggleAchievements 
 
 export default {
     load() {
         console.log('header loaded')
+        globalThis.toggleNotifications = toggleNotifications
+        globalThis.toggleAchievements = toggleAchievements
+
         const elNotificationsMenu = $1('#notifications-menu')
         const elAchievementsMenu = $1('#achievements-menu')
 

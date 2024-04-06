@@ -84,6 +84,12 @@
 
     public async Task RegisterUser(EditContext editContext)
     {
+        if (char.IsDigit(Input.UserName[0]))
+        {
+            identityErrors = [new() { Code = "InvalidUserName", Description = "Username can't start with a digit" }];
+            return;
+        }
+        
         var user = CreateUser();
         user.LastLoginIp = HttpContext.GetRemoteIp();
         user.LastLoginDate = DateTime.UtcNow;

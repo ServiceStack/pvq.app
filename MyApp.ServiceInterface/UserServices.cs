@@ -138,7 +138,7 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
     public async Task<object> Any(GetLatestNotifications request)
     {
         var userName = Request.GetClaimsPrincipal().GetUserName();
-        var notificationPosts = await Db.SelectMultiAsync<Notification,Post>(Db.From<Notification>()
+        var tuples = await Db.SelectMultiAsync<Notification,Post>(Db.From<Notification>()
             .Join<Post>()
             .Where(x => x.UserName == userName)
             .OrderByDescending(x => x.Id)
@@ -151,23 +151,53 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
             return notification;
         }
         
-        var results = notificationPosts.Map(x => Merge(x.Item1, x.Item2));
+        var results = tuples.Map(x => Merge(x.Item1, x.Item2));
         
         return new GetLatestNotificationsResponse
         {
             Results = results
         };
     }
+    
+    public class SumAchievement
+    {
+        public int PostId { get; set; }
+        public string RefId { get; set; }
+        public int Score { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public string Title { get; set; }
+        public string Slug { get; set; }
+    }
 
     public async Task<object> Any(GetLatestAchievements request)
     {
         var userName = Request.GetClaimsPrincipal().GetUserName();
+
+        var sumAchievements = await Db.SelectAsync<SumAchievement>(
+            @"SELECT A.PostId, A.RefId, Sum(A.Score) AS Score, Max(A.CreatedDate) AS CreatedDate, P.Title, p.Slug 
+                FROM Achievement A LEFT JOIN Post P on (A.PostId = P.Id)
+               WHERE UserName = @userName
+               GROUP BY A.PostId, A.RefId
+               LIMIT 30", new { userName });
+
+        var i = 0;
+        var results = sumAchievements.Map(x => new Achievement
+        {
+            Id = ++i,
+            PostId = x.PostId,
+            RefId = x.RefId,
+            Title = x.Title.SubstringWithEllipsis(0,100),
+            Score = x.Score,
+            CreatedDate = x.CreatedDate,
+            Href = $"/questions/{x.PostId}/{x.Slug}",
+        });
+
+        // Reset everytime they view the latest achievements
+        appConfig.UsersUnreadAchievements[userName!] = 0;
+        
         return new GetLatestAchievementsResponse
         {
-            Results = await Db.SelectAsync(Db.From<Achievement>()
-                .Where(x => x.UserName == userName)
-                .OrderByDescending(x => x.Id)
-                .Take(30))
+            Results = results
         };
     }
 

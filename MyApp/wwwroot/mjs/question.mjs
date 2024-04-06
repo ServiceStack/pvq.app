@@ -65,12 +65,12 @@ async function loadVoting(ctx) {
         const down = el.querySelector('.down')
         const score = el.querySelector('.score')
 
-        const value = getValue(userPostVotes, el.id)
+        const value = getValue(userPostVotes, el.dataset.refid)
         up.classList.toggle('text-green-600',value === 1)
         up.innerHTML = value === 1 ? svgPaths.up.solid : svgPaths.up.empty
         down.classList.toggle('text-green-600',value === -1)
         down.innerHTML = value === -1 ? svgPaths.down.solid : svgPaths.down.empty
-        score.innerHTML = parseInt(score.dataset.score) + value - getValue(origPostValues, el.id)
+        score.innerHTML = parseInt(score.dataset.score) + value - getValue(origPostValues, el.dataset.refid)
     }
     function getValue(postVotes, refId) {
         return (postVotes.upVoteIds.includes(refId) ? 1 : postVotes.downVoteIds.includes(refId) ? -1 : 0)

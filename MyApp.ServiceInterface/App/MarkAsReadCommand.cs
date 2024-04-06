@@ -22,6 +22,7 @@ public class MarkAsReadCommand(AppConfig appConfig, IDbConnection db) : IExecute
             appConfig.UsersUnreadNotifications[userName] = (int) await db.CountAsync(
                 db.From<Notification>().Where(x => x.UserName == userName && !x.Read));
         }
+        // Mark all achievements as read isn't used, they're auto reset after viewed
         if (request.AllAchievements == true)
         {
             await db.UpdateOnlyAsync(() => new Achievement { Read = true }, x => x.UserName == userName);

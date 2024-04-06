@@ -44,6 +44,7 @@ public class CreatePostVotesCommand(AppConfig appConfig, IDbConnection db, IMess
                     Score = vote.Score > 0 ? 10 : -1, // 10 points for UpVote, -1 point for DownVote
                     CreatedDate = DateTime.UtcNow,
                 });
+                appConfig.IncrUnreadAchievementsFor(vote.RefUserName!);
             }
         }
         

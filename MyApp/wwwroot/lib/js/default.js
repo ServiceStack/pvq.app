@@ -31,12 +31,21 @@ if (clearMetadata) {
         })
 }
 
-if (location.hash) {
-    setTimeout(() => {
-        const el = document.getElementById(location.hash.substring(1))
-        if (el) {
-            el.classList.add('highlighted')
-            el.scrollIntoView('smooth')
-        }
-    }, 500)
+function highlightElement(id) {
+    const el = document.getElementById(id)
+    if (el) {
+        el.classList.add('highlighted')
+        el.scrollIntoView('smooth')
+    }
 }
+
+if (location.hash) {
+    highlightElement(location.hash.substring(1))
+}
+
+document.addEventListener('DOMContentLoaded', () =>
+    Blazor.addEventListener('enhancedload', (e) => {
+        if (location.hash) {
+            highlightElement(location.hash.substring(1))
+        }
+    }))
