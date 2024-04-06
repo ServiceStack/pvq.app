@@ -19,7 +19,7 @@ function formatDate(date) {
 
 const NotificationsMenu = {
     template: `
-<div v-if="!hide" :class="[transition1,'absolute top-12 right-0 z-10 mt-1 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none w-[30rem]']" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+<div v-if="!hide" :class="[transition1,'absolute top-12 right-0 z-10 mt-1 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none w-[26rem] sm:w-[30rem]']" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
     <div class="py-1 px-2 bg-gray-50 dark:bg-gray-900 flex justify-between text-sm items-center border-b border-gray-200 dark:border-gray-700">
         <span>
             inbox
@@ -123,7 +123,7 @@ const NotificationsMenu = {
 
 const AchievementsMenu = {
     template: `
-<div v-if="!hide" :class="[transition1,'absolute top-12 right-0 z-10 mt-1 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none w-[30rem]']" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+<div v-if="!hide" :class="[transition1,'absolute top-12 right-0 z-10 mt-1 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none w-[26rem] sm:w-[30rem]']" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
     <div class="py-1 px-2 bg-gray-50 dark:bg-gray-900 flex justify-between text-sm items-center border-b border-gray-200 dark:border-gray-700">
         <span class="py-1">
             achievements
@@ -132,13 +132,13 @@ const AchievementsMenu = {
   <div class="max-h-[20rem] overflow-auto" role="none">
     <ul>
         <li v-for="entry in filteredResults" :key="entry.title">
-            <div class="py-2 px-2 text-sm flex justify-between font-semibold border-b border-gray-200 dark:border-gray-700">
+            <div class="py-2 px-2 text-sm flex justify-between font-semibold border-b border-gray-300 dark:border-gray-600">
                 <span class="">{{entry.title}}</span>
             </div>
-            <div v-for="item in entry.results" class="pr-2 py-2 text-xs hover:bg-indigo-100 dark:hover:bg-indigo-800 cursor-pointer border-b border-gray-200 dark:border-gray-700" @click="goto(item)">
-                <b v-if="item.score > 0" class="mr-2 inline-block w-10 text-right text-green-600">+ {{item.score}}</b>
-                <b v-else-if="item.score < 0" class="mr-2 inline-block w-10 text-right text-red-600">- {{item.score}}</b>
-                <span class="truncate" :title="item.title">{{item.title}}</span>
+            <div v-for="item in entry.results" class="pr-2 py-2 hover:bg-indigo-100 dark:hover:bg-indigo-800 cursor-pointer border-b border-gray-200 dark:border-gray-700" @click="goto(item)">
+                <b v-if="item.score > 0" class="mr-2 text-sm inline-block w-10 text-right text-green-600">+{{item.score}}</b>
+                <b v-else-if="item.score < 0" class="mr-2 inline-block w-10 text-right text-red-600">-{{item.score}}</b>
+                <span class="text-xs font-normal truncate" :title="item.title">{{item.title}}</span>
             </div>
         </li>
         <li v-if="!filteredResults.length">
