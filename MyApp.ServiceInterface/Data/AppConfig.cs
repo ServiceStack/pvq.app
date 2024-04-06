@@ -211,9 +211,53 @@ public class AppConfig
         return userName != null && UsersUnreadAchievements.TryGetValue(userName, out var count) && count > 0;
     }
 
-    public List<CommandResult> CommandResults { get; set; } = [];
-
     public bool IsHuman(string? userName) => userName != null && GetModelUser(userName) == null;
+
+    public const int DefaultCapacity = 500;
+    public ConcurrentQueue<CommandResult> CommandResults { get; set; } = [];
+    public ConcurrentQueue<CommandResult> CommandFailures { get; set; } = new();
+    
+    public ConcurrentDictionary<string, CommandSummary> CommandTotals { get; set; } = new();
+
+    public void AddCommandResult(CommandResult result)
+    {
+        var ms = result.Ms ?? 0;
+        if (result.Error == null)
+        {
+            CommandResults.Enqueue(result);
+            while (CommandResults.Count > DefaultCapacity)
+                CommandResults.TryDequeue(out _);
+
+            CommandTotals.AddOrUpdate(result.Name, 
+                _ => new CommandSummary { Name = result.Name, Count = 1, TotalMs = ms, MinMs = ms > 0 ? ms : int.MinValue },
+                (_, summary) => 
+                {
+                    summary.Count++;
+                    summary.TotalMs += ms;
+                    summary.MaxMs = Math.Max(summary.MaxMs, ms);
+                    if (ms > 0)
+                    {
+                        summary.MinMs = Math.Min(summary.MinMs, ms);
+                    }
+                    return summary;
+                });
+        }
+        else
+        {
+            CommandFailures.Enqueue(result);
+            while (CommandFailures.Count > DefaultCapacity)
+                CommandFailures.TryDequeue(out _);
+
+            CommandTotals.AddOrUpdate(result.Name, 
+                _ => new CommandSummary { Name = result.Name, Failed = 1, Count = 0, TotalMs = 0, MinMs = int.MinValue, LastError = result.Error },
+                (_, summary) =>
+                {
+                    summary.Failed++;
+                    summary.LastError = result.Error;
+                    return summary;
+                });
+        }
+    }
 }
 
 public class CommandResult
@@ -222,4 +266,16 @@ public class CommandResult
     public long? Ms { get; set; }
     public object Request { get; set; }
     public string? Error { get; set; }
+}
+
+public class CommandSummary
+{
+    public string Name { get; set; }
+    public long Count { get; set; }
+    public long Failed { get; set; }
+    public long TotalMs { get; set; }
+    public long MinMs { get; set; }
+    public long MaxMs { get; set; }
+    public int AverageMs => (int) Math.Floor(TotalMs / (double)Count);
+    public string? LastError { get; set; }
 }

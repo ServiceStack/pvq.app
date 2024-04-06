@@ -111,8 +111,15 @@ public class SearchTasks
 
 [Tag(Tag.Tasks)]
 [ExcludeMetadata]
-[Restrict(InternalOnly = true)]
-public class ViewCommands : IGet, IReturn<CommandResult[]>
+[ValidateIsAdmin]
+public class ViewCommands : IGet, IReturn<ViewCommandsResponse>
 {
     public bool? Clear { get; set; }
+}
+public class ViewCommandsResponse
+{
+    public List<CommandResult> LatestResults { get; set; }
+    public List<CommandResult> LatestFailed { get; set; }
+    public List<CommandSummary> Totals { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
 }

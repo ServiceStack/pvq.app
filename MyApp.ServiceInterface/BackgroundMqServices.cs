@@ -53,7 +53,7 @@ public class BackgroundMqServices(
             await command.ExecuteAsync(request);
             log.LogDebug("{Command} took {ElapsedMilliseconds}ms to execute", commandName, sw.ElapsedMilliseconds);
 #if DEBUG
-            appConfig.CommandResults.Add(new() {
+            appConfig.AddCommandResult(new() {
                 Name = commandName,
                 Ms = sw.ElapsedMilliseconds,
             });
@@ -63,7 +63,7 @@ public class BackgroundMqServices(
         {
             log.LogError(e, "{Command}({Request}) failed: {Message}", commandName, request.ToJsv(), e.Message);
 #if DEBUG
-            appConfig.CommandResults.Add(new() {
+            appConfig.AddCommandResult(new() {
                 Name = commandName,
                 Ms = sw.ElapsedMilliseconds,
                 Request = request,
@@ -148,11 +148,18 @@ public class BackgroundMqServices(
 
     public object Any(ViewCommands request)
     {
-        var results = appConfig.CommandResults;
+        var to = new ViewCommandsResponse
+        {
+            LatestResults = new(appConfig.CommandResults),
+            LatestFailed = new(appConfig.CommandFailures),
+            Totals = new(appConfig.CommandTotals.Values)
+        };
         if (request.Clear == true)
         {
-            appConfig.CommandResults = [];
+            appConfig.CommandResults.Clear();
+            appConfig.CommandFailures.Clear();
+            appConfig.CommandTotals.Clear();
         }
-        return results;
+        return to;
     }
 }
