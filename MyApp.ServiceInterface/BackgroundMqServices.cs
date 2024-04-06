@@ -119,7 +119,7 @@ public class BackgroundMqServices(
     {
         var to = new ViewCommandsResponse
         {
-            LatestResults = new(AppConfig.CommandResults),
+            LatestCommands = new(AppConfig.CommandResults),
             LatestFailed = new(AppConfig.CommandFailures),
             Totals = new(AppConfig.CommandTotals.Values)
         };

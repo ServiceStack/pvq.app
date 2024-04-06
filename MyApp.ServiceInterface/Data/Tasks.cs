@@ -118,7 +118,7 @@ public class ViewCommands : IGet, IReturn<ViewCommandsResponse>
 }
 public class ViewCommandsResponse
 {
-    public List<CommandResult> LatestResults { get; set; }
+    public List<CommandResult> LatestCommands { get; set; }
     public List<CommandResult> LatestFailed { get; set; }
     public List<CommandSummary> Totals { get; set; }
     public ResponseStatus? ResponseStatus { get; set; }

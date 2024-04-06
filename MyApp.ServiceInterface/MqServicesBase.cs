@@ -22,6 +22,7 @@ public abstract class MqServicesBase(ILogger log, AppConfig appConfig) : Service
             appConfig.AddCommandResult(new() {
                 Name = commandName,
                 Ms = sw.ElapsedMilliseconds,
+                At = DateTime.UtcNow,
             });
         }
         catch (Exception e)
@@ -31,6 +32,7 @@ public abstract class MqServicesBase(ILogger log, AppConfig appConfig) : Service
             appConfig.AddCommandResult(new() {
                 Name = commandName,
                 Ms = sw.ElapsedMilliseconds,
+                At = DateTime.UtcNow,
                 Request = request,
                 Error = e.Message,
             });

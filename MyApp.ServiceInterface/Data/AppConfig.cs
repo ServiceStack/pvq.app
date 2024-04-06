@@ -268,6 +268,7 @@ public class CommandResult
 {
     public string Name { get; set; }
     public long? Ms { get; set; }
+    public DateTime At { get; set; }
     public object Request { get; set; }
     public string? Error { get; set; }
 }
