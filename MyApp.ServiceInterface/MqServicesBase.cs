@@ -27,7 +27,8 @@ public abstract class MqServicesBase(ILogger log, AppConfig appConfig) : Service
         }
         catch (Exception e)
         {
-            log.LogError(e, "{Command}({Request}) failed: {Message}", commandName, request.ToJsv(), e.Message);
+            var requestBody = JSON.stringify(request.ToObjectDictionary()).Replace("\"","");
+            log.LogError(e, "{Command}({Request}) failed: {Message}", commandName, requestBody, e.Message);
             
             appConfig.AddCommandResult(new() {
                 Name = commandName,
