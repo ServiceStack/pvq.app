@@ -191,12 +191,12 @@ public class AppConfig
         return models;
     }
 
-    public void IncrNotificationsFor(string userName)
+    public void IncrUnreadNotificationsFor(string userName)
     {
         UsersUnreadNotifications.AddOrUpdate(userName, 1, (_, count) => count + 1);
     }
 
-    public void IncrAchievementsFor(string userName)
+    public void IncrUnreadAchievementsFor(string userName)
     {
         UsersUnreadAchievements.AddOrUpdate(userName, 1, (_, count) => count + 1);
     }
@@ -210,4 +210,13 @@ public class AppConfig
     {
         return userName != null && UsersUnreadAchievements.TryGetValue(userName, out var count) && count > 0;
     }
+
+    public List<CommandResult> CommandResults { get; set; } = [];
+}
+
+public class CommandResult
+{
+    public string Name { get; set; }
+    public long? Ms { get; set; }
+    public string? Error { get; set; }
 }

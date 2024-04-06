@@ -99,15 +99,18 @@ public class QuestionServices(AppConfig appConfig,
         MessageProducer.Publish(new DbWrites
         {
             CreatePost = dbPost,
-            CreatePostJobs = appConfig.GetAnswerModelsFor(userName)
-                .Select(model => new PostJob
-                {
-                    PostId = post.Id,
-                    Model = model,
-                    Title = request.Title,
-                    CreatedBy = userName,
-                    CreatedDate = now,
-                }).ToList(),
+            CreatePostJobs = new()
+            {
+                PostJobs = appConfig.GetAnswerModelsFor(userName)
+                    .Select(model => new PostJob
+                    {
+                        PostId = post.Id,
+                        Model = model,
+                        Title = request.Title,
+                        CreatedBy = userName,
+                        CreatedDate = now,
+                    }).ToList()
+            },
         });
 
         await questions.SaveQuestionAsync(post);
@@ -126,7 +129,7 @@ public class QuestionServices(AppConfig appConfig,
         rendererCache.DeleteCachedQuestionPostHtml(request.Id);
         MessageProducer.Publish(new DbWrites
         {
-            DeletePost = request.Id,
+            DeletePost = new() { Ids = [request.Id] },
         });
         MessageProducer.Publish(new SearchTasks
         {
@@ -156,7 +159,7 @@ public class QuestionServices(AppConfig appConfig,
         
         MessageProducer.Publish(new DbWrites {
             CreateAnswer = post,
-            AnswerAddedToPost = request.PostId,
+            AnswerAddedToPost = new() { Id = request.PostId},
         });
         
         await questions.SaveHumanAnswerAsync(post);
@@ -282,20 +285,11 @@ public class QuestionServices(AppConfig appConfig,
             throw HttpError.NotFound("Answer does not exist");
 
         var json = await answerFile.ReadAllTextAsync();
-        if (answerFile.Name.Contains(".a."))
-        {
-            var obj = (Dictionary<string,object>)JSON.parse(json);
-            var choices = (List<object>) obj["choices"];
-            var choice = (Dictionary<string,object>)choices[0];
-            var message = (Dictionary<string,object>)choice["message"];
-            var body = (string)message["content"];
-            return new HttpResult(body, MimeTypes.PlainText);
-        }
-        else
-        {
-            var answer = json.FromJson<Post>();
-            return new HttpResult(answer.Body, MimeTypes.PlainText);
-        }
+        var body = answerFile.Name.Contains(".a.")
+            ? questions.GetModelAnswerBody(json)
+            : questions.GetHumanAnswerBody(json);
+
+        return new HttpResult(body ?? "", MimeTypes.PlainText);
     }
 
     /// <summary>
@@ -307,19 +301,21 @@ public class QuestionServices(AppConfig appConfig,
     {
         MessageProducer.Publish(new DbWrites
         {
-            CreatePostJobs = new List<PostJob>
+            CreatePostJobs = new()
             {
-                new PostJob
-                {
-                    PostId = request.PostId,
-                    Model = "rank",
-                    Title = $"rank-{request.PostId}",
-                    CreatedDate = DateTime.UtcNow,
-                    CreatedBy = nameof(DbWrites),
-                }
+                PostJobs = [
+                    new PostJob
+                    {
+                        PostId = request.PostId,
+                        Model = "rank",
+                        Title = $"rank-{request.PostId}",
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = nameof(DbWrites),
+                    }
+                ]
             }
         });
-        return "{ \"success\": true }";
+        return new EmptyResponse();
     }
 
     public async Task<object> Any(CreateWorkerAnswer request)
@@ -346,14 +342,38 @@ public class QuestionServices(AppConfig appConfig,
         if (request.PostJobId != null)
         {
             MessageProducer.Publish(new DbWrites {
-                AnswerAddedToPost = request.PostId,
-                CompleteJobIds = [request.PostJobId.Value]
+                AnswerAddedToPost = new() { Id = request.PostId },
+                CompletePostJobs = new() { Ids = [request.PostJobId.Value] }
             });
         }
         
         await questions.SaveModelAnswerAsync(request.PostId, request.Model, json);
         
         answerNotifier.NotifyNewAnswer(request.PostId, request.Model);
+
+        // Only add notifications for answers older than 1hr
+        var post = await Db.SingleByIdAsync<Post>(request.PostId);
+        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
+        {
+            var userName = appConfig.GetUserName(request.Model);
+            var body = questions.GetModelAnswerBody(json);
+            var cleanBody = body.StripHtml()?.Trim();
+            if (!string.IsNullOrEmpty(cleanBody))
+            {
+                MessageProducer.Publish(new DbWrites {
+                    CreateNotification = new()
+                    {
+                        UserName = post.CreatedBy,
+                        PostId = post.Id,
+                        Type = NotificationType.NewAnswer,
+                        CreatedDate = DateTime.UtcNow,
+                        RefId = $"{post.Id}-{userName}",
+                        Summary = cleanBody.SubstringWithEllipsis(0,100),
+                        RefUserName = userName,
+                    },
+                });
+            }
+        }
         
         return new IdResponse { Id = $"{request.PostId}" };
     }
@@ -474,7 +494,7 @@ public class QuestionServices(AppConfig appConfig,
 /// DEBUG
 /// </summary>
 [ValidateIsAuthenticated]
-public class CreateRankingPostJob
+public class CreateRankingPostJob : IReturn<EmptyResponse>
 {
     public int PostId { get; set; }
 }

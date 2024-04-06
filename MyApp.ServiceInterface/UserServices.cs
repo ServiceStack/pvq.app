@@ -123,7 +123,8 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
                 UserName = userName,
                 Score = score,
                 RefUserName = refUserName,
-            }
+            },
+            UpdateReputations = new(),
         });
     }
 
@@ -137,12 +138,24 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
     public async Task<object> Any(GetLatestNotifications request)
     {
         var userName = Request.GetClaimsPrincipal().GetUserName();
+        var notificationPosts = await Db.SelectMultiAsync<Notification,Post>(Db.From<Notification>()
+            .Join<Post>()
+            .Where(x => x.UserName == userName)
+            .OrderByDescending(x => x.Id)
+            .Take(30));
+
+        Notification Merge(Notification notification, Post post)
+        {
+            notification.Title ??= post.Title.SubstringWithEllipsis(0,100);
+            notification.Href ??= $"/questions/{notification.PostId}/{post.Slug}#{notification.RefId}";
+            return notification;
+        }
+        
+        var results = notificationPosts.Map(x => Merge(x.Item1, x.Item2));
+        
         return new GetLatestNotificationsResponse
         {
-            Results = await Db.SelectAsync(Db.From<Notification>()
-                .Where(x => x.UserName == userName)
-                .OrderByDescending(x => x.Id)
-                .Take(30))
+            Results = results
         };
     }
 

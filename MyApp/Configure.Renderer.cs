@@ -83,7 +83,7 @@ public class RenderServices(
                 
                 // TODO improve
                 MessageProducer.Publish(new DbWrites {
-                    UpdateReputations = true
+                    UpdateReputations = new()
                 });
             }
 

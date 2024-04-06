@@ -45,7 +45,7 @@ const NotificationsMenu = {
                 <span class="">{{typeLabel(item.type)}}</span>
                 <span>{{formatDate(item.createdDate)}}</span>
             </div>
-            <div class="px-2 mt-1 truncate" :title="item.postTitle"><b class="mr-1">Q</b>{{item.postTitle}}</div>
+            <div class="px-2 mt-1 truncate" :title="item.title"><b class="mr-1">Q</b>{{item.title}}</div>
             <div class="px-2 mt-2" :title="item.summary">{{item.summary}}</div>
         </li>
         <li v-if="!filteredResults.length">

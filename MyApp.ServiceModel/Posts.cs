@@ -488,17 +488,17 @@ public class Notification
     
     public int PostId { get; set; }
     
-    public string RefId { get; set; }
+    public string RefId { get; set; } // Post or Answer or Comment
     
-    public string PostTitle { get; set; } //100 chars
-        
     public string Summary { get; set; } //100 chars
-    
-    public string Href { get; set; }
-    
+        
     public DateTime CreatedDate { get; set; }
     
     public bool Read { get; set; }
+    
+    public string? Href { get; set; }
+    
+    public string? Title { get; set; } //100 chars
     
     public string? RefUserName { get; set; }
 }
@@ -532,6 +532,10 @@ public class Achievement
     public int Score { get; set; }
     
     public bool Read { get; set; }
+    
+    public string? Href { get; set; }
+    
+    public string? Title { get; set; } //100 chars
     
     public DateTime CreatedDate { get; set; }
 }

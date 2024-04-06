@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-06 01:27:24
+Date: 2024-04-06 11:14:32
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -325,7 +325,7 @@ export var NotificationType;
     NotificationType["CommentMention"] = "CommentMention"
 })(NotificationType || (NotificationType = {}));
 export class Notification {
-    /** @param {{id?:number,userName?:string,type?:NotificationType,postId?:number,refId?:string,postTitle?:string,summary?:string,href?:string,createdDate?:string,read?:boolean,refUserName?:string}} [init] */
+    /** @param {{id?:number,userName?:string,type?:NotificationType,postId?:number,refId?:string,summary?:string,createdDate?:string,read?:boolean,href?:string,title?:string,refUserName?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {number} */
     id;
@@ -338,15 +338,15 @@ export class Notification {
     /** @type {string} */
     refId;
     /** @type {string} */
-    postTitle;
-    /** @type {string} */
     summary;
-    /** @type {string} */
-    href;
     /** @type {string} */
     createdDate;
     /** @type {boolean} */
     read;
+    /** @type {?string} */
+    href;
+    /** @type {?string} */
+    title;
     /** @type {?string} */
     refUserName;
 }
@@ -360,7 +360,7 @@ export var AchievementType;
     AchievementType["QuestionDownVote"] = "QuestionDownVote"
 })(AchievementType || (AchievementType = {}));
 export class Achievement {
-    /** @param {{id?:number,userName?:string,type?:AchievementType,postId?:number,refId?:string,refUserName?:string,score?:number,read?:boolean,createdDate?:string}} [init] */
+    /** @param {{id?:number,userName?:string,type?:AchievementType,postId?:number,refId?:string,refUserName?:string,score?:number,read?:boolean,href?:string,title?:string,createdDate?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {number} */
     id;
@@ -378,6 +378,10 @@ export class Achievement {
     score;
     /** @type {boolean} */
     read;
+    /** @type {?string} */
+    href;
+    /** @type {?string} */
+    title;
     /** @type {string} */
     createdDate;
 }
@@ -837,7 +841,7 @@ export class CreateRankingPostJob {
     postId;
     getTypeName() { return 'CreateRankingPostJob' }
     getMethod() { return 'POST' }
-    createResponse () { };
+    createResponse() { return new EmptyResponse() }
 }
 export class CreateWorkerAnswer {
     /** @param {{postId?:number,model?:string,json?:string,postJobId?:number}} [init] */

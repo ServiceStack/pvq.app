@@ -323,6 +323,24 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         var remoteQuestionFiles = await GetRemoteQuestionFilesAsync(id);
         r2.DeleteFiles(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
     }
+
+    public string? GetModelAnswerBody(string json)
+    {
+        var obj = (Dictionary<string,object>)JSON.parse(json);
+        if (!obj.TryGetValue("choices", out var oChoices) || oChoices is not List<object> choices) 
+            return null;
+        if (choices.Count <= 0 || choices[0] is not Dictionary<string, object> choice) 
+            return null;
+        if (choice["message"] is Dictionary<string, object> message)
+            return message["content"] as string;
+        return null;
+    }
+
+    public string? GetHumanAnswerBody(string json)
+    {
+        var answer = json.FromJson<Post>();
+        return answer.Body;
+    }
 }
 
 // TODO: Use Native Methods on S3VirtualFiles in vNext
