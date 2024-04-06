@@ -1,11 +1,12 @@
 ﻿using System.Data;
+using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack.Messaging;
 using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class CreatePostVotesCommand(IDbConnection db, IMessageProducer mqClient) : IExecuteCommandAsync<Vote>
+public class CreatePostVotesCommand(AppConfig appConfig, IDbConnection db, IMessageProducer mqClient) : IExecuteCommandAsync<Vote>
 {
     public async Task ExecuteAsync(Vote vote)
     {
@@ -31,12 +32,12 @@ public class CreatePostVotesCommand(IDbConnection db, IMessageProducer mqClient)
         {
             await db.InsertAsync(vote);
 
-            if (vote.RefUserName != null)
+            if (appConfig.IsHuman(vote.RefUserName))
             {
                 await db.InsertAsync(new Achievement
                 {
-                    UserName = vote.RefUserName,
-                    RefUserName = vote.UserName,
+                    UserName = vote.RefUserName!, // User who's Q or A was voted on
+                    RefUserName = vote.UserName,  // User who voted
                     PostId = vote.PostId,
                     RefId = vote.RefId,
                     Type = vote.Score > 0 ? voteUp : voteDown,

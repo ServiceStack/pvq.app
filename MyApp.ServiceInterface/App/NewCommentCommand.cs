@@ -25,7 +25,7 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IExecute
             var cleanBody = comment.Body.StripHtml().Trim();
             var createdDate = DateTimeOffset.FromUnixTimeMilliseconds(comment.Created).DateTime;
 
-            if (createdBy != null && createdBy != comment.CreatedBy)
+            if (createdBy != null && createdBy != comment.CreatedBy && appConfig.IsHuman(createdBy))
             {
                 await db.InsertAsync(new Notification
                 {
@@ -41,7 +41,8 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IExecute
             }
 
             var userNameMentions = cleanBody.FindUserNameMentions()
-                .Where(x => x != createdBy && x != comment.CreatedBy).ToList();
+                .Where(x => x != createdBy && x != comment.CreatedBy && appConfig.IsHuman(x))
+                .ToList();
             if (userNameMentions.Count > 0)
             {
                 var existingUsers = await db.SelectAsync(db.From<ApplicationUser>()
@@ -53,17 +54,20 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IExecute
                     if (firstMentionPos < 0) continue;
 
                     var startPos = Math.Max(0, firstMentionPos - 50);
-                    await db.InsertAsync(new Notification
+                    if (appConfig.IsHuman(existingUser.UserName))
                     {
-                        UserName = existingUser.UserName!,
-                        Type = NotificationType.CommentMention,
-                        RefId = commentRefId,
-                        PostId = postId,
-                        CreatedDate = createdDate,
-                        Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
-                        RefUserName = comment.CreatedBy,
-                    });
-                    appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
+                        await db.InsertAsync(new Notification
+                        {
+                            UserName = existingUser.UserName!,
+                            Type = NotificationType.CommentMention,
+                            RefId = commentRefId,
+                            PostId = postId,
+                            CreatedDate = createdDate,
+                            Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
+                            RefUserName = comment.CreatedBy,
+                        });
+                        appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
+                    }
                 }
             }
         }

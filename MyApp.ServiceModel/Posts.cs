@@ -507,10 +507,12 @@ public class Notification
 public enum AchievementType
 {
     Unknown = 0,
-    AnswerUpVote = 1,
-    AnswerDownVote = 2,
-    QuestionUpVote = 3,
-    QuestionDownVote = 4,
+    NewAnswer = 1,
+    AnswerUpVote = 2,
+    AnswerDownVote = 3,
+    NewQuestion = 4,
+    QuestionUpVote = 5,
+    QuestionDownVote = 6,
 }
 
 public class Achievement

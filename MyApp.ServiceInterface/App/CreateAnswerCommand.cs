@@ -35,7 +35,8 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IExecu
         var post = await db.SingleByIdAsync<Post>(postId);
         if (post?.CreatedBy != null)
         {
-            if (post.CreatedBy != answer.CreatedBy)
+            // Notify Post Author of new Answer
+            if (post.CreatedBy != answer.CreatedBy && appConfig.IsHuman(post.CreatedBy))
             {
                 await db.InsertAsync(new Notification
                 {
@@ -50,11 +51,12 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IExecu
                 appConfig.IncrUnreadNotificationsFor(post.CreatedBy);
             }
 
+            // Notify any User Mentions in Answer
             if (!string.IsNullOrEmpty(answer.Body))
             {
                 var cleanBody = answer.Body.StripHtml().Trim();
                 var userNameMentions = cleanBody.FindUserNameMentions()
-                    .Where(x => x != post.CreatedBy && x != answer.CreatedBy).ToList();
+                    .Where(x => x != post.CreatedBy && x != answer.CreatedBy && appConfig.IsHuman(x)).ToList();
                 if (userNameMentions.Count > 0)
                 {
                     var existingUsers = await db.SelectAsync(db.From<ApplicationUser>()
@@ -66,20 +68,36 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IExecu
                         if (firstMentionPos < 0) continue;
 
                         var startPos = Math.Max(0, firstMentionPos - 50);
-                        await db.InsertAsync(new Notification
+                        if (appConfig.IsHuman(existingUser.UserName))
                         {
-                            UserName = existingUser.UserName!,
-                            Type = NotificationType.AnswerMention,
-                            RefId = $"{postId}",
-                            PostId = postId,
-                            CreatedDate = answer.CreationDate,
-                            Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
-                            RefUserName = answer.CreatedBy,
-                        });
-                        appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
+                            await db.InsertAsync(new Notification
+                            {
+                                UserName = existingUser.UserName!,
+                                Type = NotificationType.AnswerMention,
+                                RefId = $"{postId}",
+                                PostId = postId,
+                                CreatedDate = answer.CreationDate,
+                                Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
+                                RefUserName = answer.CreatedBy,
+                            });
+                            appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
+                        }
                     }
                 }
             }
+        }
+
+        if (appConfig.IsHuman(answer.CreatedBy))
+        {
+            await db.InsertAsync(new Achievement
+            {
+                UserName = answer.CreatedBy,
+                Type = AchievementType.NewAnswer,
+                RefId = refId,
+                PostId = postId,
+                Score = 1,
+                CreatedDate = DateTime.UtcNow,
+            });
         }
     }
 }

@@ -47,9 +47,9 @@ public class BackgroundMqServices(
     public async Task ExecuteAsync<T>(IExecuteCommandAsync<T> command, T request) where T : class
     {
         var commandName = command.GetType().Name;
+        var sw = Stopwatch.StartNew();
         try
         {
-            var sw = Stopwatch.StartNew();   
             await command.ExecuteAsync(request);
             log.LogDebug("{Command} took {ElapsedMilliseconds}ms to execute", commandName, sw.ElapsedMilliseconds);
 #if DEBUG
@@ -61,10 +61,12 @@ public class BackgroundMqServices(
         }
         catch (Exception e)
         {
-            log.LogError(e, "{Command} failed: {Message}", commandName, e.Message);
+            log.LogError(e, "{Command}({Request}) failed: {Message}", commandName, request.ToJsv(), e.Message);
 #if DEBUG
             appConfig.CommandResults.Add(new() {
                 Name = commandName,
+                Ms = sw.ElapsedMilliseconds,
+                Request = request,
                 Error = e.Message,
             });
 #endif
@@ -76,7 +78,7 @@ public class BackgroundMqServices(
     public async Task Any(DbWrites request)
     {
         if (request.CreatePostVote != null)
-            await ExecuteAsync(new CreatePostVotesCommand(Db, MessageProducer), request.CreatePostVote);
+            await ExecuteAsync(new CreatePostVotesCommand(appConfig, Db, MessageProducer), request.CreatePostVote);
 
         if (request.CreatePost != null)
             await ExecuteAsync(new CreatePostCommand(GetLogger<CreatePostCommand>(), appConfig, Db), request.CreatePost);

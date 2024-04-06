@@ -212,11 +212,14 @@ public class AppConfig
     }
 
     public List<CommandResult> CommandResults { get; set; } = [];
+
+    public bool IsHuman(string? userName) => userName != null && GetModelUser(userName) == null;
 }
 
 public class CommandResult
 {
     public string Name { get; set; }
     public long? Ms { get; set; }
+    public object Request { get; set; }
     public string? Error { get; set; }
 }

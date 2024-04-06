@@ -47,7 +47,7 @@ public class CreatePostCommand(ILogger log, AppConfig appConfig, IDbConnection d
         {
             var cleanBody = body.StripHtml().Trim();
             var userNameMentions = cleanBody.FindUserNameMentions()
-                .Where(x => x != createdBy).ToList();
+                .Where(x => x != createdBy && appConfig.IsHuman(x)).ToList();
             if (userNameMentions.Count > 0)
             {
                 var existingUsers = await db.SelectAsync(db.From<ApplicationUser>()
@@ -59,19 +59,35 @@ public class CreatePostCommand(ILogger log, AppConfig appConfig, IDbConnection d
                     if (firstMentionPos < 0) continue;
 
                     var startPos = Math.Max(0, firstMentionPos - 50);
-                    await db.InsertAsync(new Notification
+                    if (appConfig.IsHuman(existingUser.UserName))
                     {
-                        UserName = existingUser.UserName!,
-                        Type = NotificationType.QuestionMention,
-                        RefId = $"{post.Id}",
-                        PostId = post.Id,
-                        CreatedDate = post.CreationDate,
-                        Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
-                        RefUserName = createdBy,
-                    });
-                    appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
+                        await db.InsertAsync(new Notification
+                        {
+                            UserName = existingUser.UserName!,
+                            Type = NotificationType.QuestionMention,
+                            RefId = $"{post.Id}",
+                            PostId = post.Id,
+                            CreatedDate = post.CreationDate,
+                            Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
+                            RefUserName = createdBy,
+                        });
+                        appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
+                    }
                 }
             }
+        }
+
+        if (appConfig.IsHuman(post.CreatedBy))
+        {
+            await db.InsertAsync(new Achievement
+            {
+                UserName = post.CreatedBy!,
+                Type = AchievementType.NewQuestion,
+                RefId = $"{post.Id}",
+                PostId = post.Id,
+                Score = 1,
+                CreatedDate = DateTime.UtcNow,
+            });
         }
     }
 }
