@@ -102,6 +102,13 @@ const NotificationsMenu = {
         async function markAll() {
             results.value.forEach(x => x.read = true)
             await client.api(new MarkAsRead({ allNotifications: true }))
+            if (api.succeeded) {
+                const alert = $1('#new-achievements')
+                if (alert) {
+                    alert.classList.remove('text-red-500')
+                    alert.classList.add('text-transparent')
+                }
+            }
         }
         
         async function goto(item) {
