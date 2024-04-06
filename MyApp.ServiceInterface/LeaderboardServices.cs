@@ -43,7 +43,10 @@ public class LeaderboardServices : Service
         var statQuestions = statTotals.Where(x => !x.Id.Contains('-')).ToList();
         
         // There might not be answers to some questions which we want to exclude from the win rate
-        statQuestions = statQuestions.Where(x => answers.Any(y => y.PostId == x.PostId)).ToList();
+        var questionAnswerDict = answers.GroupBy(x => x.PostId).ToDictionary(x => x.Key, x => x.ToList());
+        questionAnswerDict = questionAnswerDict.Where(x => x.Value.Count > 0).ToDictionary(x => x.Key, x => x.Value);
+        // Now filtering is done, put all the answers back into a list
+        statQuestions = statQuestions.Where(x => questionAnswerDict.ContainsKey(x.PostId)).ToList();
 
         var overallWinRates = statsByUser.GroupBy(x => x.Id).Select(y =>
         {
@@ -58,6 +61,18 @@ public class LeaderboardServices : Service
 
         var modelScale = 1 / overallWinRates.Where(x => IsHuman(x.Id) == false)
             .Sum(y => y.WinRate);
+        var humanScale = 1 / overallWinRates.Where(x => IsHuman(x.Id))
+            .Sum(y => y.WinRate);
+        var skipScale = double.IsInfinity(modelScale);
+        if (skipScale)
+        {
+            modelScale = 1;
+        }
+        var skipHumanScale = double.IsInfinity(humanScale);
+        if (skipHumanScale)
+        {
+            humanScale = 1;
+        }
 
 
         var leaderBoard = new CalculateLeaderboardResponse
@@ -77,12 +92,19 @@ public class LeaderboardServices : Service
                     StartingUpVotes = x.GetScore()
                 })
                 .ToList(),
+            
             AnswererWinRate = overallWinRates,
+            HumanWinRate = overallWinRates.Where(x => IsHuman(x.Id))
+                .Select(x => new LeaderBoardWinRate
+                {
+                    Id = x.Id,
+                    WinRate = x.WinRate * (skipHumanScale ? 1 : humanScale) * 100
+                }).ToList(),
             ModelWinRate = overallWinRates.Where(x => IsHuman(x.Id) == false)
                 .Select(x => new ModelWinRate
                 {
                     Id = x.Id,
-                    WinRate = x.WinRate * modelScale * 100
+                    WinRate = x.WinRate * (skipScale ? 1 : modelScale) * 100
                 }).ToList(),
             ModelTotalScore = statsByUser.GroupBy(x => x.Id)
                 .Select(x => new ModelTotalScore
@@ -143,6 +165,32 @@ WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight O
 
         return CalculateLeaderboardResponse(statTotals,statsByUser,answers);
     }
+
+    public async Task<object> Any(GetLeaderboardStatsHuman request)
+    {
+        var statTotals = Db.Select<StatTotals>(@"
+select * from main.StatTotals where PostId in (select PostId from StatTotals
+where PostId in (select StatTotals.PostId from StatTotals
+                 where Id like '%-accepted')
+group by PostId) and  (Id like '%-accepted' or Id like '%-most-voted' or Id not like '%-%')");
+        // filter to answers only
+        var answers = statTotals.Where(x => x.Id.Contains('-')).ToList();
+        // Sum up votes by model, first group by UserName
+        var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
+        {
+            Id = x.Key,
+            UpVotes = x.Sum(y => y.UpVotes),
+            DownVotes = x.Sum(y => y.DownVotes),
+            StartingUpVotes = x.Sum(y => y.StartingUpVotes),
+            FavoriteCount = x.Sum(y => y.FavoriteCount)
+        }).ToList();
+
+        return CalculateLeaderboardResponse(statTotals,statsByUser,answers);
+    }
+}
+
+public class GetLeaderboardStatsHuman
+{
 }
 
 public class GetLeaderboardStatsByTag
@@ -161,6 +209,7 @@ public class CalculateLeaderboardResponse
     public List<ModelTotalScore> ModelTotalScore { get; set; }
     public List<ModelTotalScoreByTag> ModelTotalScoreByTag { get; set; }
     public List<ModelWinRate> ModelWinRate { get; set; }
+    public List<LeaderBoardWinRate> HumanWinRate { get; set; }
 }
 
 public class ModelTotalScoreByTag
