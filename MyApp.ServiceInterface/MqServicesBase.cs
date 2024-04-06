@@ -27,14 +27,14 @@ public abstract class MqServicesBase(ILogger log, AppConfig appConfig) : Service
         }
         catch (Exception e)
         {
-            var requestBody = JSON.stringify(request.ToObjectDictionary()).Replace("\"","");
+            var requestBody = request.ToJsv();
             log.LogError(e, "{Command}({Request}) failed: {Message}", commandName, requestBody, e.Message);
             
             appConfig.AddCommandResult(new() {
                 Name = commandName,
                 Ms = sw.ElapsedMilliseconds,
                 At = DateTime.UtcNow,
-                Request = request,
+                Request = requestBody,
                 Error = e.Message,
             });
         }
