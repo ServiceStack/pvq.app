@@ -1285,10 +1285,6 @@ select{
   display: contents;
 }
 
-.list-item {
-  display: list-item;
-}
-
 .hidden {
   display: none;
 }
@@ -1497,8 +1493,8 @@ select{
   width: 24rem;
 }
 
-.w-\[30rem\] {
-  width: 30rem;
+.w-\[26rem\] {
+  width: 26rem;
 }
 
 .w-auto {
@@ -1511,26 +1507,6 @@ select{
 
 .w-screen {
   width: 100vw;
-}
-
-.w-\[20rem\] {
-  width: 20rem;
-}
-
-.w-\[25rem\] {
-  width: 25rem;
-}
-
-.w-\[28rem\] {
-  width: 28rem;
-}
-
-.w-\[27rem\] {
-  width: 27rem;
-}
-
-.w-\[26rem\] {
-  width: 26rem;
 }
 
 .min-w-0 {
@@ -2150,11 +2126,6 @@ select{
   border-color: rgb(244 244 245 / var(--tw-border-opacity));
 }
 
-.border-gray-400 {
-  --tw-border-opacity: 1;
-  border-color: rgb(156 163 175 / var(--tw-border-opacity));
-}
-
 .bg-accent-1 {
   --tw-bg-opacity: 1;
   background-color: rgb(250 250 250 / var(--tw-bg-opacity));
@@ -2686,6 +2657,14 @@ select{
 
 .font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.font-serif {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+.font-sans {
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 .text-2xl {
@@ -3388,6 +3367,11 @@ select{
   border-color: rgb(156 163 175 / var(--tw-border-opacity));
 }
 
+.hover\:border-gray-600:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(75 85 99 / var(--tw-border-opacity));
+}
+
 .hover\:border-indigo-700:hover {
   --tw-border-opacity: 1;
   border-color: rgb(67 56 202 / var(--tw-border-opacity));
@@ -3505,6 +3489,11 @@ select{
 .hover\:text-cyan-800:hover {
   --tw-text-opacity: 1;
   color: rgb(21 94 117 / var(--tw-text-opacity));
+}
+
+.hover\:text-gray-400:hover {
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity));
 }
 
 .hover\:text-gray-500:hover {
@@ -3911,6 +3900,10 @@ select{
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
 .dark\:divide-gray-700:is(.dark *) > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(55 65 81 / var(--tw-divide-opacity));
@@ -3956,11 +3949,6 @@ select{
 
 .dark\:border-zinc-700\/40:is(.dark *) {
   border-color: rgb(63 63 70 / 0.4);
-}
-
-.dark\:border-gray-500:is(.dark *) {
-  --tw-border-opacity: 1;
-  border-color: rgb(107 114 128 / var(--tw-border-opacity));
 }
 
 .dark\:bg-black:is(.dark *) {
@@ -4547,10 +4535,6 @@ select{
     position: relative;
   }
 
-  .sm\:top-0 {
-    top: 0px;
-  }
-
   .sm\:col-span-3 {
     grid-column: span 3 / span 3;
   }
@@ -4660,16 +4644,16 @@ select{
     width: 24rem;
   }
 
+  .sm\:w-\[30rem\] {
+    width: 30rem;
+  }
+
   .sm\:w-\[56rem\] {
     width: 56rem;
   }
 
   .sm\:w-full {
     width: 100%;
-  }
-
-  .sm\:w-\[30rem\] {
-    width: 30rem;
   }
 
   .sm\:max-w-3xl {

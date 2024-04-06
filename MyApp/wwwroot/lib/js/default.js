@@ -31,6 +31,7 @@ if (clearMetadata) {
         })
 }
 
+// highlight the element with the given id
 function highlightElement(id) {
     const el = document.getElementById(id)
     if (el) {
