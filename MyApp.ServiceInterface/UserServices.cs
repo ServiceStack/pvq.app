@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.Formats.Png;
 
 namespace MyApp.ServiceInterface;
 
-public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Service
+public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator imageCreator) : Service
 {
     private const string AppData = "/App_Data";
     
@@ -99,20 +99,32 @@ public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Servic
 
     public async Task Any(PostVote request)
     {
-        var userName = Request.GetClaimsPrincipal().Identity!.Name!;
+        var userName = Request.GetClaimsPrincipal().GetUserName()!;
         if (string.IsNullOrEmpty(userName))
             throw new ArgumentNullException(nameof(userName));
+
         var postId = request.RefId.LeftPart('-').ToInt();
         var score = request.Up == true ? 1 : request.Down == true ? -1 : 0;
+        
+        var refUserName = request.RefId.IndexOf('-') >= 0
+            ? request.RefId.RightPart('-')
+            : await Db.ScalarAsync<string?>(Db.From<Post>().Where(x => x.Id == postId)
+                .Select(x => x.CreatedBy));
+
+        if (userName == refUserName)
+            throw new ArgumentException("Can't vote on your own post", nameof(request.RefId));
+        
         MessageProducer.Publish(new DbWrites
         {
-            RecordPostVote = new()
+            CreatePostVote = new()
             {
                 RefId = request.RefId,
                 PostId = postId,
                 UserName = userName,
                 Score = score,
-            }
+                RefUserName = refUserName,
+            },
+            UpdateReputations = new(),
         });
     }
 
@@ -121,5 +133,93 @@ public class UserServices(R2VirtualFiles r2, ImageCreator imageCreator) : Servic
         var letter = char.ToUpper(request.UserName[0]);
         var svg = imageCreator.CreateSvg(letter, request.BgColor, request.TextColor);
         return new HttpResult(svg, MimeTypes.ImageSvg);
+    }
+
+    public async Task<object> Any(GetLatestNotifications request)
+    {
+        var userName = Request.GetClaimsPrincipal().GetUserName();
+        var tuples = await Db.SelectMultiAsync<Notification,Post>(Db.From<Notification>()
+            .Join<Post>()
+            .Where(x => x.UserName == userName)
+            .OrderByDescending(x => x.Id)
+            .Take(30));
+
+        Notification Merge(Notification notification, Post post)
+        {
+            notification.Title ??= post.Title.SubstringWithEllipsis(0,100);
+            notification.Href ??= $"/questions/{notification.PostId}/{post.Slug}#{notification.RefId}";
+            return notification;
+        }
+        
+        var results = tuples.Map(x => Merge(x.Item1, x.Item2));
+        
+        return new GetLatestNotificationsResponse
+        {
+            Results = results
+        };
+    }
+    
+    public class SumAchievement
+    {
+        public int PostId { get; set; }
+        public string RefId { get; set; }
+        public int Score { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public string Title { get; set; }
+        public string Slug { get; set; }
+    }
+
+    public async Task<object> Any(GetLatestAchievements request)
+    {
+        var userName = Request.GetClaimsPrincipal().GetUserName();
+
+        var sumAchievements = await Db.SelectAsync<SumAchievement>(
+            @"SELECT A.PostId, A.RefId, Sum(A.Score) AS Score, Max(A.CreatedDate) AS CreatedDate, P.Title, p.Slug 
+                FROM Achievement A LEFT JOIN Post P on (A.PostId = P.Id)
+               WHERE UserName = @userName
+               GROUP BY A.PostId, A.RefId
+               LIMIT 30", new { userName });
+
+        var i = 0;
+        var results = sumAchievements.Map(x => new Achievement
+        {
+            Id = ++i,
+            PostId = x.PostId,
+            RefId = x.RefId,
+            Title = x.Title.SubstringWithEllipsis(0,100),
+            Score = x.Score,
+            CreatedDate = x.CreatedDate,
+            Href = $"/questions/{x.PostId}/{x.Slug}",
+        });
+
+        // Reset everytime they view the latest achievements
+        appConfig.UsersUnreadAchievements[userName!] = 0;
+        
+        return new GetLatestAchievementsResponse
+        {
+            Results = results
+        };
+    }
+
+    public async Task<object> Any(MarkAsRead request)
+    {
+        request.UserName = Request.GetClaimsPrincipal().GetUserName()
+            ?? throw new ArgumentNullException(nameof(MarkAsRead.UserName));
+        MessageProducer.Publish(new DbWrites
+        {
+            MarkAsRead = request, 
+        });
+        return new EmptyResponse();
+    }
+    
+    public object Any(GetUsersInfo request)
+    {
+        return new GetUsersInfoResponse
+        {
+            UsersQuestions = appConfig.UsersQuestions.ToDictionary(),
+            UsersReputation = appConfig.UsersReputation.ToDictionary(),
+            UsersUnreadAchievements = appConfig.UsersUnreadAchievements.ToDictionary(),
+            UsersUnreadNotifications = appConfig.UsersUnreadNotifications.ToDictionary(),
+        };
     }
 }

@@ -1,6 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.Data;
+using System.Diagnostics;
+using Amazon.Runtime.Internal.Util;
+using MyApp.ServiceInterface;
 using MyApp.ServiceModel;
+using ServiceStack;
 using ServiceStack.OrmLite;
 
 namespace MyApp.Data;
@@ -15,6 +19,8 @@ public class AppConfig
     public string? GitPagesBaseUrl { get; set; }
     public ConcurrentDictionary<string,int> UsersReputation { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersQuestions { get; set; } = new();
+    public ConcurrentDictionary<string,int> UsersUnreadAchievements { get; set; } = new();
+    public ConcurrentDictionary<string,int> UsersUnreadNotifications { get; set; } = new();
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
@@ -103,28 +109,35 @@ public class AppConfig
         
         ResetUsersReputation(db);
         ResetUsersQuestions(db);
+        
+        ResetUsersUnreadAchievements(db);
+        ResetUsersUnreadNotifications(db);
     }
 
     public void UpdateUsersReputation(IDbConnection db)
     {
-        db.ExecuteNonQuery(@"update UserInfo set Reputation = UserScores.total
-            from (select createdBy, sum(count) as total from
-                (select createdBy, count(*) as count from post where CreatedBy is not null group by 1
-                union
-                select userName, count(*) as count from vote group by 1
-                union
-                select substring(id,instr(id,'-')+1) as userName, sum(UpVotes) as count from StatTotals where instr(id,'-') group by 1
-                union
-                select substring(id,instr(id,'-')+1) as userName, sum(DownVotes) as count from StatTotals where instr(id,'-') group by 1)
-                group by 1) as UserScores
-          where UserName = UserScores.CreatedBy");
+        // User Reputation Score:
+        // +1 point for each Question or Answer submitted
+        // +10 points for each Up Vote received on Question or Answer
+        // -1 point for each Down Vote received on Question or Answer
+        
+        db.ExecuteNonQuery(
+            @"UPDATE UserInfo SET Reputation = UserScores.total
+                FROM (SELECT CreatedBy, sum(score) as total FROM
+                        (SELECT CreatedBy, count(*) as score FROM StatTotals WHERE CreatedBy IS NOT NULL GROUP BY 1
+                         UNION
+                         SELECT RefUserName, count(*) * 10 as score FROM Vote WHERE RefUserName IS NOT NULL AND Score > 0 GROUP BY 1
+                         UNION 
+                         SELECT RefUserName, count(*) * -1 as score FROM Vote WHERE RefUserName IS NOT NULL AND Score < 0 GROUP BY 1)
+                      GROUP BY 1) as UserScores
+                WHERE UserName = UserScores.CreatedBy");
     }
 
     public void UpdateUsersQuestions(IDbConnection db)
     {
-        db.ExecuteNonQuery(@"update UserInfo set QuestionsCount = UserQuestions.total
-            from (select createdBy, count(*) as total from post where CreatedBy is not null group by 1) as UserQuestions
-          where UserName = UserQuestions.CreatedBy");
+        db.ExecuteNonQuery(@"UPDATE UserInfo SET QuestionsCount = UserQuestions.total
+            FROM (select createdBy, count(*) as total FROM post WHERE CreatedBy IS NOT NULL GROUP BY 1) as UserQuestions
+          WHERE UserName = UserQuestions.CreatedBy");
     }
 
     public void ResetInitialPostId(IDbConnection db)
@@ -145,6 +158,18 @@ public class AppConfig
             .Select(x => new { x.UserName, x.QuestionsCount })));
     }
 
+    public void ResetUsersUnreadNotifications(IDbConnection db)
+    {
+        UsersUnreadNotifications = new(db.Dictionary<string, int>(
+            "SELECT UserName, Count(*) AS Total FROM Notification WHERE Read = false GROUP BY UserName HAVING COUNT(*) > 0"));
+    }
+
+    public void ResetUsersUnreadAchievements(IDbConnection db)
+    {
+        UsersUnreadAchievements = new(db.Dictionary<string, int>(
+            "SELECT UserName, Count(*) AS Total FROM Achievement WHERE Read = false GROUP BY UserName HAVING COUNT(*) > 0"));
+    }
+
     public async Task ResetUserQuestionsAsync(IDbConnection db, string userName)
     {
         var questionsCount = (int)await db.CountAsync<Post>(x => x.CreatedBy == userName);
@@ -159,7 +184,103 @@ public class AppConfig
         var models = ModelsForQuestions.Where(x => x.Questions <= questionsCount)
             .Select(x => x.Model)
             .ToList();
+        if (models.Contains("gemma"))
+            models.RemoveAll(x => x == "gemma:2b");
+        if (models.Contains("deepseek-coder:33b"))
+            models.RemoveAll(x => x == "deepseek-coder:6.7b");
+        if (models.Contains("claude-3-opus"))
+            models.RemoveAll(x => x is "claude-3-haiku" or "claude-3-sonnet");
+        if (models.Contains("claude-3-sonnet"))
+            models.RemoveAll(x => x is "claude-3-haiku");
         return models;
     }
 
+    public void IncrUnreadNotificationsFor(string userName)
+    {
+        UsersUnreadNotifications.AddOrUpdate(userName, 1, (_, count) => count + 1);
+    }
+
+    public void IncrUnreadAchievementsFor(string userName)
+    {
+        UsersUnreadAchievements.AddOrUpdate(userName, 1, (_, count) => count + 1);
+    }
+
+    public bool HasUnreadNotifications(string? userName)
+    {
+        return userName != null && UsersUnreadNotifications.TryGetValue(userName, out var count) && count > 0;
+    }
+
+    public bool HasUnreadAchievements(string? userName)
+    {
+        return userName != null && UsersUnreadAchievements.TryGetValue(userName, out var count) && count > 0;
+    }
+
+    public bool IsHuman(string? userName) => userName != null && GetModelUser(userName) == null;
+
+    public const int DefaultCapacity = 500;
+    public ConcurrentQueue<CommandResult> CommandResults { get; set; } = [];
+    public ConcurrentQueue<CommandResult> CommandFailures { get; set; } = new();
+    
+    public ConcurrentDictionary<string, CommandSummary> CommandTotals { get; set; } = new();
+
+    public void AddCommandResult(CommandResult result)
+    {
+        var ms = result.Ms ?? 0;
+        if (result.Error == null)
+        {
+            CommandResults.Enqueue(result);
+            while (CommandResults.Count > DefaultCapacity)
+                CommandResults.TryDequeue(out _);
+
+            CommandTotals.AddOrUpdate(result.Name, 
+                _ => new CommandSummary { Name = result.Name, Count = 1, TotalMs = ms, MinMs = ms > 0 ? ms : int.MinValue },
+                (_, summary) => 
+                {
+                    summary.Count++;
+                    summary.TotalMs += ms;
+                    summary.MaxMs = Math.Max(summary.MaxMs, ms);
+                    if (ms > 0)
+                    {
+                        summary.MinMs = Math.Min(summary.MinMs, ms);
+                    }
+                    return summary;
+                });
+        }
+        else
+        {
+            CommandFailures.Enqueue(result);
+            while (CommandFailures.Count > DefaultCapacity)
+                CommandFailures.TryDequeue(out _);
+
+            CommandTotals.AddOrUpdate(result.Name, 
+                _ => new CommandSummary { Name = result.Name, Failed = 1, Count = 0, TotalMs = 0, MinMs = int.MinValue, LastError = result.Error },
+                (_, summary) =>
+                {
+                    summary.Failed++;
+                    summary.LastError = result.Error;
+                    return summary;
+                });
+        }
+    }
+}
+
+public class CommandResult
+{
+    public string Name { get; set; }
+    public long? Ms { get; set; }
+    public DateTime At { get; set; }
+    public string Request { get; set; }
+    public string? Error { get; set; }
+}
+
+public class CommandSummary
+{
+    public string Name { get; set; }
+    public long Count { get; set; }
+    public long Failed { get; set; }
+    public long TotalMs { get; set; }
+    public long MinMs { get; set; }
+    public long MaxMs { get; set; }
+    public int AverageMs => (int) Math.Floor(TotalMs / (double)Count);
+    public string? LastError { get; set; }
 }

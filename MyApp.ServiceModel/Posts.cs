@@ -468,10 +468,12 @@ public class GetUserReputationsResponse
 [EnumAsInt]
 public enum NotificationType
 {
-    NewComment,
-    NewAnswer,
-    CommentMention,
-    AnswerMention,
+    Unknown = 0,
+    NewComment = 1,
+    NewAnswer = 2,
+    QuestionMention = 3,
+    AnswerMention = 4,
+    CommentMention = 5,
 }
 
 public class Notification
@@ -486,26 +488,31 @@ public class Notification
     
     public int PostId { get; set; }
     
-    public string RefId { get; set; }
+    public string RefId { get; set; } // Post or Answer or Comment
     
-    public string PostTitle { get; set; } //100 chars
-        
     public string Summary { get; set; } //100 chars
-    
-    public string Href { get; set; }
-    
+        
     public DateTime CreatedDate { get; set; }
     
     public bool Read { get; set; }
+    
+    public string? Href { get; set; }
+    
+    public string? Title { get; set; } //100 chars
+    
+    public string? RefUserName { get; set; }
 }
 
 [EnumAsInt]
 public enum AchievementType
 {
-    AnswerUpVote,
-    AnswerDownVote,
-    QuestionUpVote,
-    QuestionDownVote,
+    Unknown = 0,
+    NewAnswer = 1,
+    AnswerUpVote = 2,
+    AnswerDownVote = 3,
+    NewQuestion = 4,
+    QuestionUpVote = 5,
+    QuestionDownVote = 6,
 }
 
 public class Achievement
@@ -522,9 +529,15 @@ public class Achievement
     
     public string RefId { get; set; }
     
+    public string? RefUserName { get; set; }
+    
     public int Score { get; set; }
     
     public bool Read { get; set; }
+    
+    public string? Href { get; set; }
+    
+    public string? Title { get; set; } //100 chars
     
     public DateTime CreatedDate { get; set; }
 }

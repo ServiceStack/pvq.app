@@ -7,7 +7,11 @@
         <div class="border-t border-gray-200 dark:border-gray-700">
             @foreach (var comment in Comments)
             {
-                <div class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                <div id=@($"{RefId}-{comment.Created}") data-id=@RefId data-created=@comment.Created data-createdby=@comment.CreatedBy class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                    @if (HttpContext?.User.HasRole(Roles.Moderator) == true || HttpContext?.User.GetUserName() == comment.CreatedBy)
+                    {
+                        <svg class="mr-1 align-sub text-gray-400 hover:text-gray-500 w-4 h-4 inline-block cursor-pointer" onclick="removeComment(this)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete comment</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
+                    }
                     @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
                     <span class="inline-block">
                         <span class="px-1" aria-hidden="true">&middot;</span>
@@ -21,5 +25,9 @@
 </div>
 
 @code {
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+    
+    [Parameter] public required string RefId { get; set; }
     [Parameter] public required List<Comment> Comments { get; set; }
 }

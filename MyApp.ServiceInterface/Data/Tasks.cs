@@ -48,23 +48,56 @@ public class StartJob
     public string? WorkerIp { get; set; }
 }
 
+public class NewComment
+{
+    // Post or AnswerId
+    public string RefId { get; set; }
+    public Comment Comment { get; set; }
+}
+
+public class DeletePost
+{
+    public required List<int> Ids { get; set; }
+}
+
+public class CreatePostJobs
+{
+    public required List<PostJob> PostJobs { get; set; }
+}
+
+public class CompletePostJobs
+{
+    public required List<int> Ids { get; set; }
+}
+
+public class AnswerAddedToPost
+{
+    public required int Id { get; set; }
+}
+public class UpdateReputations {}
+
 [Tag(Tag.Tasks)]
 [ExcludeMetadata]
 [Restrict(InternalOnly = true)]
 public class DbWrites
 {
-    public Vote? RecordPostVote { get; set; }
+    public Vote? CreatePostVote { get; set; }
     public Post? CreatePost { get; set; }
     public Post? UpdatePost { get; set; }
-    public int? DeletePost { get; set; }
-    public List<PostJob>? CreatePostJobs { get; set; }
+    public DeletePost? DeletePost { get; set; }
+    public CreatePostJobs? CreatePostJobs { get; set; }
     public StartJob? StartJob { get; set; }
-    public int? AnswerAddedToPost { get; set; }
-    public List<int>? CompleteJobIds { get; set; }
+    public Post? CreateAnswer { get; set; }
+    public AnswerAddedToPost? AnswerAddedToPost { get; set; }
+    public NewComment? NewComment { get; set; }
+    public DeleteComment? DeleteComment { get; set; }
+    public CompletePostJobs? CompletePostJobs { get; set; }
     public FailJob? FailJob { get; set; }
     public ApplicationUser? UserRegistered { get; set; }
     public ApplicationUser? UserSignedIn { get; set; }
-    public bool? UpdateReputations { get; set; }
+    public UpdateReputations? UpdateReputations { get; set; }
+    public MarkAsRead? MarkAsRead { get; set; }
+    public Notification? CreateNotification { get; set; }
 }
 
 [Tag(Tag.Tasks)]
@@ -74,4 +107,19 @@ public class SearchTasks
 {
     public int? AddPostToIndex { get; set; }
     public int? DeletePost { get; set; }
+}
+
+[Tag(Tag.Tasks)]
+[ExcludeMetadata]
+[ValidateIsAdmin]
+public class ViewCommands : IGet, IReturn<ViewCommandsResponse>
+{
+    public bool? Clear { get; set; }
+}
+public class ViewCommandsResponse
+{
+    public List<CommandResult> LatestCommands { get; set; }
+    public List<CommandResult> LatestFailed { get; set; }
+    public List<CommandSummary> Totals { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
 }

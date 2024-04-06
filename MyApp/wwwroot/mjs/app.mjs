@@ -70,6 +70,11 @@ export function mount(sel, component, props) {
     return app
 }
 
+export function forceMount(sel, component, props) {
+    unmount($1(sel))
+    return mount(sel, component, props)
+}
+
 async function mountApp(el, props) {
     let appPath = el.getAttribute('data-component')
     if (!appPath.startsWith('/') && !appPath.startsWith('.')) {
@@ -183,7 +188,7 @@ function unmount(el) {
 
 
 /* used in :::sh and :::nuget CopyContainerRenderer */
-globalThis.copy = function (e) {
+globalThis.copyCommand = function (e) {
     e.classList.add('copying')
     let $el = document.createElement("textarea")
     let text = (e.querySelector('code') || e.querySelector('p')).innerHTML

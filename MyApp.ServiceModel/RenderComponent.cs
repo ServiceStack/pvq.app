@@ -8,10 +8,15 @@ public class RenderHome
     public List<Post> Posts { get; set; }
 }
 
+public class RegenerateMeta
+{
+    public int? IfPostModified { get; set; }
+    public int? ForPost { get; set; }
+}
+
 public class RenderComponent : IReturnVoid
 {
-    public int? IfQuestionModified { get; set; }
-    public int? RegenerateMeta { get; set; }
+    public RegenerateMeta? RegenerateMeta { get; set; }
     public QuestionAndAnswers? Question { get; set; }
     public RenderHome? Home { get; set; }
 }

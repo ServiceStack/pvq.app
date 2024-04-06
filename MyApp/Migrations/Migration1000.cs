@@ -20,12 +20,20 @@ public class Migration1000 : MigrationBase
         [Required]
         public string RefId { get; set; }
 
+        /// <summary>
+        /// User who voted
+        /// </summary>
         public string UserName { get; set; }
     
         /// <summary>
         /// 1 for UpVote, -1 for DownVote
         /// </summary>
         public int Score { get; set; }
+    
+        /// <summary>
+        /// User who's Post (Q or A) was voted on
+        /// </summary>
+        public string? RefUserName { get; set; }
     }
 
     public class Job
@@ -113,17 +121,19 @@ public class Migration1000 : MigrationBase
     
         public int PostId { get; set; }
     
-        public string RefId { get; set; }
+        public string RefId { get; set; } // Post or Answer or Comment
     
-        public string PostTitle { get; set; }
+        public string Summary { get; set; } //100 chars
+    
+        public string? Href { get; set; }
+    
+        public string? Title { get; set; } //100 chars
         
-        public string Summary { get; set; }
-    
-        public string Href { get; set; }
-    
         public DateTime CreatedDate { get; set; }
     
         public bool Read { get; set; }
+    
+        public string? RefUserName { get; set; }
     }
     
     [EnumAsInt]
@@ -143,9 +153,15 @@ public class Migration1000 : MigrationBase
     
         public string RefId { get; set; }
     
+        public string? RefUserName { get; set; }
+    
         public int Score { get; set; }
     
         public bool Read { get; set; }
+    
+        public string? Href { get; set; }
+    
+        public string? Title { get; set; } //100 chars
     
         public DateTime CreatedDate { get; set; }
     }
@@ -160,6 +176,7 @@ public class Migration1000 : MigrationBase
         Db.CreateTable<PostJob>();
         
         Db.ExecuteSql("INSERT INTO UserInfo (UserId, UserName) SELECT Id, UserName FROM AspNetUsers");
+        Db.ExecuteSql("UPDATE StatTotals SET CreatedBy = substr(Id,instr(Id,'-')+1) WHERE instr(Id,'-') > 0 AND CreatedBy IS NULL");
     }
 
     public override void Down()

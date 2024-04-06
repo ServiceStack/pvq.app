@@ -3,7 +3,7 @@ import { map } from "@servicestack/client"
 
 export default {
     template:`<div class="lang relative bg-gray-700 text-gray-300 pl-5 py-3 sm:rounded flex">
-    <div class="flex ml-2 w-full justify-between cursor-pointer" @click="copy">
+    <div class="flex ml-2 w-full justify-between cursor-pointer" @click="copyCommand">
       <div>
           <span>$ </span>
           <label class="cursor-pointer">
@@ -33,7 +33,7 @@ export default {
     setup(props) {
         let successText = ref('')
         /** @param {MouseEvent} e */
-        function copy(e) {
+        function copyCommand(e) {
             let $el = document.createElement("input")
             let $lbl = e.target.parentElement.querySelector('label')
             $el.setAttribute("value", $lbl.innerText)
@@ -52,6 +52,6 @@ export default {
             successText.value = 'copied'
             setTimeout(() => successText.value = '', 3000)
         }
-        return { successText, copy }
+        return { successText, copyCommand }
     }
 }

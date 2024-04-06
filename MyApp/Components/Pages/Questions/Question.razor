@@ -66,7 +66,7 @@
         
         var noCache = Force != null && (Env.IsDevelopment() || HttpContext?.User.IsAdminOrModerator() == true);
         
-        title = Slug.Replace("-", " ").ToTitleCase();
+        title = (Slug ?? "").Replace("-", " ").ToTitleCase();
         Html = noCache
             ? await RendererCache.GetQuestionPostHtmlAsync(Id)
             : null;
@@ -93,7 +93,7 @@
             {
                 MessageProducer.Publish(new RenderComponent
                 {
-                    RegenerateMeta = noCache ? Id : null
+                    RegenerateMeta = new() { ForPost = Id }
                 });
             }
             else
@@ -104,7 +104,7 @@
                 {
                     MessageProducer.Publish(new RenderComponent
                     {
-                        IfQuestionModified = Id,
+                        RegenerateMeta = new() { IfPostModified = Id }
                     });
                 }
             }
@@ -127,13 +127,13 @@
             if (noCache || !questionFiles.Files.Any(x => x.Name.EndsWith(".meta.json")))
             {
                 MessageProducer.Publish(new RenderComponent {
-                    RegenerateMeta = Id,
+                    RegenerateMeta = new() { ForPost = Id },
                 });
             }
             else
             {
                 MessageProducer.Publish(new RenderComponent {
-                    IfQuestionModified = Id,
+                    RegenerateMeta = new() { IfPostModified = Id },
                     Question = question,
                 });
             }

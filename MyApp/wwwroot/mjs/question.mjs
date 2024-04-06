@@ -8,6 +8,7 @@ import {
     DeleteQuestion, DeleteComment, GetUserReputations,
 } from "dtos.mjs"
 
+const client = new JsonServiceClient()
 let meta = null
 
 function getComments(id) {
@@ -33,6 +34,27 @@ const svgPaths = {
     }
 }
 
+globalThis.removeComment = async function (el) {
+    const parentEl = el.parentElement, 
+          id = parentEl.dataset.id,
+          created = parseInt(parentEl.dataset.created),
+          createdBy = parentEl.dataset.createdby
+    if (confirm('Are you sure?')) {
+        const api = await client.apiVoid(new DeleteComment({
+            id,
+            created,
+            createdBy,
+        }))
+        if (api.succeeded) {
+            parentEl.parentElement.removeChild(parentEl)
+        } else {
+            alert(api.errorMessage)
+        }
+    }
+}
+
+
+
 async function loadVoting(ctx) {
     const { client, postId, userName, user, hasRole } = ctx
 
@@ -43,12 +65,12 @@ async function loadVoting(ctx) {
         const down = el.querySelector('.down')
         const score = el.querySelector('.score')
 
-        const value = getValue(userPostVotes, el.id)
+        const value = getValue(userPostVotes, el.dataset.refid)
         up.classList.toggle('text-green-600',value === 1)
         up.innerHTML = value === 1 ? svgPaths.up.solid : svgPaths.up.empty
         down.classList.toggle('text-green-600',value === -1)
         down.innerHTML = value === -1 ? svgPaths.down.solid : svgPaths.down.empty
-        score.innerHTML = parseInt(score.dataset.score) + value - getValue(origPostValues, el.id)
+        score.innerHTML = parseInt(score.dataset.score) + value - getValue(origPostValues, el.dataset.refid)
     }
     function getValue(postVotes, refId) {
         return (postVotes.upVoteIds.includes(refId) ? 1 : postVotes.downVoteIds.includes(refId) ? -1 : 0)
@@ -65,12 +87,15 @@ async function loadVoting(ctx) {
     }
 
     $$('.voting').forEach(el => {
-        const refId = el.id
+        const refId = el.dataset.refid
+        const createdBy = el.closest('[data-createdby]')?.dataset.createdby
         async function vote(value) {
             if (!userName) {
                 location.href = `/Account/Login?ReturnUrl=${encodeURIComponent(location.pathname)}`
                 return
             }
+            if (userName === createdBy) 
+                return
 
             const prevValue = getValue(userPostVotes, refId)
             setValue(refId, value)
@@ -85,13 +110,20 @@ async function loadVoting(ctx) {
                 setTimeout(() => loadUserReputations(ctx), 5000)
             }
         }
+        function disableSelf(svg) {
+            if (userName === createdBy) {
+                svg.classList.remove('hover:text-green-600','cursor-pointer')
+                svg.classList.add('text-gray-400')
+            }
+            return svg
+        }
 
-        on(el.querySelector('.up'), {
+        on(disableSelf(el.querySelector('.up')), {
             click(e) {
                 vote(getValue(userPostVotes, refId) === 1 ? 0 : 1)
             }
         })
-        on(el.querySelector('.down'), {
+        on(disableSelf(el.querySelector('.down')), {
             click(e) {
                 vote(getValue(userPostVotes, refId) === -1 ? 0 : -1)
             }
@@ -642,7 +674,6 @@ async function loadUserReputations(ctx) {
 
 export default  {
     async load() {
-        const client = new JsonServiceClient()
         const { user, hasRole } = useAuth()
         const userName = user.value?.userName
         const postId = parseInt($1('[data-postid]')?.getAttribute('data-postid'))

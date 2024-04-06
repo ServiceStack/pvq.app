@@ -30,3 +30,23 @@ if (clearMetadata) {
             localStorage.setItem('/metadata/app.json', json)
         })
 }
+
+// highlight the element with the given id
+function highlightElement(id) {
+    const el = document.getElementById(id)
+    if (el) {
+        el.classList.add('highlighted')
+        el.scrollIntoView('smooth')
+    }
+}
+
+if (location.hash) {
+    highlightElement(location.hash.substring(1))
+}
+
+document.addEventListener('DOMContentLoaded', () =>
+    Blazor.addEventListener('enhancedload', (e) => {
+        if (location.hash) {
+            highlightElement(location.hash.substring(1))
+        }
+    }))

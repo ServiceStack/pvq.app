@@ -1,4 +1,5 @@
-﻿using ServiceStack;
+﻿using System.Runtime.Serialization;
+using ServiceStack;
 using ServiceStack.DataAnnotations;
 
 namespace MyApp.ServiceModel;
@@ -57,4 +58,46 @@ public class CreateAvatar : IGet, IReturn<string>
     public string UserName { get; set; }
     public string? TextColor { get; set; }
     public string? BgColor { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class GetLatestNotifications : IGet, IReturn<GetLatestNotificationsResponse> {}
+public class GetLatestNotificationsResponse
+{
+    public List<Notification> Results { get; set; } = [];
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class GetLatestAchievements : IGet, IReturn<GetLatestAchievementsResponse> {}
+public class GetLatestAchievementsResponse
+{
+    public List<Achievement> Results { get; set; } = [];
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class MarkAsRead : IPost, IReturn<EmptyResponse>
+{
+    [IgnoreDataMember]
+    public string UserName { get; set; }
+    public List<int>? NotificationIds { get; set; }
+    public bool? AllNotifications { get; set; }
+    public List<int>? AchievementIds { get; set; }
+    public bool? AllAchievements { get; set; }
+}
+
+[ExcludeMetadata]
+[ValidateIsAdmin]
+public class GetUsersInfo : IGet, IReturn<GetUsersInfoResponse>
+{
+}
+
+public class GetUsersInfoResponse
+{
+    public Dictionary<string,int> UsersReputation { get; set; } = new();
+    public Dictionary<string,int> UsersQuestions { get; set; } = new();
+    public Dictionary<string,int> UsersUnreadAchievements { get; set; } = new();
+    public Dictionary<string,int> UsersUnreadNotifications { get; set; } = new();
+    public ResponseStatus? ResponseStatus { get; set; }
 }

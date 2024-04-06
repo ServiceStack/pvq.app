@@ -3,7 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject AppConfig AppConfig
 
-<header class="border-b border-gray-200 dark:border-gray-800 pr-3">
+<header class="border-b border-gray-200 dark:border-gray-800 pr-3" data-module="mjs/header.mjs">
     <div class="flex flex-wrap items-center">
         <div class="absolute z-10 top-2 left-2 sm:static flex-shrink flex-grow-0">
             <div class="cursor-pointer">
@@ -42,10 +42,10 @@
                     <AuthorizeView>
                         <Authorized>
                             <li>
-                                <div class="mx-3 relative">
+                                <div class="mr-2 relative">
                                     <div>
                                         <NavLink href="Account/Manage"
-                                            class="max-w-xs bg-white dark:bg-black rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 lg:p-2 lg:rounded-md lg:hover:bg-gray-50 dark:lg:hover:bg-gray-900 dark:ring-offset-black" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                                 class="max-w-xs bg-white dark:bg-black rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 lg:p-2 lg:rounded-md lg:hover:bg-gray-50 dark:lg:hover:bg-gray-900 dark:ring-offset-black" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
                                             <span class="hidden ml-3 text-gray-700 dark:text-gray-300 text-sm font-medium lg:block">
                                                 <span class="sr-only">Open user menu for </span>
                                                 @User.GetDisplayName()
@@ -58,6 +58,20 @@
                                         </NavLink>
                                     </div>
                                 </div>
+                            </li>
+                            <li class="static sm:relative flex flex-wrap just-fu-start m-0">
+                                <div onclick="toggleNotifications(this)" class="select-none group relative hover:bg-gray-100 dark:hover:bg-gray-800 p-4 cursor-pointer">
+                                    <svg class="w-6 h-6 text-gray-400 group-hover:text-gray-500 dark:group-hover:text-sky-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14v-3h-3q-.75.95-1.787 1.475T12 18q-1.175 0-2.212-.525T8 16H5zm7-3q.95 0 1.725-.55T14.8 14H19V5H5v9h4.2q.3.9 1.075 1.45T12 16m-7 3h14z"/></svg>
+                                    <svg id="new-notifications" class=@CssUtils.ClassNames("absolute right-1 top-1 h-4 w-4", AppConfig.HasUnreadNotifications(HttpContext?.User.GetUserName()) ? "text-red-500" : "text-transparent") viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                                </div>
+                                <div id="notifications-menu" class="absolute sm:static top-12 right-0"></div>
+                            </li>
+                            <li class="mr-2 static sm:relative flex flex-wrap just-fu-start m-0">
+                                <div onclick="toggleAchievements(this)" class="select-none group relative hover:bg-gray-100 dark:hover:bg-gray-800 p-4 cursor-pointer">
+                                    <svg class="w-6 h-6 cursor-pointer text-gray-400 group-hover:text-gray-500 dark:group-hover:text-sky-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M8 3h8v8h6v10H2V9h6zm2 16h4V5h-4zm6 0h4v-6h-4zm-8 0v-8H4v8z"/></svg>
+                                    <svg id="new-achievements" class=@CssUtils.ClassNames("absolute right-1 top-1 h-4 w-4", AppConfig.HasUnreadAchievements(HttpContext?.User.GetUserName()) ? "text-red-500" : "text-transparent") viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                                </div>
+                                <div id="achievements-menu" class="absolute sm:static top-12 right-0"></div>
                             </li>
                             <li class="mr-3 relative flex flex-wrap just-fu-start m-0">
                                 <form action="Account/Logout" method="post">
@@ -96,6 +110,9 @@
 </header>
 
 @code {
+    [CascadingParameter]
+    public HttpContext? HttpContext { get; set; }
+    
     private string? currentUrl;
 
     [SupplyParameterFromQuery] 

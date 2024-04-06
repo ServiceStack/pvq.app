@@ -1,4 +1,7 @@
-﻿using MyApp.Data;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MyApp.Data;
+using MyApp.ServiceInterface.App;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.IO;
@@ -6,7 +9,13 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelWorkerQueue modelWorkers, QuestionsProvider questions) : Service
+public class BackgroundMqServices(
+    IServiceProvider services,
+    ILogger<BackgroundMqServices> log,
+    AppConfig appConfig, 
+    R2VirtualFiles r2, 
+    ModelWorkerQueue modelWorkers) 
+    : MqServicesBase(log, appConfig)
 {
     public async Task Any(DiskTasks request)
     {
@@ -33,145 +42,54 @@ public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelW
         }
     }
 
+    ILogger<T> GetLogger<T>() => services.GetRequiredService<ILogger<T>>();
+
     public async Task Any(DbWrites request)
     {
-        var vote = request.RecordPostVote;
-        if (vote != null)
-        {
-            if (string.IsNullOrEmpty(vote.RefId))
-                throw new ArgumentNullException(nameof(vote.RefId));
-            if (string.IsNullOrEmpty(vote.UserName))
-                throw new ArgumentNullException(nameof(vote.UserName));
-
-            await Db.DeleteAsync<Vote>(new { vote.RefId, vote.UserName });
-            if (vote.Score != 0)
-            {
-                await Db.InsertAsync(vote);
-            }
-            
-            MessageProducer.Publish(new RenderComponent {
-                RegenerateMeta = vote.PostId
-            });
-            
-            request.UpdateReputations = true;
-        }
+        if (request.CreatePostVote != null)
+            await ExecuteAsync(new CreatePostVotesCommand(AppConfig, Db, MessageProducer), request.CreatePostVote);
 
         if (request.CreatePost != null)
-        {
-            await Db.InsertAsync(request.CreatePost);
-            var createdBy = request.CreatePost.CreatedBy;
-            if (createdBy != null && request.CreatePost.PostTypeId == 1)
-            {
-                await appConfig.ResetUserQuestionsAsync(Db, createdBy);
-            }
-        }
+            await ExecuteAsync(new CreatePostCommand(GetLogger<CreatePostCommand>(), AppConfig, Db), request.CreatePost);
 
         if (request.UpdatePost != null)
-        {
-            var question = request.UpdatePost;
-            await Db.UpdateOnlyAsync(() => new Post {
-                Title = question.Title,
-                Tags = question.Tags,
-                Slug = question.Slug,
-                Summary = question.Summary,
-                ModifiedBy = question.ModifiedBy,
-                LastActivityDate = question.LastActivityDate,
-                LastEditDate = question.LastEditDate,
-            }, x => x.Id == request.UpdatePost.Id);
-        }
+            await ExecuteAsync(new UpdatePostCommand(Db), request.UpdatePost);
 
         if (request.DeletePost != null)
-        {
-            await Db.DeleteAsync<PostJob>(x => x.PostId == request.DeletePost);
-            await Db.DeleteAsync<Vote>(x => x.PostId == request.DeletePost);
-            await Db.DeleteByIdAsync<Post>(request.DeletePost);
-            AppConfig.Instance.ResetInitialPostId(Db);
-        }
+            await ExecuteAsync(new DeletePostCommand(AppConfig, Db), request.DeletePost);
         
-        if (request.CreatePostJobs is { Count: > 0 })
-        {
-            await Db.SaveAllAsync(request.CreatePostJobs);
-            request.CreatePostJobs.ForEach(modelWorkers.Enqueue);
-        }
+        if (request.CreatePostJobs is { PostJobs.Count: > 0 })
+            await ExecuteAsync(new CreatePostJobsCommand(Db, modelWorkers), request.CreatePostJobs);
 
-        var startJob = request.StartJob;
-        if (startJob != null)
-        {
-            await Db.UpdateOnlyAsync(() => new PostJob
-            {
-                StartedDate = DateTime.UtcNow,
-                Worker = startJob.Worker,
-                WorkerIp = startJob.WorkerIp,
-            }, x => x.PostId == startJob.Id);
-        }
+        if (request.StartJob != null)
+            await ExecuteAsync(new StartJobCommand(Db), request.StartJob);
 
-        if (request.CompleteJobIds is { Count: > 0 })
-        {
-            await Db.UpdateOnlyAsync(() => new PostJob {
-                    CompletedDate = DateTime.UtcNow,
-                }, 
-                x => request.CompleteJobIds.Contains(x.Id));
-            var postJobs = await Db.SelectAsync(Db.From<PostJob>()
-                .Where(x => request.CompleteJobIds.Contains(x.Id)));
-
-            foreach (var postJob in postJobs)
-            {
-                // If there's no outstanding model answer jobs for this post, add a rank job
-                if (!Db.Exists(Db.From<PostJob>()
-                    .Where(x => x.PostId == postJob.PostId && x.CompletedDate == null)))
-                {
-                    var rankJob = new PostJob
-                    {
-                        PostId = postJob.PostId,
-                        Model = "rank",
-                        Title = postJob.Title,
-                        CreatedDate = DateTime.UtcNow,
-                        CreatedBy = nameof(DbWrites),
-                    };
-                    await Db.InsertAsync(rankJob);
-                    modelWorkers.Enqueue(rankJob);
-                    MessageProducer.Publish(new SearchTasks { AddPostToIndex = postJob.PostId });
-                }
-            }
-        }
+        if (request.CompletePostJobs is { Ids.Count: > 0 })
+            await ExecuteAsync(new CompletePostJobsCommand(Db, modelWorkers, MessageProducer), request.CompletePostJobs);
 
         if (request.FailJob != null)
-        {
-            await Db.UpdateAddAsync(() => new PostJob {
-                    Error = request.FailJob.Error,
-                    RetryCount = 1,
-                }, 
-                x => x.PostId == request.FailJob.Id);
-            var postJob = await Db.SingleByIdAsync<PostJob>(request.FailJob.Id);
-            if (postJob != null)
-            {
-                if (postJob.RetryCount > 3)
-                {
-                    await Db.UpdateOnlyAsync(() =>
-                            new PostJob { CompletedDate = DateTime.UtcNow },
-                        x => x.PostId == request.FailJob.Id);
-                }
-                else
-                {
-                    modelWorkers.Enqueue(postJob);
-                }
-            }
-        }
-        
-        if (request.AnswerAddedToPost != null)
-        {
-            await Db.UpdateAddAsync(() => new Post
-            {
-                AnswerCount = 1,
-            }, x => x.Id == request.AnswerAddedToPost.Value);
-        }
+            await ExecuteAsync(new FailJobCommand(Db, modelWorkers), request.FailJob);
 
-        if (request.UpdateReputations == true)
-        {
-            // TODO improve
-            appConfig.UpdateUsersReputation(Db);
-            appConfig.ResetUsersReputation(Db);
-        }
+        if (request.CreateAnswer != null)
+            await ExecuteAsync(new CreateAnswerCommand(AppConfig, Db), request.CreateAnswer);
+        
+        if (request.CreateNotification != null)
+            await ExecuteAsync(new CreateNotificationCommand(AppConfig, Db), request.CreateNotification);
+
+        if (request.AnswerAddedToPost != null)
+            await ExecuteAsync(new AnswerAddedToPostCommand(Db), request.AnswerAddedToPost);
+
+        if (request.NewComment != null)
+            await ExecuteAsync(new NewCommentCommand(AppConfig, Db), request.NewComment);
+
+        if (request.DeleteComment != null)
+            await ExecuteAsync(new DeleteCommentCommand(AppConfig, Db), request.DeleteComment);
+
+        if (request.UpdateReputations != null)
+            await ExecuteAsync(new UpdateReputationsCommand(AppConfig, Db), request.UpdateReputations);
+
+        if (request.MarkAsRead != null)
+            await ExecuteAsync(new MarkAsReadCommand(AppConfig, Db), request.MarkAsRead);
     }
 
     public async Task Any(AnalyticsTasks request)
@@ -195,5 +113,22 @@ public class BackgroundMqServices(AppConfig appConfig, R2VirtualFiles r2, ModelW
         {
             await analyticsDb.DeleteAsync<PostView>(x => x.PostId == request.DeletePost);
         }
+    }
+
+    public object Any(ViewCommands request)
+    {
+        var to = new ViewCommandsResponse
+        {
+            LatestCommands = new(AppConfig.CommandResults),
+            LatestFailed = new(AppConfig.CommandFailures),
+            Totals = new(AppConfig.CommandTotals.Values)
+        };
+        if (request.Clear == true)
+        {
+            AppConfig.CommandResults.Clear();
+            AppConfig.CommandFailures.Clear();
+            AppConfig.CommandTotals.Clear();
+        }
+        return to;
     }
 }
