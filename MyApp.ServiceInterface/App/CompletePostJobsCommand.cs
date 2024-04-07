@@ -6,7 +6,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class CompletePostJobsCommand(IDbConnection Db, ModelWorkerQueue modelWorkers, IMessageProducer mqClient) : IExecuteCommandAsync<CompletePostJobs>
+public class CompletePostJobsCommand(IDbConnection Db, ModelWorkerQueue modelWorkers, IMessageProducer mqClient) : IAsyncCommand<CompletePostJobs>
 {
     public async Task ExecuteAsync(CompletePostJobs request)
     {

@@ -5,7 +5,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class MarkAsReadCommand(AppConfig appConfig, IDbConnection db) : IExecuteCommandAsync<MarkAsRead>
+public class MarkAsReadCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<MarkAsRead>
 {
     public async Task ExecuteAsync(MarkAsRead request)
     {

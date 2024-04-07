@@ -5,7 +5,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class CreateNotificationCommand(AppConfig appConfig, IDbConnection db) : IExecuteCommandAsync<Notification>
+public class CreateNotificationCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<Notification>
 {
     public async Task ExecuteAsync(Notification request)
     {

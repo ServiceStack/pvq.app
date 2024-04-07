@@ -2,6 +2,7 @@ using ServiceStack.Messaging;
 using MyApp.ServiceModel;
 using Microsoft.AspNetCore.Identity;
 using MyApp.Data;
+using MyApp.ServiceInterface;
 
 [assembly: HostingStartup(typeof(MyApp.ConfigureMq))]
 
@@ -24,6 +25,7 @@ public class ConfigureMq : IHostingStartup
             services.AddSingleton<IMessageProducer>(c => c.GetRequiredService<IMessageService>().MessageFactory.CreateMessageProducer());
             services.AddSingleton<ModelWorkerQueue>();
             services.AddSingleton<WorkerAnswerNotifier>();
+            services.AddPlugin(new CommandsFeature());
         })
         .ConfigureAppHost(afterAppHostInit: appHost => {
             var mqService = appHost.Resolve<IMessageService>();

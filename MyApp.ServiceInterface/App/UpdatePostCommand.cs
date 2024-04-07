@@ -4,7 +4,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class UpdatePostCommand(IDbConnection db) : IExecuteCommandAsync<Post>
+public class UpdatePostCommand(IDbConnection db) : IAsyncCommand<Post>
 {
     public async Task ExecuteAsync(Post question)
     {

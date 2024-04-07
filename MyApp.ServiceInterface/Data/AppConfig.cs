@@ -263,24 +263,3 @@ public class AppConfig
         }
     }
 }
-
-public class CommandResult
-{
-    public string Name { get; set; }
-    public long? Ms { get; set; }
-    public DateTime At { get; set; }
-    public string Request { get; set; }
-    public string? Error { get; set; }
-}
-
-public class CommandSummary
-{
-    public string Name { get; set; }
-    public long Count { get; set; }
-    public long Failed { get; set; }
-    public long TotalMs { get; set; }
-    public long MinMs { get; set; }
-    public long MaxMs { get; set; }
-    public int AverageMs => (int) Math.Floor(TotalMs / (double)Count);
-    public string? LastError { get; set; }
-}

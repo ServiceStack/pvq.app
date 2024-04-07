@@ -4,7 +4,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class CreatePostJobsCommand(IDbConnection db, ModelWorkerQueue modelWorkers) : IExecuteCommandAsync<CreatePostJobs>
+public class CreatePostJobsCommand(IDbConnection db, ModelWorkerQueue modelWorkers) : IAsyncCommand<CreatePostJobs>
 {
     public async Task ExecuteAsync(CreatePostJobs request)
     {

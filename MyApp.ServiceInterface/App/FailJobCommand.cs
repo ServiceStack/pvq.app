@@ -5,7 +5,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class FailJobCommand(IDbConnection db, ModelWorkerQueue modelWorkers) : IExecuteCommandAsync<FailJob>
+public class FailJobCommand(IDbConnection db, ModelWorkerQueue modelWorkers) : IAsyncCommand<FailJob>
 {
     public async Task ExecuteAsync(FailJob request)
     {

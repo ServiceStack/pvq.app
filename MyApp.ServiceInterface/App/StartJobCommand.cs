@@ -5,7 +5,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class StartJobCommand(IDbConnection db) : IExecuteCommandAsync<StartJob>
+public class StartJobCommand(IDbConnection db) : IAsyncCommand<StartJob>
 {
     public async Task ExecuteAsync(StartJob job)
     {

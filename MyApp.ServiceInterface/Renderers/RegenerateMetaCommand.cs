@@ -10,13 +10,13 @@ using ServiceStack.OrmLite;
 namespace MyApp.ServiceInterface.Renderers;
 
 public class RegenerateMetaCommand(
-    ILogger log,
+    ILogger<RegenerateMetaCommand> log,
     IDbConnectionFactory dbFactory,
     IDbConnection db,
     QuestionsProvider questions,
     RendererCache cache,
     IMessageProducer mqClient)
-    : IExecuteCommandAsync<RegenerateMeta>
+    : IAsyncCommand<RegenerateMeta>
 {
     // Return Value
     public QuestionAndAnswers? Question { get; set; }

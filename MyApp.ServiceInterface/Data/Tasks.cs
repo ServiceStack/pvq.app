@@ -1,4 +1,6 @@
-﻿using MyApp.ServiceModel;
+﻿using MyApp.ServiceInterface;
+using MyApp.ServiceInterface.App;
+using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.DataAnnotations;
 
@@ -77,27 +79,74 @@ public class AnswerAddedToPost
 public class UpdateReputations {}
 
 [Tag(Tag.Tasks)]
-[ExcludeMetadata]
-[Restrict(InternalOnly = true)]
-public class DbWrites
+[Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
+public class DbWrites : IGet, IReturn<EmptyResponse>
 {
+    [Command(typeof(CreatePostVotesCommand))]
     public Vote? CreatePostVote { get; set; }
+    
+    [Command(typeof(CreatePostCommand))]
     public Post? CreatePost { get; set; }
+    
+    [Command(typeof(UpdatePostCommand))]
     public Post? UpdatePost { get; set; }
+    
+    [Command(typeof(DeletePostCommand))]
     public DeletePost? DeletePost { get; set; }
+    
+    [Command(typeof(CreatePostJobsCommand))]
     public CreatePostJobs? CreatePostJobs { get; set; }
+    
+    [Command(typeof(StartJobCommand))]
     public StartJob? StartJob { get; set; }
+    
+    [Command(typeof(CreateAnswerCommand))]
     public Post? CreateAnswer { get; set; }
+    
+    [Command(typeof(AnswerAddedToPostCommand))]
     public AnswerAddedToPost? AnswerAddedToPost { get; set; }
+    
+    [Command(typeof(NewCommentCommand))]
     public NewComment? NewComment { get; set; }
+    
+    [Command(typeof(DeleteCommentCommand))]
     public DeleteComment? DeleteComment { get; set; }
+    
+    [Command(typeof(CompletePostJobsCommand))]
     public CompletePostJobs? CompletePostJobs { get; set; }
+    
+    [Command(typeof(FailJobCommand))]
     public FailJob? FailJob { get; set; }
-    public ApplicationUser? UserRegistered { get; set; }
-    public ApplicationUser? UserSignedIn { get; set; }
+    
+    [Command(typeof(UpdateReputationsCommand))]
     public UpdateReputations? UpdateReputations { get; set; }
+    
+    [Command(typeof(MarkAsReadCommand))]
     public MarkAsRead? MarkAsRead { get; set; }
+    
+    [Command(typeof(CreateNotificationCommand))]
     public Notification? CreateNotification { get; set; }
+}
+
+public class RenderHome
+{
+    public string? Tab { get; set; }
+    public List<Post> Posts { get; set; }
+}
+
+public class RegenerateMeta
+{
+    public int? IfPostModified { get; set; }
+    public int? ForPost { get; set; }
+}
+
+public class RenderComponent : IReturnVoid
+{
+    public RegenerateMeta? RegenerateMeta { get; set; }
+    
+    public QuestionAndAnswers? Question { get; set; }
+    
+    public RenderHome? Home { get; set; }
 }
 
 [Tag(Tag.Tasks)]
@@ -109,17 +158,4 @@ public class SearchTasks
     public int? DeletePost { get; set; }
 }
 
-[Tag(Tag.Tasks)]
-[ExcludeMetadata]
-[ValidateIsAdmin]
-public class ViewCommands : IGet, IReturn<ViewCommandsResponse>
-{
-    public bool? Clear { get; set; }
-}
-public class ViewCommandsResponse
-{
-    public List<CommandSummary> CommandTotals { get; set; }
-    public List<CommandResult> LatestCommands { get; set; }
-    public List<CommandResult> LatestFailed { get; set; }
-    public ResponseStatus? ResponseStatus { get; set; }
-}
+

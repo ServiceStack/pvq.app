@@ -30,6 +30,10 @@ public class ConfigureRenderer : IHostingStartup
             services.AddScoped<BlazorRenderer>();
             services.AddSingleton<RendererCache>();
             services.RegisterService<RenderServices>();
+
+            services.AddTransient<RegenerateMetaCommand>();
+            services.AddScoped<RenderQuestionPostCommand>();
+            services.AddScoped<RenderHomeTabCommand>();
         })
         .ConfigureAppHost(appHost => { });
 }
@@ -48,7 +52,7 @@ internal class StaticNavigationManager : NavigationManager
     }
 }
 
-public class RenderQuestionPostCommand(BlazorRenderer renderer, RendererCache cache) : IExecuteCommandAsync<QuestionAndAnswers>
+public class RenderQuestionPostCommand(BlazorRenderer renderer, RendererCache cache) : IAsyncCommand<QuestionAndAnswers>
 {
     public async Task ExecuteAsync(QuestionAndAnswers request)
     {
@@ -57,7 +61,7 @@ public class RenderQuestionPostCommand(BlazorRenderer renderer, RendererCache ca
     }
 }
 
-public class RenderHomeTabCommand(BlazorRenderer renderer, RendererCache cache) : IExecuteCommandAsync<RenderHome>
+public class RenderHomeTabCommand(BlazorRenderer renderer, RendererCache cache) : IAsyncCommand<RenderHome>
 {
     public async Task ExecuteAsync(RenderHome request)
     {
@@ -72,12 +76,10 @@ public class RenderHomeTabCommand(BlazorRenderer renderer, RendererCache cache) 
 
 public class RenderServices(
     ILogger<RenderServices> log,
-    AppConfig appConfig,
-    QuestionsProvider questions,
-    BlazorRenderer renderer,
+    MarkdownQuestions markdown,
+    BlazorRenderer renderer, 
     RendererCache cache,
-    IDbConnectionFactory dbFactory,
-    MarkdownQuestions markdown) : MqServicesBase(log, appConfig)
+    ICommandExecutor executor) : Service
 {
     public async Task Any(RenderComponent request)
     {
@@ -86,8 +88,8 @@ public class RenderServices(
 
         if (request.RegenerateMeta != null)
         {
-            var command = new RegenerateMetaCommand(log, dbFactory, Db, questions, cache, MessageProducer);
-            await ExecuteAsync(command, request.RegenerateMeta);
+            var command = executor.Command<RegenerateMetaCommand>();
+            await executor.ExecuteAsync(command, request.RegenerateMeta);
 
             // Result is used to determine if Question Post HTML needs to be regenerated
             request.Question = command.Question;
@@ -96,11 +98,11 @@ public class RenderServices(
         if (request.Question != null)
         {
             log.LogInformation("Rendering Question Post HTML {Id}...", request.Question.Id);
-            await ExecuteAsync(new RenderQuestionPostCommand(renderer, cache), request.Question);
+            await executor.ExecuteAsync(new RenderQuestionPostCommand(renderer, cache), request.Question);
         }
 
         if (request.Home != null)
-            await ExecuteAsync(new RenderHomeTabCommand(renderer, cache), request.Home);
+            await executor.ExecuteAsync(new RenderHomeTabCommand(renderer, cache), request.Home);
     }
     
     public object Any(PreviewMarkdown request)

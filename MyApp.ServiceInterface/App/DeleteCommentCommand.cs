@@ -5,7 +5,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class DeleteCommentCommand(AppConfig appConfig, IDbConnection db) : IExecuteCommandAsync<DeleteComment>
+public class DeleteCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<DeleteComment>
 {
     public async Task ExecuteAsync(DeleteComment request)
     {
