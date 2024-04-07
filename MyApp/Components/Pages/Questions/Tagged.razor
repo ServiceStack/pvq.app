@@ -1,4 +1,5 @@
 ﻿@page "/questions/tagged/{Slug}"
+@attribute [OutputCache(Duration = 600)]
 @inject IDbConnectionFactory DbFactory
 
 <div class="flex flex-wrap justify-center">

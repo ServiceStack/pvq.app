@@ -1,4 +1,5 @@
 ﻿@page "/questions"
+@attribute [OutputCache(Duration = 60)]
 @inject IDbConnectionFactory DbFactory
 @inject IMessageProducer MessageProducer
 

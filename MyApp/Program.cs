@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using ServiceStack.Blazor;
 using MyApp.Components;
 using MyApp.Data;
@@ -57,6 +56,12 @@ services.AddBlazorServerIdentityApiClient(baseUrl);
 services.AddLocalStorage();
 
 services.AddServiceStack(typeof(MyServices).Assembly);
+
+services.AddOutputCache(options =>
+{
+    // Use default cache of 60s (for non Authenticated Users)
+    options.AddBasePolicy(builder => builder.Expire(TimeSpan.FromSeconds(60)));
+});
 
 var app = builder.Build();
 

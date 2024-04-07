@@ -71,7 +71,9 @@ export function mount(sel, component, props) {
 }
 
 export function forceMount(sel, component, props) {
-    unmount($1(sel))
+    const el = $1(sel)
+    if (!el) return
+    unmount(el)
     return mount(sel, component, props)
 }
 

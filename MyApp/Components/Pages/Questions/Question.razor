@@ -1,4 +1,5 @@
 ﻿@page "/questions/{Id:int}/{*Slug}"
+@attribute [OutputCache(Duration = 60)]
 @using ServiceStack.Caching
 @inject QuestionsProvider QuestionsProvider
 @inject RendererCache RendererCache

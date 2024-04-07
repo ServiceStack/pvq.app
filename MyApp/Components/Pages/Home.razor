@@ -1,4 +1,5 @@
 ﻿@page "/"
+@attribute [OutputCache(Duration = 60)]
 @inject RendererCache RendererCache
 @inject IMessageProducer MessageProducer
 @inject IDbConnectionFactory DbFactory
