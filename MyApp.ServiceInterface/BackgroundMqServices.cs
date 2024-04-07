@@ -121,7 +121,7 @@ public class BackgroundMqServices(
         {
             LatestCommands = new(AppConfig.CommandResults),
             LatestFailed = new(AppConfig.CommandFailures),
-            Totals = new(AppConfig.CommandTotals.Values)
+            CommandTotals = new(AppConfig.CommandTotals.Values)
         };
         if (request.Clear == true)
         {

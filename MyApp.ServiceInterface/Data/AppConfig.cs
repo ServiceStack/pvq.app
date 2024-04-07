@@ -217,7 +217,7 @@ public class AppConfig
 
     public bool IsHuman(string? userName) => userName != null && GetModelUser(userName) == null;
 
-    public const int DefaultCapacity = 500;
+    public const int DefaultCapacity = 250;
     public ConcurrentQueue<CommandResult> CommandResults { get; set; } = [];
     public ConcurrentQueue<CommandResult> CommandFailures { get; set; } = new();
     
