@@ -1,10 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Data;
-using System.Diagnostics;
-using Amazon.Runtime.Internal.Util;
-using MyApp.ServiceInterface;
 using MyApp.ServiceModel;
-using ServiceStack;
 using ServiceStack.OrmLite;
 
 namespace MyApp.Data;
