@@ -33,25 +33,25 @@ public class AppConfig
         ("mixtral", 5),
         ("gemini-pro", 10),
         ("claude-3-haiku", 25),
-        ("deepseek-coder:33b", 50),
+        //("deepseek-coder:33b", 50),
         ("claude-3-sonnet", 75),
         ("gpt-4-turbo", 100),
         ("claude-3-opus", 200),
 #else
-        ("phi", 0),
-        ("gemma:2b", 0),
-        ("qwen:4b", 0),
-        ("codellama", 0),
-        ("deepseek-coder:6.7b", 0),
-        ("mistral", 0),
-        ("gemma", 3),
-        ("mixtral", 5),
-        // ("gemini-pro", 10),
-        // ("claude-3-haiku", 25),
-        // ("deepseek-coder:33b", 50),
-        // ("claude-3-sonnet", 75),
-        // ("gpt-4-turbo", 100),
-        // ("claude-3-opus", 200),
+        ("phi", 0),                 // demis,macbook
+        ("gemma:2b", 0),            // demis,macbook
+        ("qwen:4b", 0),             // demis,darren
+        ("codellama", 0),           // demis,darren
+        ("deepseek-coder:6.7b", 0), // demis
+        ("mistral", 0),             // demis
+        ("gemma", 3),               // demis
+        ("mixtral", 5),             // darren
+        ("gemini-pro", 10),         // hetzner,macbook
+        ("claude-3-haiku", 25),     // hetzner,macbook
+        //("deepseek-coder:33b", 50),
+        ("claude-3-sonnet", 75),    // hetzner,macbook
+        ("gpt-4-turbo", 100),       // hetzner,macbook
+        ("claude-3-opus", 200),     // hetzner,macbook
 #endif
     ];
 
