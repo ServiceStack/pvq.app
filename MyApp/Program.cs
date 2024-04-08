@@ -28,7 +28,11 @@ services.AddAuthentication(options =>
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
-    .AddIdentityCookies(options => options.DisableRedirectsForApis());
+    .AddIdentityCookies(options =>
+    {
+        options.DisableRedirectsForApis();
+        options.ApplicationCookie?.Configure(x => x.ExpireTimeSpan = TimeSpan.FromDays(400));
+    });
 services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("App_Data"));
 
