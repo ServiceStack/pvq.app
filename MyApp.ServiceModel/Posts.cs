@@ -461,7 +461,7 @@ public class GetUserReputations : IGet, IReturn<GetUserReputationsResponse>
 }
 public class GetUserReputationsResponse
 {
-    public Dictionary<string, int> Results { get; set; } = [];
+    public Dictionary<string, string> Results { get; set; } = [];
     public ResponseStatus? ResponseStatus { get; set; }
 }
 

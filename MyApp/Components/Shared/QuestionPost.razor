@@ -32,7 +32,7 @@
                 {
                     <div>
                         <span>viewed</span>
-                        <b>@($"{Question.ViewCount:n0}") times</b>
+                        <b>@($"{Question.ViewCount.ToHumanReadable()}") times</b>
                     </div>
                 }
             </div>

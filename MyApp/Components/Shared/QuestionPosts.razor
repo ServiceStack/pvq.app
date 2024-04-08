@@ -14,7 +14,7 @@
                 }
                 else
                 {
-                    <div class="text-gray-600 dark:text-gray-300 whitespace-nowrap">@post.Score votes</div>
+                    <div class="text-gray-600 dark:text-gray-300 whitespace-nowrap">@post.Score.ToHumanReadable() votes</div>
                     @if (post.AcceptedAnswerId != null)
                     {
                         <div class="my-2 text-center items-center rounded-md bg-green-600 px-2 py-1 text-sm font-medium text-white whitespace-nowrap">

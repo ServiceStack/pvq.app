@@ -88,8 +88,10 @@ public class AppConfig
     public void SetInitialPostId(long initialValue) => this.nextPostId = initialValue;
     public long LastPostId => Interlocked.Read(ref nextPostId);
     public long GetNextPostId() => Interlocked.Increment(ref nextPostId);
+
+    public string GetReputation(string? userName) => GetReputationValue(userName).ToHumanReadable();
     
-    public int GetReputation(string? userName) => 
+    public int GetReputationValue(string? userName) => 
         userName == null || !UsersReputation.TryGetValue(userName, out var reputation) 
             ? 1 
             : reputation;

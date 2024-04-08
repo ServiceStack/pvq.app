@@ -37,4 +37,22 @@ public class UnitTest
         
         Assert.That(userNames, Is.EquivalentTo(new[]{ "alice", "charlie", "david-dee", "mythz" }));
     }
+
+    [Test]
+    public void Does_HumanReadable()
+    {
+        Assert.That(1.ToHumanReadable(), Is.EquivalentTo("1"));
+        Assert.That(10.ToHumanReadable(), Is.EquivalentTo("10"));
+        Assert.That(100.ToHumanReadable(), Is.EquivalentTo("100"));
+        Assert.That(1000.ToHumanReadable(), Is.EquivalentTo("1k"));
+        Assert.That(1100.ToHumanReadable(), Is.EquivalentTo("1.1k"));
+        Assert.That(10000.ToHumanReadable(), Is.EquivalentTo("10k"));
+        Assert.That(11000.ToHumanReadable(), Is.EquivalentTo("11k"));
+        Assert.That(11100.ToHumanReadable(), Is.EquivalentTo("11.1k"));
+        Assert.That(1000000.ToHumanReadable(), Is.EquivalentTo("1m"));
+        Assert.That(1100000.ToHumanReadable(), Is.EquivalentTo("1.1m"));
+        Assert.That(10000000.ToHumanReadable(), Is.EquivalentTo("10m"));
+        Assert.That(11000000.ToHumanReadable(), Is.EquivalentTo("11m"));
+        Assert.That(11100000.ToHumanReadable(), Is.EquivalentTo("11.1m"));
+    }
 }
