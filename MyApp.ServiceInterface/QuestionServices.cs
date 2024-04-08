@@ -351,9 +351,9 @@ public class QuestionServices(AppConfig appConfig,
         
         answerNotifier.NotifyNewAnswer(request.PostId, request.Model);
 
-        // Only add notifications for answers older than 1hr
+        // Only add notifications for answers older than 25hr
         var post = await Db.SingleByIdAsync<Post>(request.PostId);
-        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
+        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(25))
         {
             var userName = appConfig.GetUserName(request.Model);
             var body = questions.GetModelAnswerBody(json);
