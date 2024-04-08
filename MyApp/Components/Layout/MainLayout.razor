@@ -1,5 +1,4 @@
 ﻿@inherits LayoutComponentBase
-@inject NavigationManager NavigationManager
 @inject IWebHostEnvironment Env
 @inject IServiceGatewayFactory GatewayFactory
 
@@ -79,6 +78,6 @@ remount()
         await base.OnInitializedAsync();
         var gateway = GatewayFactory.GetServiceGateway(HttpContext.ToRequest());
         metadataHtml = await gateway.ApiAsJsonAsync(new MetadataApp());
-        authJson = await gateway.ApiAsJsonAsync(new Authenticate());
+        authJson = BlazorHtml.RawJson(HttpContext.User.ToAuthenticateResponse());
     }
 }
