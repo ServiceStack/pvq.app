@@ -5,7 +5,6 @@ using MyApp.Data;
 using MyApp.ServiceInterface;
 using MyApp.ServiceInterface.Renderers;
 using MyApp.ServiceModel;
-using ServiceStack.Data;
 
 [assembly: HostingStartup(typeof(MyApp.ConfigureRenderer))]
 
@@ -98,11 +97,11 @@ public class RenderServices(
         if (request.Question != null)
         {
             log.LogInformation("Rendering Question Post HTML {Id}...", request.Question.Id);
-            await executor.ExecuteAsync(new RenderQuestionPostCommand(renderer, cache), request.Question);
+            await executor.ExecuteAsync(executor.Command<RenderQuestionPostCommand>(), request.Question);
         }
 
         if (request.Home != null)
-            await executor.ExecuteAsync(new RenderHomeTabCommand(renderer, cache), request.Home);
+            await executor.ExecuteAsync(executor.Command<RenderHomeTabCommand>(), request.Home);
     }
     
     public object Any(PreviewMarkdown request)

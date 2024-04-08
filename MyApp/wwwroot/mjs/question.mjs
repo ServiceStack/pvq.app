@@ -1,14 +1,16 @@
 ﻿import { ref, computed, watchEffect, nextTick, onMounted } from "vue"
-import { $$, $1, on, JsonServiceClient, EventBus, toDate } from "@servicestack/client"
+import { $$, $1, on, JsonServiceClient, EventBus, toDate, humanize } from "@servicestack/client"
 import { useClient, useAuth, useUtils } from "@servicestack/vue"
 import { mount, alreadyMounted } from "app.mjs"
 import {
     UserPostData, PostVote, GetQuestionFile,
     AnswerQuestion, UpdateQuestion, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta,
-    DeleteQuestion, DeleteComment, GetUserReputations,
+    DeleteQuestion, DeleteComment, GetUserReputations, CommentVote,
+    ShareContent, FlagContent,
 } from "dtos.mjs"
 
 const client = new JsonServiceClient()
+const pageBus = new EventBus()
 let meta = null
 
 function getComments(id) {
@@ -53,13 +55,33 @@ globalThis.removeComment = async function (el) {
     }
 }
 
+let userPostVotes = {upVoteIds:[], downVoteIds:[]}
+let origPostValues = {upVoteIds:[], downVoteIds:[]}
+function getValue(postVotes, refId) {
+    return (postVotes.upVoteIds.includes(refId) ? 1 : postVotes.downVoteIds.includes(refId) ? -1 : 0)
+}
+function setValue(refId, value) {
+    userPostVotes.upVoteIds = userPostVotes.upVoteIds.filter(x => x !== refId)
+    userPostVotes.downVoteIds = userPostVotes.downVoteIds.filter(x => x !== refId)
+    if (value === 1) {
+        userPostVotes.upVoteIds.push(refId)
+    }
+    if (value === -1) {
+        userPostVotes.downVoteIds.push(refId)
+    }
+}
 
+async function updateUserData(postId) {
+    const api = await client.api(new UserPostData({ postId }))
+    if (api.succeeded) {
+        origPostValues = api.response
+        userPostVotes = Object.assign({}, origPostValues)
+    }
+}
 
 async function loadVoting(ctx) {
     const { client, postId, userName, user, hasRole } = ctx
 
-    let userPostVotes = {upVoteIds:[], downVoteIds:[]}
-    let origPostValues = {upVoteIds:[], downVoteIds:[]}
     function updateVote(el) {
         const up = el.querySelector('.up')
         const down = el.querySelector('.down')
@@ -71,19 +93,6 @@ async function loadVoting(ctx) {
         down.classList.toggle('text-green-600',value === -1)
         down.innerHTML = value === -1 ? svgPaths.down.solid : svgPaths.down.empty
         score.innerHTML = parseInt(score.dataset.score) + value - getValue(origPostValues, el.dataset.refid)
-    }
-    function getValue(postVotes, refId) {
-        return (postVotes.upVoteIds.includes(refId) ? 1 : postVotes.downVoteIds.includes(refId) ? -1 : 0)
-    }
-    function setValue(refId, value) {
-        userPostVotes.upVoteIds = userPostVotes.upVoteIds.filter(x => x !== refId)
-        userPostVotes.downVoteIds = userPostVotes.downVoteIds.filter(x => x !== refId)
-        if (value === 1) {
-            userPostVotes.upVoteIds.push(refId)
-        }
-        if (value === -1) {
-            userPostVotes.downVoteIds.push(refId)
-        }
     }
 
     $$('.voting').forEach(el => {
@@ -130,11 +139,159 @@ async function loadVoting(ctx) {
         })
     })
 
-    const api = await client.api(new UserPostData({ postId }))
-    if (api.succeeded) {
-        origPostValues = api.response
-        userPostVotes = Object.assign({}, origPostValues)
-        $$('.voting').forEach(updateVote)
+    await updateUserData(postId)
+    $$('.voting').forEach(updateVote)
+}
+
+export const NewReport = {
+    template:`<ModalDialog class="z-30" sizeClass="sm:max-w-prose sm:w-full" @done="done">
+        <form @submit.prevent="submit">
+            <div class="shadow overflow-hidden sm:rounded-md bg-white dark:bg-black">
+                <div class="relative px-4 py-5 sm:p-6">
+                    <fieldset>
+                        <legend class="text-base font-medium text-gray-900 dark:text-gray-100 text-center mb-4">Flag {{contentType}}</legend>  
+                        <ErrorSummary except="type,description" />
+                        <div class="grid grid-cols-6 gap-6">
+                            <div class="col-span-6">
+                            <fieldset>
+                              <legend class="sr-only">Flag Issue</legend>
+                              <div class="space-y-5">
+                                <div v-for="x in ReportTypes" class="relative flex items-start">
+                                  <div class="flex h-6 items-center">
+                                    <input :id="x.value" :value="x.value" :aria-describedby="x.value + '-description'" name="type" v-model="request.type" type="radio" class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                  </div>
+                                  <div class="ml-3 text-sm leading-6">
+                                    <label :for="x.value" class="font-medium text-gray-900 dark:text-gray-50">{{x.label}}</label>
+                                    <p :id="x.value + '-description'" class="text-gray-500">{{x.text}}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </fieldset>
+                            </div>
+                            <div class="col-span-6">
+                                <TextareaInput id="reason" v-model="request.reason" placeholder="" label="Reason (optional)" />
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="mt-4 px-4 py-3 bg-gray-50 dark:bg-gray-900 text-right sm:px-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <Loading v-if="loading" />
+                        </div>
+                        <div>
+                            <SecondaryButton class="mr-2" @click="done">Cancel</SecondaryButton>
+                            <PrimaryButton type="submit">Submit</PrimaryButton>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </ModalDialog>`,
+    emits:['done'],
+    props: {
+        refId:String,
+    },
+    setup(props, { emit }) {
+        const client = useClient()
+        const loading = client.loading
+        
+        const contentType = computed(() => props.refId.indexOf('-') < 0
+            ? 'Question'
+            : props.refId.indexOf('-') !== props.refId.lastIndexOf('-')
+                ? 'Comment'
+                : 'Answer')
+
+        const request = ref(new FlagContent({
+            refId: props.refId
+        }))
+
+        async function submit() {
+            const api = await client.api(request.value)
+            if (api.succeeded) {
+                done()
+            }
+        }
+
+        function done() {
+            emit('done')
+        }
+        
+        const ReportTypes = [
+            {
+                value: 'Spam',
+                text: 'Poor response, promotes a product or service without disclosing affiliation',
+            },
+            {
+                value: 'Offensive',
+                text: 'Uses rude, abusive, disrespectful or offensive language',
+            },
+            {
+                value: 'Duplicate',
+                text: 'This has already been asked or answered before',
+            },
+            {
+                value: 'NotRelevant',
+                text: 'This is not relevant to the question or answer',
+            },
+            {
+                value: 'LowQuality',
+                text: `This is a low quality or low effort ${contentType.value.toLowerCase()}`,
+            },
+            {
+                value: 'Plagiarized',
+                text: `This ${contentType.value.toLowerCase()} is copied without attribution`,
+            },
+            {
+                value: 'NeedsReview',
+                text: 'Other issues, needs review by a moderator. Please provide specific details',
+            }
+        ]
+        ReportTypes.forEach(x => x.label = humanize(x.value))
+
+        return { request, loading, contentType, ReportTypes, submit, done }
+    }
+}
+
+const QuestionDialogs = {
+    components: { NewReport },
+    template: `<div>
+        <NewReport v-if="show==='NewReport'" :refId="refId" @done="done" />
+    </div>`,
+    props:['bus'],
+    setup(props, { emit }) {
+        
+        const show = ref('')
+        const refId = ref('')
+        
+        function done() {
+            show.value = ''
+            emit('done')
+        }
+        
+        onMounted(() => {
+            props.bus.subscribe('showNewReport', id => {
+                show.value = 'NewReport'
+                refId.value = id
+            })
+            props.bus.subscribe('showShare', id => {
+                show.value = 'Share'
+                refId.value = id
+            })
+        })
+        
+        return { show, refId, done }
+    }
+}
+
+async function loadDialogs(ctx) {
+    const { client, postId, userName, user, hasRole } = ctx
+
+    const el = $1(`#dialogs`)
+    if (!el) return
+
+    if (!alreadyMounted(el)) {
+        mount(el, QuestionDialogs, { postId, userName, user, bus:pageBus })
     }
 }
 
@@ -146,7 +303,6 @@ const QuestionAside = {
     `,
     props:['id'],
     setup(props) {
-        
         const { hasRole } = useAuth()
         const isModerator = hasRole('Moderator')
         const client = useClient()
@@ -190,6 +346,15 @@ const AddComment = {
         <div>
             <div v-if="comments.length" class="border-t border-gray-200 dark:border-gray-700">
                 <div v-for="comment in comments" :data-createdby="comment.createdBy" :data-created="comment.created" class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                    <div class="inline-block mr-1 min-w-[12px]" v-if="comment.upVotes">
+                        <span class="text-red-600 font-semibold">{{comment.upVotes}}</span>
+                    </div>
+                    <div class="inline-block mr-1">
+                        <div class="flex flex-col">
+                            <svg :class="['w-4 h-4',hasVoted(comment) ? 'text-red-600' : 'cursor-pointer text-gray-400 hover:text-red-600']" @click="voteUp(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15"><path fill="currentColor" d="m7.5 3l7.5 8H0z"/></svg>
+                            <svg class="cursor-pointer w-4 h-4 text-gray-400 hover:text-red-600" @click="flag(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M4 5a1 1 0 0 1 .3-.714a6 6 0 0 1 8.213-.176l.351.328a4 4 0 0 0 5.272 0l.249-.227c.61-.483 1.527-.097 1.61.676L20 5v9a1 1 0 0 1-.3.714a6 6 0 0 1-8.213.176l-.351-.328A4 4 0 0 0 6 14.448V21a1 1 0 0 1-1.993.117L4 21z"/></svg>
+                        </div>
+                    </div>
                     <svg v-if="isModerator || comment.createdBy === userName" class="mr-1 align-sub text-gray-400 hover:text-gray-500 w-4 h-4 inline-block cursor-pointer" @click="removeComment(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete comment</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
                     <span v-html="comment.body"></span>
                     <span class="inline-block">
@@ -214,6 +379,8 @@ const AddComment = {
         const comments = ref(getComments(props.id))
         const error = ref('')
         const input = ref()
+
+        function hasVoted(comment) { return userPostVotes.upVoteIds.includes(`${props.id}-${comment.created}`) }
         
         function keyDown(e) {
             if (e.key === 'Enter') {
@@ -258,12 +425,25 @@ const AddComment = {
             editing.value = true
             nextTick(() => input.value.focus())
         }
-        
+
+        async function voteUp(comment) {
+            const refId = `${props.id}-${comment.created}`
+            const api = await client.apiVoid(new CommentVote({ refId, created: comment.created, up: true }))
+            if (api.succeeded) {
+                
+            }
+        }
+
+        function flag(comment) {
+            pageBus.publish('showNewReport', `${props.id}-${comment.created}`)
+        }
+
         onMounted(() => {
             input.value.focus()
         })
         
-        return { userName, isModerator, txt, input, editing, comments, keyDown, formatDate, loading, error, submit, close, removeComment, startEditing }
+        return { userName, isModerator, txt, input, editing, comments, keyDown, startEditing, 
+                formatDate, loading, error, submit, close, removeComment, voteUp, flag, hasVoted }
     }
 }
 
@@ -371,7 +551,6 @@ const EditQuestion = {
             const api = await client.api(new GetQuestionFile({ id: props.id }))
             if (api.succeeded) {
                 original = JSON.parse(api.response)
-                // console.log('original', original)
                 Object.assign(request.value, original)
             }
             nextTick(() => globalThis?.hljs?.highlightAll())
@@ -400,9 +579,11 @@ async function loadEditQuestion(ctx) {
     const el = $1(`[data-postid="${postId}"]`)
     if (!el) return
 
-    const id = el.id
+    const id = el.dataset.postid
     const question = el,
+        shareLink = el.querySelector('.share-link'),
         editLink = el.querySelector('.edit-link'),
+        flagLink = el.querySelector('.flag-link'),
         edit = el.querySelector('.edit'),
         title = el.querySelector('h1 span'),
         footer = el.querySelector('.question-footer'),
@@ -411,7 +592,25 @@ async function loadEditQuestion(ctx) {
         addCommentLink = el.querySelector('.add-comment-link'),
         comments = el.querySelector('.comments'),
         questionAside = el.querySelector('.question-aside')
-    
+
+    shareLink.innerHTML = 'share'
+    on(shareLink, {
+        click() {
+            pageBus.publish('showShareContent', id)
+        }
+    })
+
+    flagLink.innerHTML = 'flag'
+    on(flagLink, {
+        click() {
+            if (!userName) {
+                location.href = signInUrl()
+            } else {
+                pageBus.publish('showNewReport', id)
+            }
+        }
+    })
+
     if (!editLink) return // Locked Questions
     editLink.innerHTML = 'edit'
     addCommentLink.innerHTML = 'add comment'
@@ -585,15 +784,35 @@ async function loadEditAnswers(ctx) {
     const sel = `[data-answer]`
     
     $$(sel).forEach(el => {
-        const id = el.id
+        const id = el.dataset.answer
         const answer = el,
+            shareLink = el.querySelector('.share-link'),
             editLink = el.querySelector('.edit-link'),
+            flagLink = el.querySelector('.flag-link'),
             edit = el.querySelector('.edit'),
             preview = el.querySelector('.preview'),
             previewHtml = preview.innerHTML,
             addCommentLink = el.querySelector('.add-comment-link'),
             comments = el.querySelector('.comments')
 
+        shareLink.innerHTML = 'share'
+        on(shareLink, {
+            click() {
+                pageBus.publish('showShareContent', id)
+            }
+        })
+
+        flagLink.innerHTML = 'flag'
+        on(flagLink, {
+            click() {
+                if (!userName) {
+                    location.href = signInUrl()
+                } else {
+                    pageBus.publish('showNewReport', id)
+                }
+            }
+        })
+        
         if (!editLink) return // Locked Questions
         const answerId = answer.dataset.answer
         editLink.innerHTML = 'edit'
@@ -652,7 +871,6 @@ async function loadUserReputations(ctx) {
     $$('[data-rep-user]').forEach(x => {
         userNames.add(x.dataset.repUser)
     })
-    console.log('userNames', userNames.size, userNames)
     if (userNames.size > 0) {
         const api = await client.api(new GetUserReputations({ userNames: Array.from(userNames) }))
         if (api.succeeded) {
@@ -692,6 +910,7 @@ export default  {
         if (!isNaN(postId)) {
             const ctx = { client, userName, postId, user, hasRole }
             await Promise.all([
+                loadDialogs(ctx),
                 loadVoting(ctx),
                 loadEditQuestion(ctx),
                 loadEditAnswers(ctx),

@@ -101,3 +101,46 @@ public class GetUsersInfoResponse
     public Dictionary<string,int> UsersUnreadNotifications { get; set; } = new();
     public ResponseStatus? ResponseStatus { get; set; }
 }
+
+[Route("/q/{RefId}")]
+[Route("/q/{RefId}/{UserId}")]
+public class ShareContent : IGet, IReturn<string>
+{
+    [ValidateNotEmpty]
+    public string RefId { get; set; }
+    public int? UserId { get; set; }
+}
+
+public enum FlagType
+{
+    Unknown = 0,
+    Span = 1,
+    Offensive = 2,
+    Duplicate = 3,
+    NotRelevant = 4,
+    LowQuality = 5,
+    Plagiarized = 6,
+    NeedsReview = 7,
+}
+
+[ValidateIsAuthenticated]
+public class FlagContent : IPost, IReturn<EmptyResponse>
+{
+    [ValidateNotEmpty]
+    public string RefId { get; set; }
+    public FlagType Type { get; set; }
+    public string? Reason { get; set; }
+}
+
+public class Flag
+{
+    [AutoIncrement]
+    public int Id { get; set; }
+    public string RefId { get; set; }
+    public int PostId { get; set; }
+    public FlagType Type { get; set; }
+    public string? Reason { get; set; }
+    public string? UserName { get; set; }
+    public string? RemoteIp { get; set; }
+    public DateTime CreatedDate { get; set; }
+}

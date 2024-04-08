@@ -250,6 +250,14 @@ public class PostVote : IReturnVoid
     public bool? Down { get; set; }
 }
 
+[ValidateIsAuthenticated]
+public class CommentVote : IReturnVoid
+{
+    public string RefId { get; set; }
+    public bool? Up { get; set; }
+    public bool? Down { get; set; }
+}
+
 [ValidateHasRole(Roles.Moderator)]
 public class CreateWorkerAnswer : IPost, IReturn<IdResponse>
 {

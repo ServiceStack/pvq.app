@@ -106,7 +106,7 @@
             {
                 MessageProducer.Publish(new AnalyticsTasks
                 {
-                    RecordSearchView = new SearchView { Query = Q }.WithRequest(HttpContext)
+                    CreateSearchStat = new SearchStat { Query = Q, Type = SearchStatType.Search}.WithRequest(HttpContext)
                 });
 
                 using var dbSearch = await DbFactory.OpenAsync(Databases.Search);

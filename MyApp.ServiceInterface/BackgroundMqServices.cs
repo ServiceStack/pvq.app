@@ -37,24 +37,24 @@ public class BackgroundMqServices(R2VirtualFiles r2) : Service
 
     public async Task Any(AnalyticsTasks request)
     {
-        if (request.RecordPostView == null && request.RecordSearchView == null && request.DeletePost == null)
+        if (request.CreatePostStat == null && request.CreateSearchStat == null && request.DeletePost == null)
             return;
 
         using var analyticsDb = HostContext.AppHost.GetDbConnection(Databases.Analytics);
         
-        if (request.RecordPostView != null)// && !Stats.IsAdminOrModerator(request.RecordPostView.UserName))
+        if (request.CreatePostStat != null)// && !Stats.IsAdminOrModerator(request.RecordPostView.UserName))
         {
-            await analyticsDb.InsertAsync(request.RecordPostView);
+            await analyticsDb.InsertAsync(request.CreatePostStat);
         }
 
-        if (request.RecordSearchView != null)// && !Stats.IsAdminOrModerator(request.RecordSearchView.UserName))
+        if (request.CreateSearchStat != null)// && !Stats.IsAdminOrModerator(request.RecordSearchView.UserName))
         {
-            await analyticsDb.InsertAsync(request.RecordSearchView);
+            await analyticsDb.InsertAsync(request.CreateSearchStat);
         }
 
         if (request.DeletePost != null)
         {
-            await analyticsDb.DeleteAsync<PostView>(x => x.PostId == request.DeletePost);
+            await analyticsDb.DeleteAsync<PostStat>(x => x.PostId == request.DeletePost);
         }
     }
 }

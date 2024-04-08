@@ -165,7 +165,20 @@ public class Migration1000 : MigrationBase
     
         public DateTime CreatedDate { get; set; }
     }
-
+    
+    public enum FlagType {}
+    public class Flag
+    {
+        [AutoIncrement]
+        public int Id { get; set; }
+        public string RefId { get; set; }
+        public int PostId { get; set; }
+        public FlagType Type { get; set; }
+        public string? Reason { get; set; }
+        public string UserName { get; set; }
+        public string? RemoteIp { get; set; }
+        public DateTime CreatedDate { get; set; }
+    }
     public override void Up()
     {
         Db.CreateTable<Achievement>();
@@ -174,6 +187,7 @@ public class Migration1000 : MigrationBase
         Db.CreateTable<Vote>();
         Db.CreateTable<Job>();
         Db.CreateTable<PostJob>();
+        Db.CreateTable<Flag>();
         
         Db.ExecuteSql("INSERT INTO UserInfo (UserId, UserName) SELECT Id, UserName FROM AspNetUsers");
         Db.ExecuteSql("UPDATE StatTotals SET CreatedBy = substr(Id,instr(Id,'-')+1) WHERE instr(Id,'-') > 0 AND CreatedBy IS NULL");
@@ -189,5 +203,6 @@ public class Migration1000 : MigrationBase
         Db.DropTable<UserInfo>();
         Db.DropTable<Notification>();
         Db.DropTable<Achievement>();
+        Db.DropTable<Flag>();
     }
 }

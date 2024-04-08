@@ -10,34 +10,43 @@ public class Migration1001 : MigrationBase
     {
         public string RefId { get; set; }
         public string? UserName { get; set; }
-        public string RemoteIp { get; set; }
+        public string? RemoteIp { get; set; }
         public DateTime CreatedDate { get; set; }
     }
 
-    public class PostView : StatBase
+    [EnumAsInt]
+    public enum PostStatType {}
+
+    public class PostStat : StatBase
     {
         [AutoIncrement]
         public int Id { get; set; }
         [Index]
         public int PostId { get; set; }
+        public PostStatType Type { get; set; }
+        public string? RefUserName { get; set; }
     }
 
-    public class SearchView : StatBase
+    [EnumAsInt]
+    public enum SearchStatType {}
+
+    public class SearchStat : StatBase
     {
         [AutoIncrement]
         public int Id { get; set; }
         public string? Query { get; set; }
+        public SearchStatType Type { get; set; }
     }
 
     public override void Up()
     {
-        Db.CreateTable<PostView>();
-        Db.CreateTable<SearchView>();
+        Db.CreateTable<PostStat>();
+        Db.CreateTable<SearchStat>();
     }
 
     public override void Down()
     {
-        Db.CreateTable<PostView>();
-        Db.CreateTable<SearchView>();
+        Db.CreateTable<SearchStat>();
+        Db.CreateTable<PostStat>();
     }
 }

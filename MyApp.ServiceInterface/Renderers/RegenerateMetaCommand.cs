@@ -158,7 +158,7 @@ public class RegenerateMetaCommand(
             await db.UpdateOnlyAsync(() => new Post { AnswerCount = answerFiles.Count }, x => x.Id == id);
         }
 
-        var totalPostViews = dbAnalytics.Count<PostView>(x => x.PostId == id);
+        var totalPostViews = dbAnalytics.Count<PostStat>(x => x.PostId == id);
         var livePostUpVotes = allPostVotes.Count(x => x.RefId == postId && x.Score > 0);
         var livePostDownVotes = allPostVotes.Count(x => x.RefId == postId && x.Score < 0);
         var liveStats = new List<StatTotals>

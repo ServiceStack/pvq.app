@@ -6,7 +6,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-public class CreatePostVotesCommand(AppConfig appConfig, IDbConnection db, IMessageProducer mqClient) : IAsyncCommand<Vote>
+public class CreatePostVoteCommand(AppConfig appConfig, IDbConnection db, IMessageProducer mqClient) : IAsyncCommand<Vote>
 {
     public async Task ExecuteAsync(Vote vote)
     {

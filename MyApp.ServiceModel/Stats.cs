@@ -80,20 +80,37 @@ public class StatBase
     public DateTime CreatedDate { get; set; }
 }
 
+[EnumAsInt]
+public enum PostStatType
+{
+    Unknown = 0,
+    View = 1,
+    Share = 2,
+}
+
 [Icon(Svg = Icons.Stats)]
-public class PostView : StatBase
+public class PostStat : StatBase
 {
     [AutoIncrement]
     public int Id { get; set; }
     [Index]
     public int PostId { get; set; }
+    public PostStatType Type { get; set; }
+    public string? RefUserName { get; set; }
+}
+
+[EnumAsInt]
+public enum SearchStatType
+{
+    Unknown = 0,
+    Search = 1,
 }
 
 [Icon(Svg = Icons.Stats)]
-public class SearchView : StatBase
+public class SearchStat : StatBase
 {
     [AutoIncrement]
     public int Id { get; set; }
     public string? Query { get; set; }
+    public SearchStatType Type { get; set; }
 }
-

@@ -6,8 +6,8 @@ using ServiceStack.DataAnnotations;
 
 namespace MyApp.Data;
 
-[ExcludeMetadata]
-[Restrict(InternalOnly = true)]
+[Tag(Tag.Tasks)]
+[Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
 public class SendEmail : IReturn<EmptyResponse>
 {
     public string To { get; set; }
@@ -18,8 +18,7 @@ public class SendEmail : IReturn<EmptyResponse>
 }
 
 [Tag(Tag.Tasks)]
-[ExcludeMetadata]
-[Restrict(InternalOnly = true)]
+[Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
 public class DiskTasks : IReturnVoid
 {
     public SaveFile? SaveFile { get; set; }
@@ -34,12 +33,11 @@ public class SaveFile
 }
 
 [Tag(Tag.Tasks)]
-[ExcludeMetadata]
-[Restrict(InternalOnly = true)]
+[Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
 public class AnalyticsTasks
 {
-    public SearchView? RecordSearchView { get; set; }
-    public PostView? RecordPostView { get; set; }
+    public SearchStat? CreateSearchStat { get; set; }
+    public PostStat? CreatePostStat { get; set; }
     public int? DeletePost { get; set; }
 }
 
@@ -82,50 +80,56 @@ public class UpdateReputations {}
 [Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
 public class DbWrites : IGet, IReturn<EmptyResponse>
 {
-    [Command(typeof(CreatePostVotesCommand))]
+    [Command<CreatePostVoteCommand>]
     public Vote? CreatePostVote { get; set; }
     
-    [Command(typeof(CreatePostCommand))]
+    [Command<CreateCommentVoteCommand>]
+    public Vote? CreateCommentVote { get; set; }
+    
+    [Command<CreatePostCommand>]
     public Post? CreatePost { get; set; }
     
-    [Command(typeof(UpdatePostCommand))]
+    [Command<UpdatePostCommand>]
     public Post? UpdatePost { get; set; }
     
-    [Command(typeof(DeletePostCommand))]
+    [Command<DeletePostCommand>]
     public DeletePost? DeletePost { get; set; }
     
-    [Command(typeof(CreatePostJobsCommand))]
+    [Command<CreatePostJobsCommand>]
     public CreatePostJobs? CreatePostJobs { get; set; }
     
-    [Command(typeof(StartJobCommand))]
+    [Command<StartJobCommand>]
     public StartJob? StartJob { get; set; }
     
-    [Command(typeof(CreateAnswerCommand))]
+    [Command<CreateAnswerCommand>]
     public Post? CreateAnswer { get; set; }
     
-    [Command(typeof(AnswerAddedToPostCommand))]
+    [Command<AnswerAddedToPostCommand>]
     public AnswerAddedToPost? AnswerAddedToPost { get; set; }
     
-    [Command(typeof(NewCommentCommand))]
+    [Command<NewCommentCommand>]
     public NewComment? NewComment { get; set; }
     
-    [Command(typeof(DeleteCommentCommand))]
+    [Command<DeleteCommentCommand>]
     public DeleteComment? DeleteComment { get; set; }
     
-    [Command(typeof(CompletePostJobsCommand))]
+    [Command<CompletePostJobsCommand>]
     public CompletePostJobs? CompletePostJobs { get; set; }
     
-    [Command(typeof(FailJobCommand))]
+    [Command<FailJobCommand>]
     public FailJob? FailJob { get; set; }
     
-    [Command(typeof(UpdateReputationsCommand))]
+    [Command<UpdateReputationsCommand>]
     public UpdateReputations? UpdateReputations { get; set; }
     
-    [Command(typeof(MarkAsReadCommand))]
+    [Command<MarkAsReadCommand>]
     public MarkAsRead? MarkAsRead { get; set; }
     
-    [Command(typeof(CreateNotificationCommand))]
+    [Command<CreateNotificationCommand>]
     public Notification? CreateNotification { get; set; }
+    
+    [Command<CreateFlagCommand>]
+    public Flag? CreateFlag { get; set; }
 }
 
 public class RenderHome
@@ -150,12 +154,9 @@ public class RenderComponent : IReturnVoid
 }
 
 [Tag(Tag.Tasks)]
-[ExcludeMetadata]
-[Restrict(InternalOnly = true)]
+[Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
 public class SearchTasks
 {
     public int? AddPostToIndex { get; set; }
     public int? DeletePost { get; set; }
 }
-
-

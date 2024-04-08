@@ -5,11 +5,13 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.Configuration;
 using ServiceStack.DataAnnotations;
+using ServiceStack.Messaging;
+using ServiceStack.Redis;
 using ServiceStack.Web;
+using ServiceStack.Model;
 
 namespace MyApp.ServiceInterface;
 
@@ -32,6 +34,10 @@ public class CommandAttribute(Type commandType, Lifetime lifetime = Lifetime.Tra
     public Lifetime Lifetime { get; } = lifetime;
 }
 
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+public class CommandAttribute<T>(Lifetime lifetime = Lifetime.Transient) 
+    : CommandAttribute(typeof(T), lifetime) where T : IAsyncCommand;
+
 public enum Lifetime
 {
     /// <summary>
@@ -52,6 +58,7 @@ public enum Lifetime
     /// </summary>
     Transient,
 }
+
 public static class CommandExtensions
 {
     public static Task ExecuteCommandsAsync<T>(this IRequest? req, T requestDto) where T : class
@@ -67,7 +74,7 @@ public static class CommandExtensions
     }
 }
 
-public class CommandsFeature : IPlugin, IConfigureServices, ServiceStack.Model.IHasStringId
+public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
 {
     public string Id => "commands";
 
@@ -88,14 +95,14 @@ public class CommandsFeature : IPlugin, IConfigureServices, ServiceStack.Model.I
     public List<(Type, ServiceLifetime)> RegisterTypes { get; set; } =
     [
         (typeof(IDbConnection), ServiceLifetime.Transient),
-        (typeof(ServiceStack.Redis.IRedisClient), ServiceLifetime.Singleton),
-        (typeof(ServiceStack.Redis.IRedisClientAsync), ServiceLifetime.Singleton),
-        (typeof(ServiceStack.Messaging.IMessageProducer), ServiceLifetime.Singleton),
+        (typeof(IRedisClient), ServiceLifetime.Singleton),
+        (typeof(IRedisClientAsync), ServiceLifetime.Singleton),
+        (typeof(IMessageProducer), ServiceLifetime.Singleton),
     ];
 
     public void Configure(IServiceCollection services)
     {
-        services.AddSingleton<ICommandExecutor>(c => new CommandExecutor(this, c));
+        services.AddTransient<ICommandExecutor>(c => new CommandExecutor(this, c));
 
         ServiceLifetime ToServiceLifetime(Lifetime lifetime) => lifetime switch {
             Lifetime.Scoped => ServiceLifetime.Scoped,
@@ -122,15 +129,15 @@ public class CommandsFeature : IPlugin, IConfigureServices, ServiceStack.Model.I
             {
                 services.Add(registerType.Item1, _ => HostContext.AppHost.GetDbConnection(), registerType.Item2);
             }
-            if (registerType.Item1 == typeof(ServiceStack.Redis.IRedisClient) && !services.Exists<ServiceStack.Redis.IRedisClient>())
+            if (registerType.Item1 == typeof(IRedisClient) && !services.Exists<IRedisClient>())
             {
                 services.Add(registerType.Item1, _ => HostContext.AppHost.GetRedisClient(), registerType.Item2);
             }
-            if (registerType.Item1 == typeof(ServiceStack.Redis.IRedisClientAsync) && !services.Exists<ServiceStack.Redis.IRedisClientAsync>())
+            if (registerType.Item1 == typeof(IRedisClientAsync) && !services.Exists<IRedisClientAsync>())
             {
                 services.Add(registerType.Item1, _ => HostContext.AppHost.GetRedisClientAsync(), registerType.Item2);
             }
-            if (registerType.Item1 == typeof(ServiceStack.Messaging.IMessageProducer) && !services.Exists<ServiceStack.Messaging.IMessageProducer>())
+            if (registerType.Item1 == typeof(IMessageProducer) && !services.Exists<IMessageProducer>())
             {
                 services.Add(registerType.Item1, _ => HostContext.AppHost.GetMessageProducer(), registerType.Item2);
             }

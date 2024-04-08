@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-06 13:26:31
+Date: 2024-04-09 01:50:28
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -13,6 +13,26 @@ BaseUrl: https://localhost:5001
 */
 
 "use strict";
+/** @typedef {'Unknown'|'Span'|'Offensive'|'Duplicate'|'NotRelevant'|'LowQuality'|'Plagiarized'|'NeedsReview'} */
+export var FlagType;
+(function (FlagType) {
+    FlagType["Unknown"] = "Unknown"
+    FlagType["Span"] = "Span"
+    FlagType["Offensive"] = "Offensive"
+    FlagType["Duplicate"] = "Duplicate"
+    FlagType["NotRelevant"] = "NotRelevant"
+    FlagType["LowQuality"] = "LowQuality"
+    FlagType["Plagiarized"] = "Plagiarized"
+    FlagType["NeedsReview"] = "NeedsReview"
+})(FlagType || (FlagType = {}));
+export class RegenerateMeta {
+    /** @param {{ifPostModified?:number,forPost?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?number} */
+    ifPostModified;
+    /** @type {?number} */
+    forPost;
+}
 export class Post {
     /** @param {{id?:number,postTypeId?:number,acceptedAnswerId?:number,parentId?:number,score?:number,viewCount?:number,title?:string,favoriteCount?:number,creationDate?:string,lastActivityDate?:string,lastEditDate?:string,lastEditorUserId?:number,ownerUserId?:number,tags?:string[],slug?:string,summary?:string,rankDate?:string,answerCount?:number,createdBy?:string,modifiedBy?:string,refId?:string,body?:string,modifiedReason?:string,lockedDate?:string,lockedReason?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -426,7 +446,7 @@ export class StringsResponse {
     responseStatus;
 }
 export class CalculateLeaderboardResponse {
-    /** @param {{mostLikedModels?:ModelTotalScore[],mostLikedModelsByLlm?:ModelTotalStartUpVotes[],answererWinRate?:LeaderBoardWinRate[],humanVsLlmWinRateByHumanVotes?:LeaderBoardWinRate[],humanVsLlmWinRateByLlmVotes?:LeaderBoardWinRate[],modelWinRateByTag?:ModelWinRateByTag[],modelTotalScore?:ModelTotalScore[],modelTotalScoreByTag?:ModelTotalScoreByTag[],modelWinRate?:ModelWinRate[]}} [init] */
+    /** @param {{mostLikedModels?:ModelTotalScore[],mostLikedModelsByLlm?:ModelTotalStartUpVotes[],answererWinRate?:LeaderBoardWinRate[],humanVsLlmWinRateByHumanVotes?:LeaderBoardWinRate[],humanVsLlmWinRateByLlmVotes?:LeaderBoardWinRate[],modelWinRateByTag?:ModelWinRateByTag[],modelTotalScore?:ModelTotalScore[],modelTotalScoreByTag?:ModelTotalScoreByTag[],modelWinRate?:ModelWinRate[],humanWinRate?:LeaderBoardWinRate[]}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {ModelTotalScore[]} */
     mostLikedModels;
@@ -446,6 +466,8 @@ export class CalculateLeaderboardResponse {
     modelTotalScoreByTag;
     /** @type {ModelWinRate[]} */
     modelWinRate;
+    /** @type {LeaderBoardWinRate[]} */
+    humanWinRate;
 }
 export class GetAllAnswerModelsResponse {
     /** @param {{results?:string[]}} [init] */
@@ -524,9 +546,9 @@ export class CommentsResponse {
     responseStatus;
 }
 export class GetUserReputationsResponse {
-    /** @param {{results?:{ [index: string]: number; },responseStatus?:ResponseStatus}} [init] */
+    /** @param {{results?:{ [index: string]: string; },responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
-    /** @type {{ [index: string]: number; }} */
+    /** @type {{ [index: string]: string; }} */
     results;
     /** @type {?ResponseStatus} */
     responseStatus;
@@ -710,6 +732,12 @@ export class GetLeaderboardStatsByTag {
     /** @type {string} */
     tag;
     getTypeName() { return 'GetLeaderboardStatsByTag' }
+    getMethod() { return 'POST' }
+    createResponse () { };
+}
+export class GetLeaderboardStatsHuman {
+    constructor(init) { Object.assign(this, init) }
+    getTypeName() { return 'GetLeaderboardStatsHuman' }
     getMethod() { return 'POST' }
     createResponse () { };
 }
@@ -954,6 +982,19 @@ export class PostVote {
     getMethod() { return 'POST' }
     createResponse() { }
 }
+export class CommentVote {
+    /** @param {{refId?:string,up?:boolean,down?:boolean}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    refId;
+    /** @type {?boolean} */
+    up;
+    /** @type {?boolean} */
+    down;
+    getTypeName() { return 'CommentVote' }
+    getMethod() { return 'POST' }
+    createResponse() { }
+}
 export class CreateAvatar {
     /** @param {{userName?:string,textColor?:string,bgColor?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -994,12 +1035,34 @@ export class MarkAsRead {
     getMethod() { return 'POST' }
     createResponse() { return new EmptyResponse() }
 }
-export class RenderComponent {
-    /** @param {{ifQuestionModified?:number,regenerateMeta?:number,question?:QuestionAndAnswers,home?:RenderHome}} [init] */
+export class ShareContent {
+    /** @param {{refId?:string,userId?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    refId;
     /** @type {?number} */
-    ifQuestionModified;
-    /** @type {?number} */
+    userId;
+    getTypeName() { return 'ShareContent' }
+    getMethod() { return 'GET' }
+    createResponse() { return '' }
+}
+export class FlagContent {
+    /** @param {{refId?:string,type?:FlagType,reason?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    refId;
+    /** @type {FlagType} */
+    type;
+    /** @type {?string} */
+    reason;
+    getTypeName() { return 'FlagContent' }
+    getMethod() { return 'POST' }
+    createResponse() { return new EmptyResponse() }
+}
+export class RenderComponent {
+    /** @param {{regenerateMeta?:RegenerateMeta,question?:QuestionAndAnswers,home?:RenderHome}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?RegenerateMeta} */
     regenerateMeta;
     /** @type {?QuestionAndAnswers} */
     question;

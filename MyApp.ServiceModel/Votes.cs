@@ -12,7 +12,7 @@ public class Vote
     public int PostId { get; set; }
         
     /// <summary>
-    /// `Post.Id` or `${Post.Id}-{UserName}` (Answer)
+    /// `Post.Id` or `{Post.Id}-{UserName}` (answer) or `{Post.Id}-{UserName}-{Created}` (comment) 
     /// </summary>
     [Required]
     public string RefId { get; set; }

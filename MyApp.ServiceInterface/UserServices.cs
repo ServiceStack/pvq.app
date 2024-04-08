@@ -97,12 +97,17 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
         return to;
     }
 
-    public async Task Any(PostVote request)
+    private string GetRequiredUserName()
     {
         var userName = Request.GetClaimsPrincipal().GetUserName()!;
         if (string.IsNullOrEmpty(userName))
             throw new ArgumentNullException(nameof(userName));
+        return userName;
+    }
 
+    public async Task Any(PostVote request)
+    {
+        var userName = GetRequiredUserName();
         var postId = request.RefId.LeftPart('-').ToInt();
         var score = request.Up == true ? 1 : request.Down == true ? -1 : 0;
         
@@ -123,6 +128,26 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
                 UserName = userName,
                 Score = score,
                 RefUserName = refUserName,
+            },
+            UpdateReputations = new(),
+        });
+    }
+
+    public async Task Any(CommentVote request)
+    {
+        var userName = GetRequiredUserName();
+        
+        var postId = request.RefId.LeftPart('-').ToInt();
+        var score = request.Up == true ? 1 : request.Down == true ? -1 : 0;
+        
+        MessageProducer.Publish(new DbWrites
+        {
+            CreateCommentVote = new()
+            {
+                RefId = request.RefId,
+                PostId = postId,
+                UserName = userName,
+                Score = score,
             },
             UpdateReputations = new(),
         });
@@ -221,5 +246,56 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
             UsersUnreadAchievements = appConfig.UsersUnreadAchievements.ToDictionary(),
             UsersUnreadNotifications = appConfig.UsersUnreadNotifications.ToDictionary(),
         };
+    }
+
+    public async Task<object> Any(ShareContent request)
+    {
+        var postId = request.RefId.LeftPart('-').ToInt();
+        var post = await Db.SingleByIdAsync<Post>(postId);
+        if (post == null)
+            return HttpResult.Redirect("/404");
+        
+        string? refUserName = request.UserId != null 
+            ? await Db.ScalarAsync<string>("SELECT UserName FROM AspNetUsers WHERE ROWID = @UserId", new { request.UserId })
+            : null;
+        
+        var userName = Request.GetClaimsPrincipal().GetUserName();
+        MessageProducer.Publish(new AnalyticsTasks {
+            CreatePostStat = new()
+            {
+                PostId = postId,
+                RefId = request.RefId,
+                UserName = userName,
+                RefUserName = refUserName,
+                CreatedDate = DateTime.UtcNow,
+                Type = PostStatType.Share,
+                RemoteIp = Request?.RemoteIp,
+            }
+        });
+
+        return HttpResult.Redirect($"/questions/{postId}/{post.Slug}" + (request.RefId.IndexOf('-') >= 0 ? $"#{request.RefId}" : ""));
+    }
+
+    public async Task<object> Any(FlagContent request)
+    {
+        var postId = request.RefId.LeftPart('-').ToInt();
+        var post = await Db.SingleByIdAsync<Post>(postId);
+        if (post == null)
+            return HttpError.NotFound("Does not exist");
+
+        var userName = Request.GetClaimsPrincipal().GetUserName();
+        MessageProducer.Publish(new DbWrites {
+            CreateFlag = new()
+            {
+                PostId = postId,
+                RefId = request.RefId,
+                UserName = userName,
+                Type = request.Type,
+                Reason = request.Reason,
+                RemoteIp = Request?.RemoteIp,
+                CreatedDate = DateTime.UtcNow,
+            }
+        });
+        return new FlagContent();
     }
 }

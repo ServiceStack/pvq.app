@@ -62,7 +62,7 @@
     async Task load()
     {
         MessageProducer.Publish(new AnalyticsTasks {
-            RecordPostView = new PostView { PostId = Id }.WithRequest(HttpContext)
+            CreatePostStat = new PostStat { PostId = Id, Type = PostStatType.View}.WithRequest(HttpContext)
         });
         
         var noCache = Force != null && (Env.IsDevelopment() || HttpContext?.User.IsAdminOrModerator() == true);
