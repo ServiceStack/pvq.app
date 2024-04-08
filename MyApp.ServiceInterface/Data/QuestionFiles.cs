@@ -46,7 +46,7 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         var accepted = files.FirstOrDefault(x => x.Name.Contains(".h.accepted"));
         var mostVoted = files.FirstOrDefault(x => x.Name.Contains(".h.most-voted"));
         return accepted?.Length == mostVoted?.Length
-            ? files.Where(x => !Equals(x, mostVoted)).ToList()
+            ? files.Where(x => !Equals(x, accepted)).ToList()
             : files;
     }
     
@@ -71,9 +71,9 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         Question.Answers.Sort((a, b) =>
         {
             var aScore = postStats.FirstOrDefault(x => x.Id == a.Id)?.GetScore()
-                         ?? GetModelScore(a.Model);
+                         ?? 0;
             var bScore = postStats.FirstOrDefault(x => x.Id == b.Id)?.GetScore()
-                         ?? GetModelScore(b.Model);
+                         ?? 0;
             return bScore - aScore;
         });
     }
