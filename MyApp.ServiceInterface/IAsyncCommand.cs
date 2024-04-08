@@ -334,7 +334,6 @@ public class CommandSummary
 [ExcludeMetadata]
 public class ViewCommands : IGet, IReturn<ViewCommandsResponse>
 {
-    public bool? Clear { get; set; }
 }
 public class ViewCommandsResponse
 {
@@ -359,12 +358,6 @@ public class ViewCommandsService : Service
             LatestFailed = new(feature.CommandFailures),
             CommandTotals = new(feature.CommandTotals.Values)
         };
-        if (request.Clear == true)
-        {
-            feature.CommandResults.Clear();
-            feature.CommandFailures.Clear();
-            feature.CommandTotals.Clear();
-        }
         return to;
     }
 }
