@@ -52,6 +52,12 @@ public class AppConfig
         ("claude-3-sonnet", 75),    // hetzner,macbook
         ("gpt-4-turbo", 100),       // hetzner,macbook
         ("claude-3-opus", 200),     // hetzner,macbook
+        
+        //hetzner: model-worker.mjs gemini-pro,claude-3-haiku,claude-3-sonnet,gpt-4-turbo,claude-3-opus 
+        //macbook: model-worker.mjs phi,gemma:2b,gemini-pro,claude-3-haiku,claude-3-sonnet,gpt-4-turbo,claude-3-opus
+        //demis:   model-worker.mjs phi,gemma:2b,qwen:4b,codellama,deepseek-coder:6.7b,mistral,gemma
+        //darren1: model-worker.mjs qwen:4b,codellama
+        //darren2: model-worker.mjs mixtral
 #endif
     ];
 
