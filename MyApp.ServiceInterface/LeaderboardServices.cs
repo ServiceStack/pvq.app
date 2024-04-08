@@ -22,7 +22,7 @@ public class LeaderboardServices : Service
     {
         var statTotals = await Db.SelectAsync<StatTotals>();
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-')).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {
@@ -143,7 +143,7 @@ public class LeaderboardServices : Service
 
     public async Task<object> Any(GetLeaderboardStatsByTag request)
     {
-        var statTotals = Db.Select<StatTotals>(@"SELECT st.*
+        var statTotals = await Db.SelectAsync<StatTotals>(@"SELECT st.*
 FROM main.StatTotals st
          JOIN main.post p ON st.PostId = p.Id
 WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight OR p.Tags = @TagSolo)", new { TagSolo = $"[{request.Tag}]", 
@@ -152,7 +152,7 @@ WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight O
             TagMiddle = $",{request.Tag},",
         });
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-')).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {
@@ -168,13 +168,13 @@ WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight O
 
     public async Task<object> Any(GetLeaderboardStatsHuman request)
     {
-        var statTotals = Db.Select<StatTotals>(@"
+        var statTotals = await Db.SelectAsync<StatTotals>(@"
 select * from main.StatTotals where PostId in (select PostId from StatTotals
 where PostId in (select StatTotals.PostId from StatTotals
                  where Id like '%-accepted')
 group by PostId) and  (Id like '%-accepted' or Id like '%-most-voted' or Id not like '%-%')");
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-')).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {
