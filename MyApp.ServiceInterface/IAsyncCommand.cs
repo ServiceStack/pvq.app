@@ -67,6 +67,13 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
     public int ResultsCapacity { get; set; } = DefaultCapacity;
     public int FailuresCapacity { get; set; } = DefaultCapacity;
     public int TimingsCapacity { get; set; } = 1000;
+    
+    /// <summary>
+    /// Ignore commands or Request DTOs from being logged
+    /// </summary>
+    public List<string> Ignore { get; set; } = [nameof(ViewCommands)];
+    
+    public Func<CommandResult,bool>? ShouldIgnore { get; set; }
 
     /// <summary>
     /// Limit API access to users in role
@@ -135,6 +142,9 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
 
     public void Register(IAppHost appHost)
     {
+        // if (appHost is ServiceStackHost host)
+        //     host.AddTimings = true;
+        
         log = appHost.GetApplicationServices().GetRequiredService<ILogger<CommandsFeature>>();
     }
 
@@ -172,7 +182,7 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
         }
         catch (Exception e)
         {
-            var requestBody = requestDto.ToJsv();
+            var requestBody = requestDto.ToSafeJson();
             log!.LogError(e, "{Command}({Request}) failed: {Message}", commandType.Name, requestBody, e.Message);
 
             AddCommandResult(new()
@@ -218,6 +228,11 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
 
     public void AddCommandResult(CommandResult result)
     {
+        if (Ignore.Contains(result.Name))
+            return;
+        if (ShouldIgnore != null && ShouldIgnore(result))
+            return;
+        
         var ms = (int)(result.Ms ?? 0);
         if (result.Error == null)
         {
@@ -226,7 +241,15 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
                 CommandResults.TryDequeue(out _);
 
             CommandTotals.AddOrUpdate(result.Name, 
-                _ => new CommandSummary { Name = result.Name, Count = 1, TotalMs = ms, MinMs = ms > 0 ? ms : int.MinValue, Timings = new([ms]) },
+                _ => new CommandSummary
+                {
+                    Type = result.Type,
+                    Name = result.Name, 
+                    Count = 1, 
+                    TotalMs = ms, 
+                    MinMs = ms > 0 ? ms : int.MinValue, 
+                    Timings = new([ms]),
+                },
                 (_, summary) => 
                 {
                     summary.Count++;
@@ -256,6 +279,38 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
                     summary.LastError = result.Error?.Message;
                     return summary;
                 });
+        }
+    }
+
+    public void AddRequest(object requestDto, object response, TimeSpan elapsed)
+    {
+        var name = requestDto.GetType().Name;
+        if (Ignore.Contains(name))
+            return;
+        
+        var ms = (int)elapsed.TotalMilliseconds;
+        var error = response.GetResponseStatus();
+        if (error == null)
+        {
+            AddCommandResult(new()
+            {
+                Type = "API",
+                Name = name,
+                Ms = ms,
+                At = DateTime.UtcNow,
+            });
+        }
+        else
+        {
+            AddCommandResult(new()
+            {
+                Type = "API",
+                Name = name,
+                Ms = ms,
+                At = DateTime.UtcNow,
+                Request = requestDto.ToSafeJson(),
+                Error = error,
+            });
         }
     }
     
@@ -303,15 +358,27 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
 
 public class CommandResult
 {
+    public string Type { get; set; } = "CMD";
     public string Name { get; set; }
     public long? Ms { get; set; }
     public DateTime At { get; set; }
     public string Request { get; set; }
     public ResponseStatus? Error { get; set; }
+
+    public CommandResult Clone(Action<CommandResult>? configure = null) => X.Apply(new CommandResult
+    {
+        Type = Type,
+        Name = Name,
+        Ms = Ms,
+        At = At,
+        Request = Request,
+        Error = Error,
+    }, configure);
 }
 
 public class CommandSummary
 {
+    public string Type { get; set; } = "CMD";
     public string Name { get; set; }
     public int Count { get; set; }
     public int Failed { get; set; }
@@ -327,7 +394,9 @@ public class CommandSummary
 [ExcludeMetadata]
 public class ViewCommands : IGet, IReturn<ViewCommandsResponse>
 {
+    public List<string>? Include { get; set; }
 }
+
 public class ViewCommandsResponse
 {
     public List<CommandSummary> CommandTotals { get; set; }
@@ -351,6 +420,16 @@ public class ViewCommandsService : Service
             LatestFailed = new(feature.CommandFailures),
             CommandTotals = new(feature.CommandTotals.Values)
         };
+
+        if (request.Include?.Contains(nameof(ResponseStatus.StackTrace)) != true)
+        {
+            to.LatestFailed = to.LatestFailed.Map(x => x.Clone(c =>
+            {
+                if (c.Error != null)
+                    c.Error.StackTrace = null;
+            }));
+        }
+        
         return to;
     }
 }
@@ -372,10 +451,13 @@ public static class CommandExtensions
     public static double Median(this IEnumerable<int> nums)
     {
         var array = nums.ToArray();
+        if (array.Length == 0) return 0;
+        if (array.Length == 1) return array[0];
         Array.Sort(array);
-        var mid = array.Length / 2;
+        var mid = Math.Min(array.Length / 2, array.Length - 1);
         return array.Length % 2 == 0 
             ? (array[mid] + array[mid - 1]) / 2.0 
             : array[mid];
     }    
 }
+
