@@ -318,7 +318,8 @@ public class CommandSummary
     public int TotalMs { get; set; }
     public int MinMs { get; set; }
     public int MaxMs { get; set; }
-    public int AverageMs => (int) Math.Floor(TotalMs / (double)Count);
+    public double AverageMs => Count == 0 ? 0 : Math.Round(TotalMs / (double)Count, 2);
+    public double MedianMs => Math.Round(Timings.Median(), 2);
     public string? LastError { get; set; }
     public ConcurrentQueue<int> Timings { get; set; } = new();
 }
@@ -367,4 +368,14 @@ public static class CommandExtensions
         var feature = HostContext.AssertPlugin<CommandsFeature>();
         return feature.ExecuteCommandsAsync(services, requestDto);
     }
+    
+    public static double Median(this IEnumerable<int> nums)
+    {
+        var array = nums.ToArray();
+        Array.Sort(array);
+        var mid = array.Length / 2;
+        return array.Length % 2 == 0 
+            ? (array[mid] + array[mid - 1]) / 2.0 
+            : array[mid];
+    }    
 }
