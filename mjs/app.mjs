@@ -15,6 +15,10 @@ const CustomElements = [
     'lite-youtube'
 ]
 
+export function assetsUrl(path) {
+    return globalThis.assetsUrl(path)
+}
+
 export const alreadyMounted = el => el.__vue_app__ 
 
 const mockArgs = { attrs:{}, slots:{}, emit:() => {}, expose: () => {} }
