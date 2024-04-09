@@ -59,21 +59,6 @@ public enum Lifetime
     Transient,
 }
 
-public static class CommandExtensions
-{
-    public static Task ExecuteCommandsAsync<T>(this IRequest? req, T requestDto) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(req);
-        ArgumentNullException.ThrowIfNull(requestDto);
-        
-        var services = req.TryResolve<IServiceProvider>();
-        if (services == null)
-            throw new NotSupportedException(nameof(IServiceProvider) + " not available");
-        var feature = HostContext.AssertPlugin<CommandsFeature>();
-        return feature.ExecuteCommandsAsync(services, requestDto);
-    }
-}
-
 public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
 {
     public string Id => "commands";
@@ -196,7 +181,7 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
                 Ms = sw.ElapsedMilliseconds,
                 At = DateTime.UtcNow,
                 Request = requestBody,
-                Error = e.Message,
+                Error = e.ToResponseStatus(),
             });
         }
     }
@@ -264,11 +249,11 @@ public class CommandsFeature : IPlugin, IConfigureServices, IHasStringId
                 CommandFailures.TryDequeue(out _);
 
             CommandTotals.AddOrUpdate(result.Name, 
-                _ => new CommandSummary { Name = result.Name, Failed = 1, Count = 0, TotalMs = 0, MinMs = int.MinValue, LastError = result.Error },
+                _ => new CommandSummary { Name = result.Name, Failed = 1, Count = 0, TotalMs = 0, MinMs = int.MinValue, LastError = result.Error?.Message },
                 (_, summary) =>
                 {
                     summary.Failed++;
-                    summary.LastError = result.Error;
+                    summary.LastError = result.Error?.Message;
                     return summary;
                 });
         }
@@ -322,7 +307,7 @@ public class CommandResult
     public long? Ms { get; set; }
     public DateTime At { get; set; }
     public string Request { get; set; }
-    public string? Error { get; set; }
+    public ResponseStatus? Error { get; set; }
 }
 
 public class CommandSummary
@@ -366,5 +351,20 @@ public class ViewCommandsService : Service
             CommandTotals = new(feature.CommandTotals.Values)
         };
         return to;
+    }
+}
+
+public static class CommandExtensions
+{
+    public static Task ExecuteCommandsAsync<T>(this IRequest? req, T requestDto) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(req);
+        ArgumentNullException.ThrowIfNull(requestDto);
+        
+        var services = req.TryResolve<IServiceProvider>();
+        if (services == null)
+            throw new NotSupportedException(nameof(IServiceProvider) + " not available");
+        var feature = HostContext.AssertPlugin<CommandsFeature>();
+        return feature.ExecuteCommandsAsync(services, requestDto);
     }
 }
