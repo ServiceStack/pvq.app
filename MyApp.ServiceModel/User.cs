@@ -114,7 +114,7 @@ public class ShareContent : IGet, IReturn<string>
 public enum FlagType
 {
     Unknown = 0,
-    Span = 1,
+    Spam = 1,
     Offensive = 2,
     Duplicate = 3,
     NotRelevant = 4,

@@ -5,7 +5,6 @@ using ServiceStack.OrmLite;
 using MyApp.Data;
 using MyApp.ServiceInterface;
 using MyApp.ServiceModel;
-using ServiceStack.Messaging;
 
 [assembly: HostingStartup(typeof(MyApp.AppHost))]
 

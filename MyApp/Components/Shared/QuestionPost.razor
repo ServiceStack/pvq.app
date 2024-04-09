@@ -98,10 +98,10 @@
                 </div>
                 @if (Question.Post.LockedDate == null)
                 {
-                    <div class="mt-4 text-sm">
-                        <span class="share-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Share this Question"></span>
-                        <span class="edit-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Question"></span>
-                        <span class="flag-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Flag this Question"></span>
+                    <div data-question=@Question.Post.Id class="relative mt-4 text-sm">
+                        <span class="share-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Share this Question">share</span>
+                        <span class="edit-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Question">edit</span>
+                        <span class="flag-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Flag this Question">flag</span>
                     </div>
                 }
                 else
@@ -121,14 +121,8 @@
                     </div>
                 }
                 
-                <div class="mt-4">
-                    <PostComments RefId=@($"{Question.Id}") Comments=@Question.QuestionComments />
-                    @if (Question.Post.LockedDate == null)
-                    {
-                        <div class="add-comment-link pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></div>
-                    }
-                </div>
-                
+                <PostComments RefId=@($"{Question.Id}") Comments=@Question.QuestionComments />
+            
             </div>
         </div>
     </article>
@@ -176,24 +170,19 @@
                                         answered <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
                                     </div>
                                 </div>
-
                             </div>
+                            
                             @if (Question.Post.LockedDate == null)
                             {
-                                <div class="mt-4 text-sm">
+                                <div data-answer=@answer.Id class="relative mt-4 text-sm">
+                                    <div class="share-dialog absolute"></div>
                                     <span class="share-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Share this Answer"></span>
                                     <span class="edit-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Answer"></span>
                                     <span class="flag-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Flag this Answer"></span>
                                 </div>
                             }
                             
-                            <div class="mt-4">
-                                <PostComments RefId="@answer.Id" Comments=@Question.GetAnswerComments(answer.Id) />
-                                @if (Question.Post.LockedDate == null)
-                                {
-                                    <div class="add-comment-link pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment"></div>
-                                }
-                            </div>
+                            <PostComments RefId=@answer.Id Comments=@Question.GetAnswerComments(answer.Id) />
                         </div>
                     </div>
                 </article>
