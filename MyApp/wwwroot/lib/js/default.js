@@ -1,5 +1,3 @@
-import { assetsUrl } from "../../mjs/app.mjs";
-
 window.hljs?.highlightAll()
 
 if (!localStorage.getItem('data:tags.txt'))
