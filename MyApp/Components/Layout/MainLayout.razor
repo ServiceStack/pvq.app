@@ -15,6 +15,11 @@ const { loadMetadata } = useMetadata()
 loadMetadata({
     olderThan: window.Server ? null : location.search.includes('clear=metadata') ? 0 : 60 * 60 * 1000 //1hr
 })
+function assetsUrl(url) {
+    return url.startsWith('http') 
+        ? url 
+        : '@BlazorConfig.Instance.AssetsBasePath' + url
+}
 </script>
 
 <Header />

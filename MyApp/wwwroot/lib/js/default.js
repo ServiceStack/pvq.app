@@ -1,8 +1,10 @@
+import { assetsUrl } from "../../mjs/app.mjs";
+
 window.hljs?.highlightAll()
 
 if (!localStorage.getItem('data:tags.txt'))
 {
-    fetch('/data/tags.txt')
+    fetch(assetsUrl('/data/tags.txt'))
         .then(r => r.text())
         .then(txt => localStorage.setItem('data:tags.txt', txt.replace(/\r\n/g,'\n')));
 }

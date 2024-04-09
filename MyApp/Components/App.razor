@@ -1,21 +1,25 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var baseUrl = BlazorConfig.Instance.AssetsBasePath ?? "";
+}
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="icon" href="/img/logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/app.css" />
-    <link rel="stylesheet" href="css/typography.css">
-    <link rel="stylesheet" href="css/highlight.css">
+    <link rel="icon" href="@baseUrl/img/logo.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="@baseUrl/css/app.css" />
+    <link rel="stylesheet" href="@baseUrl/css/typography.css">
+    <link rel="stylesheet" href="@baseUrl/css/highlight.css">
+    
     @BlazorHtml.ImportMap(new()
     {
-        ["app.mjs"] =              ("/mjs/app.mjs",                     "/mjs/app.mjs"),
-        ["dtos.mjs"] =             ("/mjs/dtos.mjs",                    "/mjs/dtos.mjs"),
-        ["vue"] =                  ("/lib/mjs/vue.mjs",                 "/lib/mjs/vue.min.mjs"),
-        ["@servicestack/client"] = ("/lib/mjs/servicestack-client.mjs", "/lib/mjs/servicestack-client.min.mjs"),
-        ["@servicestack/vue"] =    ("/lib/mjs/servicestack-vue.mjs",    "/lib/mjs/servicestack-vue.min.mjs"),
+        ["app.mjs"] =              ($"{baseUrl}/mjs/app.mjs",           $"{baseUrl}/mjs/app.mjs"),
+        ["dtos.mjs"] =             ($"{baseUrl}mjs/dtos.mjs",           $"{baseUrl}/mjs/dtos.mjs"),
+        ["vue"] =                  ($"{baseUrl}/lib/mjs/vue.mjs",       $"{baseUrl}/lib/mjs/vue.min.mjs"),
+        ["@servicestack/client"] = ($"{baseUrl}/lib/mjs/servicestack-client.mjs", $"{baseUrl}/lib/mjs/servicestack-client.min.mjs"),
+        ["@servicestack/vue"] =    ($"{baseUrl}/lib/mjs/servicestack-vue.mjs",    $"{baseUrl}/lib/mjs/servicestack-vue.min.mjs"),
     })
 
     <HeadOutlet />
@@ -24,15 +28,15 @@
 <body class="bg-white dark:bg-black dark:text-white">
     <Routes />
     <script src="_framework/blazor.web.js"></script>
-    <script src="js/servicestack-blazor.js"></script>
+    <script src="@baseUrl/lib/js/servicestack-blazor.js"></script>
     <script>
     JS.init({ colorScheme:false })
     Blazor.addEventListener('enhancedload', () => {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     })
     </script>
-    <script src="lib/js/highlight.js"></script>
-    <script src="lib/js/default.js"></script>
+    <script src="@baseUrl/lib/js/highlight.js"></script>
+    <script src="@baseUrl/lib/js/default.js"></script>
 </body>
 
 </html>

@@ -106,6 +106,7 @@ BlazorConfig.Set(new()
     IsDevelopment = app.Environment.IsDevelopment(),
     EnableLogging = app.Environment.IsDevelopment(),
     EnableVerboseLogging = app.Environment.IsDevelopment(),
+    AssetsBasePath = app.Environment.IsDevelopment() ? null : "https://assets.pvq.app"
 });
 
 app.Run();
