@@ -85,6 +85,15 @@ jobs:
         run: |
           dotnet publish --os linux --arch x64 -c Release -p:ContainerRepository=${{ env.image_repository_name }} -p:ContainerRegistry=ghcr.io -p:ContainerImageTags=${{ env.TAG_NAME }} -p:ContainerPort=80
 
+      # Deploy UI to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./MyApp/wwwroot
+          user_name: 'GitHub Action'
+          user_email: 'action@github.com'
+
   deploy_via_ssh:
     needs: push_to_registry
     runs-on: ubuntu-22.04
