@@ -1,6 +1,6 @@
 import { ref } from "vue"
 import { useClient, useFormatters } from "@servicestack/vue"
-import { QueryCoupons } from "/mjs/dtos.mjs"
+import { QueryCoupons } from "dtos.mjs"
 
 export default {
   template:/*html*/`
