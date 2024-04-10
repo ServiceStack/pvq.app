@@ -262,6 +262,15 @@ public class LeaderBoardWinRateByTag
     public double WinRate { get; set; }
 }
 
+public record LeaderboardStat
+{
+    public int Rank { get; set; }
+    public string AvatarUrl { get; set; }
+    public string DisplayName { get; set; }
+    public string Stat { get; set; }
+    public double Value { get; set; }
+}
+
 public class CalculateLeaderBoard : IReturn<CalculateLeaderboardResponse>, IGet
 {
     

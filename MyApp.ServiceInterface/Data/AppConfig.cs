@@ -78,24 +78,23 @@ public class AppConfig
         UserName = "unknown",
         ProfilePath = "/img/profiles/user2.svg",
     };
-
-    public ApplicationUser GetApplicationUser(string model)
+    
+    public Dictionary<string,string> ModelAliases = new()
     {
-        var user = ModelUsers.FirstOrDefault(x => x.Model == model || x.UserName == model);
-        return user ?? DefaultUser;
-    }
+        ["deepseek-coder-6.7b"] = "deepseek-coder",
+    };
     
     public ApplicationUser? GetModelUser(string model)
     {
+        if (ModelAliases.TryGetValue(model, out var alias))
+            model = alias;
+        
         var user = ModelUsers.Find(x => x.Model == model || x.UserName == model);
         return user;
     }
-    
-    public string GetUserName(string model)
-    {
-        var user = ModelUsers.FirstOrDefault(x => x.Model == model || x.UserName == model);
-        return user?.UserName ?? model;
-    }
+
+    public ApplicationUser GetApplicationUser(string model) => GetModelUser(model) ?? DefaultUser;
+    public string GetUserName(string model) => GetModelUser(model)?.UserName ?? model;
     
     private long nextPostId = -1;
     public void SetInitialPostId(long initialValue) => this.nextPostId = initialValue;

@@ -3,7 +3,7 @@ import { $$, $1, on, JsonServiceClient, EventBus, toDate, humanize, leftPart, la
 import { useClient, useAuth, useUtils } from "@servicestack/vue"
 import { mount, alreadyMounted, forceMount } from "app.mjs"
 import {GetMeta} from "./dtos.mjs";
-import Chart from "../posts/components/ChartJs.mjs";
+import Chart from "../posts/components/ChartJs.mjs"
 
 const modelColors = {
     "gemma": "#1d4ed8",
