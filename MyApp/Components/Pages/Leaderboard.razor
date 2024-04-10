@@ -24,6 +24,9 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        // Only generate if missing, otherwise background task will update it.
+        if (!File.Exists("leaderboard.json"))
+            await ApiAsync(new CalculateLeaderBoard());
         var jsonData = File.ReadAllText("leaderboard.json");
         data = jsonData.FromJson<CalculateLeaderboardResponse>();
     }
