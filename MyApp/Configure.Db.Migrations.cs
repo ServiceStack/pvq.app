@@ -90,6 +90,15 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "pvq",
+            Email = "pvq@email.com",
+            DisplayName = "pvq",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/pv/pvq/pvq.svg",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "stackoverflow",
             Email = "stackoverflow@email.com",
             DisplayName = "StackOverflow",
