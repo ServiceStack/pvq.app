@@ -12,6 +12,9 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
     
     public Dictionary<string, string> TagAliases { get; set; } = new()
     {
+        ["csharp"] = "c#",
+        ["fsharp"] = "f#",
+        ["cpp"] = "c++",
         ["ai"] = "artificial-intelligence",
         ["llm"] = "large-language-models",
     };
@@ -69,12 +72,41 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
         throw new NotSupportedException("Unsupported Site");
     }
 
+    string? GetMatchingTag(string candidate)
+    {
+        candidate = candidate.ToKebabCase();
+        if (TagAliases.TryGetValue(candidate, out var alias))
+            return alias;
+        if (appConfig.AllTags.Contains(candidate))
+            return candidate;
+        candidate = candidate.Replace("-", "");
+        if (appConfig.AllTags.Contains(candidate))
+            return candidate;
+        return null;
+    }
+
     public List<string> ExtractTags(string text, int count=5)
     {
+        var tags = new List<string>();
+        
+        foreach (var line in text.ReadLines())
+        {
+            if (line.StartsWith("```"))
+            {
+                var lang = line[3..].Trim();
+                var tag = GetMatchingTag(lang);
+
+                if (tag != null && !tags.Contains(tag))
+                {
+                    tags.Add(tag);
+                    if (tags.Count >= count)
+                        break;
+                }
+            }
+        }
+        
         var prepareWords = ValidTagCharsRegex.Replace(text, " ");
         prepareWords = SingleWhiteSpaceRegex.Replace(prepareWords, " ").Trim();
-
-        var tags = new List<string>();
 
         var words = prepareWords.Split();
 
@@ -83,26 +115,14 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
         
         foreach (var word in words)
         {
-            if (tags.Count >= count)
-                break;
-            
             var candidate = word.TrimEnd('.');
-            candidate = candidate.ToKebabCase();
-            if (TagAliases.TryGetValue(candidate, out var alias))
+            var tag = GetMatchingTag(candidate);
+
+            if (tag != null && !tags.Contains(tag))
             {
-                tags.Add(alias);
-                continue;
-            }
-            if (appConfig.AllTags.Contains(candidate))
-            {
-                tags.Add(candidate);
-                continue;
-            }
-            candidate = candidate.Replace("-", "");
-            if (appConfig.AllTags.Contains(candidate))
-            {
-                tags.Add(candidate);
-                continue;
+                tags.Add(tag);
+                if (tags.Count >= count)
+                    break;
             }
         }
 
