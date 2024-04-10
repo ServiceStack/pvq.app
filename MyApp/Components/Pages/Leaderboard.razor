@@ -1,6 +1,6 @@
 ﻿@page "/leaderboard"
 @using MyApp.ServiceInterface
-@using ServiceStack.Text
+@attribute [OutputCache(Duration = 3600)]
 @inherits AppComponentBase
 
 <PageTitle>Leaderboard</PageTitle>
