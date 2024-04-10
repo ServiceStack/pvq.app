@@ -2,6 +2,7 @@
 @attribute [OutputCache(Duration = 60)]
 @inject IDbConnectionFactory DbFactory
 @inject IMessageProducer MessageProducer
+@inject NavigationManager NavigationManager
 
 <PageTitle>@Title</PageTitle>
 <div class="sm:flex flex-wrap justify-center px-2">
@@ -108,6 +109,17 @@
                 {
                     CreateSearchStat = new SearchStat { Query = Q, Type = SearchStatType.Search}.WithRequest(HttpContext)
                 });
+
+                if (int.TryParse(Q, out var postId))
+                {
+                    using var dbApp = await DbFactory.OpenAsync();
+                    var post = await dbApp.SingleByIdAsync<Post>(postId);
+                    if (post != null)
+                    {
+                        HttpContext!.Response.Redirect($"/questions/{post.Id}/{post.Slug}", permanent:true);
+                        return;
+                    }
+                }
 
                 using var dbSearch = await DbFactory.OpenAsync(Databases.Search);
                 var q = dbSearch.From<PostFts>();
