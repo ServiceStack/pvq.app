@@ -62,8 +62,12 @@
 </div>
 
 <div data-module="mjs/leaderboard.mjs">
-    <chart-js id="winrate-chart" data-labels='[@string.Join(",", GetWinRates().Select(x => $"\"{AppConfig.GetApplicationUser(x.Id).DisplayName}\"") )]'
+    <chart-js class="mt-12" id="winrate-chart" data-labels='[@string.Join(",", GetWinRates().Select(x => $"\"{AppConfig.GetApplicationUser(x.Id).DisplayName}\"") )]'
               data-datasets='[{ "label": "Win Rate", "data": [@string.Join(",", GetWinRates().Select(x => Math.Round(x.WinRate, 2)))], "borderWidth": 1, "modelNames": @GetWinRates().Select(x => x.Id).ToJson() }]'
+              data-options='{ "scale": { "ticks": { "beginAtZero": true } }, "responsive": true, "maintainAspectRatio": false }' 
+              data-type="pie"></chart-js>
+    <chart-js class="mt-12" id="totalvotes-chart" data-labels='[@string.Join(",", GetTotalVotes().Select(x => $"\"{AppConfig.GetApplicationUser(x.Id).DisplayName}\"") )]'
+              data-datasets='[{ "label": "Total Votes", "data": [@string.Join(",", GetTotalVotes().Select(x => x.TotalScore))], "borderWidth": 1, "modelNames": @GetTotalVotes().Select(x => x.Id).ToJson() }]'
               data-options='{ "scale": { "ticks": { "beginAtZero": true } }, "responsive": true, "maintainAspectRatio": false }' 
               data-type="pie"></chart-js>
 </div>
@@ -73,4 +77,6 @@
     public CalculateLeaderboardResponse LeaderBoardData { get; set; }
 
     private List<ModelWinRate> GetWinRates() => LeaderBoardData.ModelWinRate.OrderByDescending(x => x.WinRate).ToList();
+    
+    private List<ModelTotalScore> GetTotalVotes() => LeaderBoardData.ModelTotalScore.OrderByDescending(x => x.TotalScore).ToList();
 }
