@@ -11,7 +11,7 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
     public const int MostVotedScore = 10;
     public const int AcceptedScore = 9;
     public static List<string> ModelUserNames { get; } = [
-        "phi", "gemma-2b", "qwen-4b", "codellama", "gemma", "deepseek-coder-6.7b", "mistral", "mixtral","gpt-4-turbo",
+        "phi", "gemma-2b", "qwen-4b", "codellama", "gemma", "deepseek-coder", "mistral", "mixtral","gpt-4-turbo",
         "claude-3-haiku","claude-3-sonnet","claude-3-opus"
     ];
     public static Dictionary<string,int> ModelScores = new()

@@ -22,7 +22,11 @@ public class LeaderboardServices : Service
     {
         var statTotals = await Db.SelectAsync<StatTotals>();
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted") && !x.Id.Contains("-most-voted")).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') 
+                                            && !x.Id.Contains("-accepted") 
+                                            && !x.Id.Contains("-most-voted")
+                                            && !x.Id.Contains("-undefined")
+                                            ).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {
@@ -33,20 +37,14 @@ public class LeaderboardServices : Service
             FavoriteCount = x.Sum(y => y.FavoriteCount)
         }).ToList();
         
-        var leaderBoard = CalculateLeaderboardResponse(statTotals, statsByUser, answers);
+        var leaderBoard = CalculateLeaderboardResponse(statsByUser, answers);
 
         return leaderBoard;
     }
 
-    private CalculateLeaderboardResponse CalculateLeaderboardResponse(List<StatTotals> statTotals, List<StatTotals> statsByUser, List<StatTotals> answers)
+    private CalculateLeaderboardResponse CalculateLeaderboardResponse(List<StatTotals> statsByUser, List<StatTotals> answers)
     {
-        var statQuestions = statTotals.Where(x => !x.Id.Contains('-')).ToList();
-        
-        // There might not be answers to some questions which we want to exclude from the win rate
-        var questionAnswerDict = answers.GroupBy(x => x.PostId).ToDictionary(x => x.Key, x => x.ToList());
-        questionAnswerDict = questionAnswerDict.Where(x => x.Value.Count > 0).ToDictionary(x => x.Key, x => x.Value);
-        // Now filtering is done, put all the answers back into a list
-        statQuestions = statQuestions.Where(x => questionAnswerDict.ContainsKey(x.PostId)).ToList();
+
 
         var overallWinRates = statsByUser.GroupBy(x => x.Id).Select(y =>
         {
@@ -158,7 +156,10 @@ WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight O
             TagMiddle = $",{request.Tag},",
         });
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")&& !x.Id.Contains("-accepted") && !x.Id.Contains("-most-voted")).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') 
+                                            && !x.Id.Contains("-accepted") 
+                                            && !x.Id.Contains("-most-voted")
+                                            && !x.Id.Contains("-undefined")).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {
@@ -169,7 +170,7 @@ WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight O
             FavoriteCount = x.Sum(y => y.FavoriteCount)
         }).ToList();
 
-        return CalculateLeaderboardResponse(statTotals,statsByUser,answers);
+        return CalculateLeaderboardResponse(statsByUser,answers);
     }
 
     public async Task<object> Any(GetLeaderboardStatsHuman request)
@@ -180,7 +181,10 @@ where PostId in (select StatTotals.PostId from StatTotals
                  where Id like '%-accepted')
 group by PostId) and  (Id like '%-accepted' or Id like '%-most-voted' or Id not like '%-%')");
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")&& !x.Id.Contains("-accepted") && !x.Id.Contains("-most-voted")).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') 
+                                            && !x.Id.Contains("-accepted") 
+                                            && !x.Id.Contains("-most-voted")
+                                            && !x.Id.Contains("-undefined")).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {
@@ -191,7 +195,7 @@ group by PostId) and  (Id like '%-accepted' or Id like '%-most-voted' or Id not 
             FavoriteCount = x.Sum(y => y.FavoriteCount)
         }).ToList();
 
-        return CalculateLeaderboardResponse(statTotals,statsByUser,answers);
+        return CalculateLeaderboardResponse(statsByUser,answers);
     }
 }
 

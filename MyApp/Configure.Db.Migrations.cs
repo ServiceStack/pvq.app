@@ -167,7 +167,7 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
-            UserName = "deepseek-coder",
+            UserName = "deepseek-coder-6.7b",
             Email = "deepseek-coder@email.com",
             DisplayName = "DeepSeek Coder 6.7B",
             EmailConfirmed = true,
