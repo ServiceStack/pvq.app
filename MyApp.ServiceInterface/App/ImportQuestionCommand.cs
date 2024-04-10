@@ -13,7 +13,7 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
 
     public HashSet<string> IgnoreTags { get; set; } = new()
     {
-        "this", "was", "feedback", "d", "c"
+        "this", "was", "feedback", "this", 
     };
     
     public Dictionary<string, string> TagAliases { get; set; } = new()
@@ -176,12 +176,16 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
 
     string? GetMatchingTag(string candidate)
     {
+        if (candidate.Length <= 1)
+            return null;
         candidate = candidate.ToKebabCase();
         if (!IgnoreTags.Contains(candidate) && TagAliases.TryGetValue(candidate, out var alias))
             return alias;
         if (!IgnoreTags.Contains(candidate) && appConfig.AllTags.Contains(candidate))
             return candidate;
         candidate = candidate.Replace("-", "");
+        if (candidate.Length <= 1)
+            return null;
         if (!IgnoreTags.Contains(candidate) && appConfig.AllTags.Contains(candidate))
             return candidate;
         return null;
