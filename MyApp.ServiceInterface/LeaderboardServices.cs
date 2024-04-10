@@ -41,7 +41,7 @@ public class LeaderboardServices : Service
         
         // Serialize the response to a leaderboard json file
         var json = leaderBoard.ToJson();
-        await File.WriteAllTextAsync("leaderboard.json", json);
+        await File.WriteAllTextAsync("App_Data/leaderboard.json", json);
         
         return leaderBoard;
     }

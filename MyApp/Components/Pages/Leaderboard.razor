@@ -25,9 +25,9 @@
     {
         await base.OnInitializedAsync();
         // Only generate if missing, otherwise background task will update it.
-        if (!File.Exists("leaderboard.json"))
+        if (!File.Exists("App_Data/leaderboard.json"))
             await ApiAsync(new CalculateLeaderBoard());
-        var jsonData = File.ReadAllText("leaderboard.json");
+        var jsonData = File.ReadAllText("App_Data/leaderboard.json");
         data = jsonData.FromJson<CalculateLeaderboardResponse>();
     }
 
