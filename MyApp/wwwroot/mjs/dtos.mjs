@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-09 01:50:28
+Date: 2024-04-10 16:20:54
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -13,11 +13,20 @@ BaseUrl: https://localhost:5001
 */
 
 "use strict";
-/** @typedef {'Unknown'|'Span'|'Offensive'|'Duplicate'|'NotRelevant'|'LowQuality'|'Plagiarized'|'NeedsReview'} */
+/** @typedef {'Unknown'|'StackOverflow'|'Discourse'|'Reddit'|'GitHubDiscussions'} */
+export var ImportSite;
+(function (ImportSite) {
+    ImportSite["Unknown"] = "Unknown"
+    ImportSite["StackOverflow"] = "StackOverflow"
+    ImportSite["Discourse"] = "Discourse"
+    ImportSite["Reddit"] = "Reddit"
+    ImportSite["GitHubDiscussions"] = "GitHubDiscussions"
+})(ImportSite || (ImportSite = {}));
+/** @typedef {'Unknown'|'Spam'|'Offensive'|'Duplicate'|'NotRelevant'|'LowQuality'|'Plagiarized'|'NeedsReview'} */
 export var FlagType;
 (function (FlagType) {
     FlagType["Unknown"] = "Unknown"
-    FlagType["Span"] = "Span"
+    FlagType["Spam"] = "Spam"
     FlagType["Offensive"] = "Offensive"
     FlagType["Duplicate"] = "Duplicate"
     FlagType["NotRelevant"] = "NotRelevant"
@@ -553,6 +562,29 @@ export class GetUserReputationsResponse {
     /** @type {?ResponseStatus} */
     responseStatus;
 }
+export class AskQuestion {
+    /** @param {{title?:string,body?:string,tags?:string[],refId?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    title;
+    /** @type {string} */
+    body;
+    /** @type {string[]} */
+    tags;
+    /** @type {?string} */
+    refId;
+    getTypeName() { return 'AskQuestion' }
+    getMethod() { return 'POST' }
+    createResponse() { return new AskQuestionResponse() }
+}
+export class ImportQuestionResponse {
+    /** @param {{result?:AskQuestion,responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {AskQuestion} */
+    result;
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
 export class UpdateUserProfileResponse {
     /** @param {{responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -759,21 +791,6 @@ export class FindSimilarQuestions {
     getMethod() { return 'GET' }
     createResponse() { return new FindSimilarQuestionsResponse() }
 }
-export class AskQuestion {
-    /** @param {{title?:string,body?:string,tags?:string[],refId?:string}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {string} */
-    title;
-    /** @type {string} */
-    body;
-    /** @type {string[]} */
-    tags;
-    /** @type {?string} */
-    refId;
-    getTypeName() { return 'AskQuestion' }
-    getMethod() { return 'POST' }
-    createResponse() { return new AskQuestionResponse() }
-}
 export class DeleteQuestion {
     /** @param {{id?:number,returnUrl?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -944,6 +961,19 @@ export class GetUserReputations {
     getTypeName() { return 'GetUserReputations' }
     getMethod() { return 'GET' }
     createResponse() { return new GetUserReputationsResponse() }
+}
+export class ImportQuestion {
+    /** @param {{url?:string,site?:ImportSite,tags?:string[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    url;
+    /** @type {ImportSite} */
+    site;
+    /** @type {?string[]} */
+    tags;
+    getTypeName() { return 'ImportQuestion' }
+    getMethod() { return 'GET' }
+    createResponse() { return new ImportQuestionResponse() }
 }
 export class UpdateUserProfile {
     constructor(init) { Object.assign(this, init) }

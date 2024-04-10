@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Data;
 using MyApp.ServiceModel;
+using ServiceStack;
 using ServiceStack.OrmLite;
 
 namespace MyApp.Data;
@@ -58,6 +59,18 @@ public class AppConfig
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
+
+    public void LoadTags(FileInfo allTagsFile)
+    {
+        if (!allTagsFile.Exists)
+            throw new FileNotFoundException(allTagsFile.Name);
+        
+        using var stream = allTagsFile.OpenRead();
+        foreach (var line in stream.ReadLines())
+        {
+            AllTags.Add(line.Trim());
+        }
+    }
     
     public ApplicationUser DefaultUser { get; set; } = new()
     {

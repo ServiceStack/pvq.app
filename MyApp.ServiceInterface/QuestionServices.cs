@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text.RegularExpressions;
 using MyApp.Data;
+using MyApp.ServiceInterface.App;
 using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.IO;
@@ -11,7 +12,8 @@ namespace MyApp.ServiceInterface;
 public class QuestionServices(AppConfig appConfig, 
     QuestionsProvider questions, 
     RendererCache rendererCache, 
-    WorkerAnswerNotifier answerNotifier) : Service
+    WorkerAnswerNotifier answerNotifier,
+    ICommandExecutor executor) : Service
 {
     private List<string> ValidateQuestionTags(List<string>? tags)
     {
@@ -486,6 +488,17 @@ public class QuestionServices(AppConfig appConfig,
         var userName = Request.GetClaimsPrincipal().GetUserName()
                        ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
         return userName;
+    }
+
+    public async Task<object> Any(ImportQuestion request)
+    {
+        var command = executor.Command<ImportQuestionCommand>();
+        await executor.ExecuteAsync(command, request);
+        return new ImportQuestionResponse
+        {
+            Result = command.Result
+                ?? throw new Exception("Import failed")
+        };
     }
 }
 

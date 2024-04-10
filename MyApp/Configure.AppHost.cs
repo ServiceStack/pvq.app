@@ -64,16 +64,8 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         using var db = GetDbConnection();
         AppConfig.Instance.Init(db);
         
-        var allTagsFile = new FileInfo(Path.Combine(HostingEnvironment.WebRootPath, "data/tags.txt"));
-        if (!allTagsFile.Exists)
-            throw new FileNotFoundException("data/tags.txt");
-        using var stream = allTagsFile.OpenRead();
-        var allTags = AppConfig.Instance.AllTags;
-        foreach (var line in stream.ReadLines())
-        {
-            allTags.Add(line.Trim());
-        }
-        Log.Info($"Loaded {allTags.Count} tags");
+        AppConfig.Instance.LoadTags(new FileInfo(Path.Combine(HostingEnvironment.WebRootPath, "data/tags.txt")));
+        Log.Info($"Loaded {AppConfig.Instance.AllTags.Count} tags");
 
         var incompleteJobs = db.Select(db.From<PostJob>().Where(x => x.CompletedDate == null));
         if (incompleteJobs.Count > 0)

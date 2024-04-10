@@ -1,10 +1,11 @@
 ﻿import { ref, watchEffect, nextTick, onMounted } from "vue"
 import { queryString } from "@servicestack/client"
 import { useClient, useUtils } from "@servicestack/vue"
-import { AskQuestion, PreviewMarkdown, FindSimilarQuestions } from "dtos.mjs"
+import { AskQuestion, PreviewMarkdown, FindSimilarQuestions, ImportQuestion, ImportSite } from "dtos.mjs"
 
 export default {
     template:`
+        <ErrorSummary v-if="error" class="mb-2" :status="error" />
         <AutoForm ref="autoform" type="AskQuestion" v-model="request" header-class="" submit-label="Create Question" 
             :configureField="configureField" @success="onSuccess">
             <template #heading></template>
@@ -50,6 +51,7 @@ export default {
         let allTags = localStorage.getItem('data:tags.txt')?.split('\n') || []
         const expandSimilar = ref(true)
         const similarQuestions = ref([])
+        const error = ref(null)
 
         const { createDebounce } = useUtils()
         let lastBody = ''
@@ -99,6 +101,28 @@ export default {
         }
         
         onMounted(async () => {
+            
+            const qs = queryString(location.search)
+            if (qs.import) {
+                const importQuestion = new ImportQuestion({ url: qs.import })
+                const site = qs.site?.toLowerCase()
+                if (site) {
+                    importQuestion.site = site === 'stackoverflow'
+                        ? ImportSite.StackOverflow
+                        : site === 'discourse'
+                            ? ImportSite.Discourse
+                            : site === 'reddit'
+                                ? ImportSite.Reddit
+                                : null
+                }
+                const api = await client.api(importQuestion)
+                if (api.succeeded) {
+                    Object.assign(request.value, api.response.result)
+                } else {
+                    error.value = api.error
+                }
+            }
+            
             if (allTags.length === 0) {
                 let txt = await (await fetch('/data/tags.txt')).text()
                 txt = txt.replace(/\r\n/g,'\n')
@@ -114,6 +138,6 @@ export default {
             }
         }
         
-        return { request, previewHtml, autoform, expandSimilar, similarQuestions, configureField, onSuccess }
+        return { request, error, previewHtml, autoform, expandSimilar, similarQuestions, configureField, onSuccess }
     }
 }
