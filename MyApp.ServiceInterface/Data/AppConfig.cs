@@ -86,10 +86,10 @@ public class AppConfig
     
     public ApplicationUser? GetModelUser(string model)
     {
-        if (ModelAliases.TryGetValue(model, out var alias))
-            model = alias;
+        string? alias;
+        ModelAliases.TryGetValue(model, out alias);
         
-        var user = ModelUsers.Find(x => x.Model == model || x.UserName == model);
+        var user = ModelUsers.Find(x => x.Model == model || x.UserName == model || x.UserName == alias);
         return user;
     }
 
