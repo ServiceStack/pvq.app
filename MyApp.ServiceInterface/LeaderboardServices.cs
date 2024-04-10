@@ -22,7 +22,7 @@ public class LeaderboardServices : Service
     {
         var statTotals = await Db.SelectAsync<StatTotals>();
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted") && !x.Id.Contains("-most-voted")).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {
@@ -54,7 +54,7 @@ public class LeaderboardServices : Service
             var res = new LeaderBoardWinRate
             {
                 Id = y.Key,
-                WinRate = CalculateWinRate(answers, y.Key, statQuestions.Count)
+                WinRate = CalculateWinRate(answers, y.Key)
             };
             return res;
         }).ToList();
@@ -130,15 +130,21 @@ public class LeaderboardServices : Service
     /// <param name="name"></param>
     /// <param name="questionCount"></param>
     /// <returns></returns>
-    double CalculateWinRate(List<StatTotals> statTotalsList, string name, int questionCount)
+    double CalculateWinRate(List<StatTotals> statTotalsList, string name)
     {
-        return ((double)statTotalsList
-                    .GroupBy(a => a.PostId
-                    ).Select(aq => aq
-                        .MaxBy(b => b.GetScore()))
-                    .Count(winner => 
-                        winner != null && winner.Id.Contains("-") && winner.Id.SplitOnFirst('-')[1] == name) 
-                / questionCount) * 100;
+        var questionsIncluded = statTotalsList.Where(x => x.Id.Contains("-" + name)).Select(x => x.PostId).Distinct().ToList();
+        var questionsAnswered = questionsIncluded.Count;
+        if (questionsAnswered == 0)
+        {
+            return 0;
+        }
+        
+        var winRate = statTotalsList.Where(x => questionsIncluded.Contains(x.PostId))
+            .GroupBy(x => x.PostId)
+            .Select(x => x.OrderByDescending(y => y.GetScore()).First())
+            .Count(x => x.Id.Contains("-" + name)) / (double) questionsAnswered;
+        
+        return winRate;
     }
 
     public async Task<object> Any(GetLeaderboardStatsByTag request)
@@ -152,7 +158,7 @@ WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight O
             TagMiddle = $",{request.Tag},",
         });
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")&& !x.Id.Contains("-accepted") && !x.Id.Contains("-most-voted")).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {
@@ -174,7 +180,7 @@ where PostId in (select StatTotals.PostId from StatTotals
                  where Id like '%-accepted')
 group by PostId) and  (Id like '%-accepted' or Id like '%-most-voted' or Id not like '%-%')");
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")).ToList();
+        var answers = statTotals.Where(x => x.Id.Contains('-') && !x.Id.Contains("-accepted")&& !x.Id.Contains("-accepted") && !x.Id.Contains("-most-voted")).ToList();
         // Sum up votes by model, first group by UserName
         var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
         {

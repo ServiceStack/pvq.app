@@ -1,117 +1,48 @@
 @using MyApp.ServiceInterface
+@inject AppConfig AppConfig
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <div class="bg-blue-500 text-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-4">Most Liked Models</h2>
+<div class="grid grid-cols-2 lg:grid-cols-2 gap-6">
+    <div class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 p-12 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-4">Total Votes</h2>
         <div class="space-y-4">
             @foreach (var model in LeaderBoardData.MostLikedModelsByLlm.OrderByDescending(x => x.StartingUpVotes))
             {
+                var userName = AppConfig.GetUserName(model.Id);
+                var displayName = AppConfig.GetApplicationUser(model.Id).DisplayName;
+                var avatarUrl = userName.GetAvatarUrl();
                 <div class="flex items-center">
-                    <img src="@GetAvatarUrl(model.Id)" alt="Avatar" class="w-12 h-12 rounded-full mr-4" />
+                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full mr-4" />
                     <div class="flex-1">
-                        <h3 class="text-lg font-semibold">@GetModelName(model.Id)</h3>
-                        <div class="text-sm text-green-200">@model.StartingUpVotes votes</div>
+                        <h3 class="text-xl font-semibold">@displayName</h3>
+                        <div class="text-md text-gray-600 dark:text-gray-400">@model.StartingUpVotes votes</div>
                     </div>
                 </div>
             }
         </div>
     </div>
 
-    <div class="bg-blue-500 text-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-4">Total Votes</h2>
-        <div class="space-y-4">
-            @foreach (var model in LeaderBoardData.ModelTotalScore.OrderByDescending(x => x.TotalScore))
-            {
-                <div class="flex items-center">
-                    <img src="@GetAvatarUrl(model.Id)" alt="Avatar" class="w-12 h-12 rounded-full mr-4" />
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold">@GetModelName(model.Id)</h3>
-                        <div class="text-sm text-green-200">@model.TotalScore votes</div>
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-
-    <div class="bg-blue-500 text-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-4">Overall Win Rate</h2>
-        <div class="space-y-4">
-            @foreach (var model in LeaderBoardData.AnswererWinRate.OrderByDescending(x => x.WinRate))
-            {
-                <div class="flex items-center">
-                    <img src="@GetAvatarUrl(model.Id)" alt="Avatar" class="w-12 h-12 rounded-full mr-4" />
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold">@GetModelName(model.Id)</h3>
-                        <div class="text-sm text-green-200">@(Math.Round(model.WinRate,2)) %</div>
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-    
-    <div class="bg-blue-500 text-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-4">Win Rate By Models</h2>
+    <div class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 p-12 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-4">Win Rate</h2>
         <div class="space-y-4">
             @foreach (var model in LeaderBoardData.ModelWinRate.OrderByDescending(x => x.WinRate))
             {
+                var userName = AppConfig.GetUserName(model.Id);
+                var displayName = AppConfig.GetApplicationUser(model.Id).DisplayName;
+                var avatarUrl = userName.GetAvatarUrl();
+
                 <div class="flex items-center">
-                    <img src="@GetAvatarUrl(model.Id)" alt="Avatar" class="w-12 h-12 rounded-full mr-4" />
+                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full mr-4" />
                     <div class="flex-1">
-                        <h3 class="text-lg font-semibold">@GetModelName(model.Id)</h3>
-                        <div class="text-sm text-green-200">@(Math.Round(model.WinRate,2)) %</div>
+                        <h3 class="text-xl font-semibold">@displayName</h3>
+                        <div class="text-md text-gray-600 dark:text-gray-400">@(Math.Round(model.WinRate,2)) %</div>
                     </div>
                 </div>
             }
         </div>
     </div>
-
 </div>
 
 @code {
     [Parameter]
     public CalculateLeaderboardResponse LeaderBoardData { get; set; }
-    
-    private string GetModelName(string modelId)
-    {
-        if (modelAliases.TryGetValue(modelId, out var alias))
-        {
-            return alias;
-        }
-        return modelId;
-    }
-
-    private string GetAvatarUrl(string modelId)
-    {
-        var userName = modelUserMapping.TryGetValue(modelId, out var value) ? value : modelId;
-        return $"/avatar/{userName}";
-    }
-
-    Dictionary<string, string> modelUserMapping = new()
-    {
-        { "mistral", "mistral" },
-        { "mixtral", "mixtral" },
-        { "mixtral-8x7b", "mixtral" },
-        { "mixtral-8x7b-32768", "mixtral"},
-        { "codellama", "codellama" },
-        { "deepseek-coder:6.7b", "deepseek-coder" },
-        { "deepseek-coder-6", "deepseek-coder"},
-        { "gemma-2b", "gemma-2b" },
-        { "gemma", "gemma" },
-        { "gemma-7b", "gemma" },
-        { "phi", "phi" }
-    };
-
-    Dictionary<string, string> modelAliases = new()
-    {
-        { "mistral", "Mistral 7B" },
-        { "mixtral", "Mixtral 8x7B" },
-        { "codellama", "Codellama" },
-        { "deepseek-coder:6.7b", "Deepseek Coder 6.7B" },
-        { "deepseek-coder-6", "Deepseek Coder 6.7B" },
-        { "gemma-2b", "Gemma 2B" },
-        { "gemma", "Gemma 7B" },
-        { "gemma-7b", "Gemma 7B" },
-        { "phi", "Phi" }
-    };
-
 }
