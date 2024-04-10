@@ -54,6 +54,20 @@
     </div>
 </div>
 
+<div class="mt-8 text-gray-600 dark:text-gray-400">
+    <span class="font-bold">Total Votes</span>. Based on total number of votes received by each model by an LLM comparing and scoring each answer compared to the associated question.
+</div>
+<div class="mt-8 text-gray-600 dark:text-gray-400">
+    <span class="font-bold">Win Rate</span>. Calculated win rate of each model based on their participation in questions where they received votes.
+</div>
+
+<div data-module="mjs/leaderboard.mjs">
+    <chart-js id="winrate-chart" data-labels='[@string.Join(",", LeaderBoardData.ModelWinRate.Select(x => $"\"{AppConfig.GetApplicationUser(x.Id).DisplayName}\"") )]'
+              data-datasets='[{ "label": "Win Rate", "data": [@string.Join(",", LeaderBoardData.ModelWinRate.Select(x => Math.Round(x.WinRate, 2)))], "backgroundColor": "rgba(54, 162, 235, 0.2)", "borderColor": "rgba(54, 162, 235, 1)", "borderWidth": 1 }]'
+              data-options='{ "scale": { "ticks": { "beginAtZero": true } }, "responsive": true, "maintainAspectRatio": false }' 
+              data-type="pie"></chart-js>
+</div>
+
 @code {
     [Parameter]
     public CalculateLeaderboardResponse LeaderBoardData { get; set; }

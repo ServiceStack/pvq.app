@@ -1,7 +1,7 @@
 ﻿import { ref, onMounted } from "vue"
 import { addScript } from "@servicestack/client"
 
-const loadJs = addScript('https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js')
+const loadJs = addScript('/lib/js/chart.umd.min.js')
 
 export default {
     template:`<div><canvas ref="chart"></canvas></div>`,
