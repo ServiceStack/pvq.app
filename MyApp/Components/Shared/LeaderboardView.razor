@@ -5,18 +5,24 @@
     <div class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 p-12 rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold mb-4">Total Votes</h2>
         <div class="space-y-4">
+            @{
+                int rankTotal = 1;
+            }
             @foreach (var model in LeaderBoardData.MostLikedModelsByLlm.OrderByDescending(x => x.StartingUpVotes))
             {
                 var userName = AppConfig.GetUserName(model.Id);
                 var displayName = AppConfig.GetApplicationUser(model.Id).DisplayName;
                 var avatarUrl = userName.GetAvatarUrl();
                 <div class="flex items-center">
-                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 mr-4" />
+                    <div class="mr-4 flex items-center justify-center w-8 h-8 text-black dark:text-white rounded-full text-2xl">@rankTotal .</div>
+                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 mr-4"/>
                     <div class="flex-1">
                         <h3 class="text-xl font-semibold">@displayName</h3>
                         <div class="text-md text-gray-600 dark:text-gray-400">@model.StartingUpVotes.ToHumanReadable() votes</div>
                     </div>
                 </div>
+
+                rankTotal++;
             }
         </div>
     </div>
@@ -24,6 +30,9 @@
     <div class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 p-12 rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold mb-4">Win Rate</h2>
         <div class="space-y-4">
+            @{
+                rankTotal = 1;
+            }
             @foreach (var model in LeaderBoardData.ModelWinRate.OrderByDescending(x => x.WinRate))
             {
                 var userName = AppConfig.GetUserName(model.Id);
@@ -31,12 +40,15 @@
                 var avatarUrl = userName.GetAvatarUrl();
 
                 <div class="flex items-center">
-                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 mr-4" />
+                    <div class="mr-4 flex items-center justify-center w-8 h-8 text-black dark:text-white rounded-full text-2xl">@rankTotal .</div>
+                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 mr-4"/>
                     <div class="flex-1">
                         <h3 class="text-xl font-semibold">@displayName</h3>
-                        <div class="text-md text-gray-600 dark:text-gray-400">@(Math.Round(model.WinRate,2)) %</div>
+                        <div class="text-md text-gray-600 dark:text-gray-400">@(Math.Round(model.WinRate, 2)) %</div>
                     </div>
                 </div>
+                
+                rankTotal++;
             }
         </div>
     </div>
