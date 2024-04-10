@@ -38,7 +38,11 @@ public class LeaderboardServices : Service
         }).ToList();
         
         var leaderBoard = CalculateLeaderboardResponse(statsByUser, answers);
-
+        
+        // Serialize the response to a leaderboard json file
+        var json = leaderBoard.ToJson();
+        await File.WriteAllTextAsync("App_Data/leaderboard.json", json);
+        
         return leaderBoard;
     }
 
@@ -52,26 +56,11 @@ public class LeaderboardServices : Service
             var res = new LeaderBoardWinRate
             {
                 Id = y.Key,
-                WinRate = CalculateWinRate(answers, y.Key)
+                WinRate = CalculateWinRate(answers, y.Key),
+                NumberOfQuestions = answers.Count(x => x.Id.Contains("-" + y.Key))
             };
             return res;
         }).ToList();
-
-        var modelScale = 1 / overallWinRates.Where(x => IsHuman(x.Id) == false)
-            .Sum(y => y.WinRate);
-        var humanScale = 1 / overallWinRates.Where(x => IsHuman(x.Id))
-            .Sum(y => y.WinRate);
-        var skipScale = double.IsInfinity(modelScale);
-        if (skipScale)
-        {
-            modelScale = 1;
-        }
-        var skipHumanScale = double.IsInfinity(humanScale);
-        if (skipHumanScale)
-        {
-            humanScale = 1;
-        }
-
 
         var leaderBoard = new CalculateLeaderboardResponse
         {
@@ -96,13 +85,15 @@ public class LeaderboardServices : Service
                 .Select(x => new LeaderBoardWinRate
                 {
                     Id = x.Id,
-                    WinRate = x.WinRate * (skipHumanScale ? 1 : humanScale) * 100
+                    WinRate = x.WinRate * 100,
+                    NumberOfQuestions = x.NumberOfQuestions
                 }).ToList(),
             ModelWinRate = overallWinRates.Where(x => IsHuman(x.Id) == false)
                 .Select(x => new ModelWinRate
                 {
                     Id = x.Id,
-                    WinRate = x.WinRate * (skipScale ? 1 : modelScale) * 100
+                    WinRate = x.WinRate * 100,
+                    NumberOfQuestions = x.NumberOfQuestions
                 }).ToList(),
             ModelTotalScore = statsByUser.GroupBy(x => x.Id)
                 .Select(x => new ModelTotalScore
@@ -252,12 +243,16 @@ public class ModelWinRate
 {
     public string Id { get; set; }
     public double WinRate { get; set; }
+    
+    public int NumberOfQuestions { get; set; }
 }
 
 public class LeaderBoardWinRate
 {
     public string Id { get; set; }
     public double WinRate { get; set; }
+    
+    public int NumberOfQuestions { get; set; }
 }
 
 public class LeaderBoardWinRateByTag

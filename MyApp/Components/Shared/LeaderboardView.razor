@@ -5,18 +5,24 @@
     <div class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 p-12 rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold mb-4">Total Votes</h2>
         <div class="space-y-4">
+            @{
+                int rankTotal = 1;
+            }
             @foreach (var model in LeaderBoardData.MostLikedModelsByLlm.OrderByDescending(x => x.StartingUpVotes))
             {
                 var userName = AppConfig.GetUserName(model.Id);
                 var displayName = AppConfig.GetApplicationUser(model.Id).DisplayName;
                 var avatarUrl = userName.GetAvatarUrl();
                 <div class="flex items-center">
-                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full mr-4" />
+                    <div class="mr-4 flex items-center justify-center w-12 h-8 text-black dark:text-white rounded-full text-2xl">@rankTotal .</div>
+                    <img src="@avatarUrl" alt="Avatar" class="w-12 h-12 mr-4 space-y-6"/>
                     <div class="flex-1">
                         <h3 class="text-xl font-semibold">@displayName</h3>
-                        <div class="text-md text-gray-600 dark:text-gray-400">@model.StartingUpVotes votes</div>
+                        <div class="text-md text-gray-600 dark:text-gray-400">@model.StartingUpVotes.ToHumanReadable() votes</div>
                     </div>
                 </div>
+
+                rankTotal++;
             }
         </div>
     </div>
@@ -24,6 +30,9 @@
     <div class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 p-12 rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold mb-4">Win Rate</h2>
         <div class="space-y-4">
+            @{
+                rankTotal = 1;
+            }
             @foreach (var model in LeaderBoardData.ModelWinRate.OrderByDescending(x => x.WinRate))
             {
                 var userName = AppConfig.GetUserName(model.Id);
@@ -31,18 +40,37 @@
                 var avatarUrl = userName.GetAvatarUrl();
 
                 <div class="flex items-center">
-                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full mr-4" />
+                    <div class="mr-4 flex items-center justify-center w-12 h-8 text-black dark:text-white rounded-full text-2xl">@rankTotal .</div>
+                    <img src="@avatarUrl" alt="Avatar" class="w-12 h-12 mr-4 space-y-6"/>
                     <div class="flex-1">
                         <h3 class="text-xl font-semibold">@displayName</h3>
-                        <div class="text-md text-gray-600 dark:text-gray-400">@(Math.Round(model.WinRate,2)) %</div>
+                        <div class="text-md text-gray-600 dark:text-gray-400">@(Math.Round(model.WinRate, 2)) % (@model.NumberOfQuestions)</div>
                     </div>
                 </div>
+                
+                rankTotal++;
             }
         </div>
     </div>
 </div>
 
+<div class="mt-8 text-gray-600 dark:text-gray-400">
+    <span class="font-bold">Total Votes</span>. Based on total number of votes received by each model by an LLM comparing and scoring each answer compared to the associated question.
+</div>
+<div class="mt-8 text-gray-600 dark:text-gray-400">
+    <span class="font-bold">Win Rate</span>. Calculated win rate of each model based on their participation in questions where they received votes.
+</div>
+
+<div data-module="mjs/leaderboard.mjs">
+    <chart-js id="winrate-chart" data-labels='[@string.Join(",", GetWinRates().Select(x => $"\"{AppConfig.GetApplicationUser(x.Id).DisplayName}\"") )]'
+              data-datasets='[{ "label": "Win Rate", "data": [@string.Join(",", GetWinRates().Select(x => Math.Round(x.WinRate, 2)))], "borderWidth": 1, "modelNames": @GetWinRates().Select(x => x.Id).ToJson() }]'
+              data-options='{ "scale": { "ticks": { "beginAtZero": true } }, "responsive": true, "maintainAspectRatio": false }' 
+              data-type="pie"></chart-js>
+</div>
+
 @code {
     [Parameter]
     public CalculateLeaderboardResponse LeaderBoardData { get; set; }
+
+    private List<ModelWinRate> GetWinRates() => LeaderBoardData.ModelWinRate.OrderByDescending(x => x.WinRate).ToList();
 }

@@ -1,5 +1,6 @@
 ﻿@page "/leaderboard"
 @using MyApp.ServiceInterface
+@attribute [OutputCache(Duration = 3600)]
 @inherits AppComponentBase
 
 <PageTitle>Leaderboard</PageTitle>
@@ -23,12 +24,11 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        var api = await ApiAsync(new CalculateLeaderBoard());
-        if (api.Succeeded)
-            data = api.Response;
-        else
-            Console.WriteLine(api.Error?.Message);
-        
+        // Only generate if missing, otherwise background task will update it.
+        if (!File.Exists("App_Data/leaderboard.json"))
+            await ApiAsync(new CalculateLeaderBoard());
+        var jsonData = File.ReadAllText("App_Data/leaderboard.json");
+        data = jsonData.FromJson<CalculateLeaderboardResponse>();
     }
 
 }
