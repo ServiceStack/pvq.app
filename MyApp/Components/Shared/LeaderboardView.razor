@@ -15,7 +15,7 @@
                 var avatarUrl = userName.GetAvatarUrl();
                 <div class="flex items-center">
                     <div class="mr-4 flex items-center justify-center w-12 h-8 text-black dark:text-white rounded-full text-2xl">@rankTotal .</div>
-                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 mr-4"/>
+                    <img src="@avatarUrl" alt="Avatar" class="w-12 h-12 mr-4 space-y-6"/>
                     <div class="flex-1">
                         <h3 class="text-xl font-semibold">@displayName</h3>
                         <div class="text-md text-gray-600 dark:text-gray-400">@model.StartingUpVotes.ToHumanReadable() votes</div>
@@ -41,10 +41,10 @@
 
                 <div class="flex items-center">
                     <div class="mr-4 flex items-center justify-center w-12 h-8 text-black dark:text-white rounded-full text-2xl">@rankTotal .</div>
-                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 mr-4"/>
+                    <img src="@avatarUrl" alt="Avatar" class="w-12 h-12 mr-4 space-y-6"/>
                     <div class="flex-1">
                         <h3 class="text-xl font-semibold">@displayName</h3>
-                        <div class="text-md text-gray-600 dark:text-gray-400">@(Math.Round(model.WinRate, 2)) %</div>
+                        <div class="text-md text-gray-600 dark:text-gray-400">@(Math.Round(model.WinRate, 2)) % (@model.NumberOfQuestions)</div>
                     </div>
                 </div>
                 
@@ -62,8 +62,8 @@
 </div>
 
 <div data-module="mjs/leaderboard.mjs">
-    <chart-js id="winrate-chart" data-labels='[@string.Join(",", LeaderBoardData.ModelWinRate.Select(x => $"\"{AppConfig.GetApplicationUser(x.Id).DisplayName}\"") )]'
-              data-datasets='[{ "label": "Win Rate", "data": [@string.Join(",", LeaderBoardData.ModelWinRate.Select(x => Math.Round(x.WinRate, 2)))], "backgroundColor": "rgba(54, 162, 235, 0.2)", "borderColor": "rgba(54, 162, 235, 1)", "borderWidth": 1 }]'
+    <chart-js id="winrate-chart" data-labels='[@string.Join(",", GetWinRates().Select(x => $"\"{AppConfig.GetApplicationUser(x.Id).DisplayName}\"") )]'
+              data-datasets='[{ "label": "Win Rate", "data": [@string.Join(",", GetWinRates().Select(x => Math.Round(x.WinRate, 2)))], "borderWidth": 1, "modelNames": @GetWinRates().Select(x => x.Id).ToJson() }]'
               data-options='{ "scale": { "ticks": { "beginAtZero": true } }, "responsive": true, "maintainAspectRatio": false }' 
               data-type="pie"></chart-js>
 </div>
@@ -71,4 +71,6 @@
 @code {
     [Parameter]
     public CalculateLeaderboardResponse LeaderBoardData { get; set; }
+
+    private List<ModelWinRate> GetWinRates() => LeaderBoardData.ModelWinRate.OrderByDescending(x => x.WinRate).ToList();
 }
