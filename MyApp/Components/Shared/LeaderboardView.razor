@@ -11,10 +11,10 @@
                 var displayName = AppConfig.GetApplicationUser(model.Id).DisplayName;
                 var avatarUrl = userName.GetAvatarUrl();
                 <div class="flex items-center">
-                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full mr-4" />
+                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 mr-4" />
                     <div class="flex-1">
                         <h3 class="text-xl font-semibold">@displayName</h3>
-                        <div class="text-md text-gray-600 dark:text-gray-400">@model.StartingUpVotes votes</div>
+                        <div class="text-md text-gray-600 dark:text-gray-400">@model.StartingUpVotes.ToHumanReadable() votes</div>
                     </div>
                 </div>
             }
@@ -31,7 +31,7 @@
                 var avatarUrl = userName.GetAvatarUrl();
 
                 <div class="flex items-center">
-                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 rounded-full mr-4" />
+                    <img src="@avatarUrl" alt="Avatar" class="w-24 h-24 mr-4" />
                     <div class="flex-1">
                         <h3 class="text-xl font-semibold">@displayName</h3>
                         <div class="text-md text-gray-600 dark:text-gray-400">@(Math.Round(model.WinRate,2)) %</div>
