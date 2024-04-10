@@ -111,6 +111,11 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
             var title = (string)postData["title"];
             var body = (string)postData["selftext"];
             var tags = request.Tags ?? [];
+            
+            var subredditTag = GetMatchingTag(subreddit);
+            if (subredditTag != null)
+                tags.Add(subredditTag);
+            
             tags.AddRange(ExtractTags(body, count:5 - tags.Count));
             
             Result = new()
