@@ -116,7 +116,7 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
             Result = new()
             {
                 Title = title.Trim(),
-                Body = body.Trim(),
+                Body = body.HtmlDecode().Trim(),
                 Tags = ExtractTags(body),
                 RefId = $"reddit.{subreddit}:{id}",
             };

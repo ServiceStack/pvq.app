@@ -95,7 +95,7 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "pvq",
             EmailConfirmed = true,
             ProfilePath = "/profiles/pv/pvq/pvq.svg",
-        }, "p@55wOrd");
+        }, "p@55wOrd", [Roles.Admin, Roles.Moderator]);
 
         await EnsureUserAsync(new ApplicationUser
         {

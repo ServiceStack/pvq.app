@@ -13,7 +13,19 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
     {
         var body = post.Body;
         post.Body = null;
-        post.Id = (int)await db.InsertAsync(post, selectIdentity: true);
+        
+        if (post.RefId != null && post.RefId.StartsWith("stackoverflow.com:") 
+                               && int.TryParse(post.RefId.LastRightPart(':'), out var stackoverflowPostId)
+                               && !await db.ExistsAsync<Post>(x => x.Id == stackoverflowPostId))
+        {
+            post.Id = stackoverflowPostId;
+            await db.InsertAsync(post);
+        }
+        else
+        {
+            post.Id = (int)await db.InsertAsync(post, selectIdentity: true);
+        }
+        
         var createdBy = post.CreatedBy;
         if (createdBy != null && post.PostTypeId == 1)
         {
