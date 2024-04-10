@@ -130,6 +130,9 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     
     [Command<CreateFlagCommand>]
     public Flag? CreateFlag { get; set; }
+    
+    [Command<ImportQuestionCommand>]
+    public ImportQuestion? ImportQuestion { get; set; }
 }
 
 public class RenderHome

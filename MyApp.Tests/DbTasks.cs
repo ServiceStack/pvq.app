@@ -2,9 +2,7 @@
 using NUnit.Framework;
 using ServiceStack;
 using ServiceStack.Data;
-using ServiceStack.Logging;
 using ServiceStack.OrmLite;
-using ServiceStack.Text;
 
 namespace MyApp.Tests;
 
@@ -12,17 +10,10 @@ namespace MyApp.Tests;
 public class DbTasks
 {
     IDbConnectionFactory ResolveDbFactory() => new ConfigureDb().ConfigureAndResolve<IDbConnectionFactory>();
-    public string GetHostDir()
-    {
-        LogManager.LogFactory = new ConsoleLogFactory();
-        var appSettings = JSON.parse(File.ReadAllText(Path.GetFullPath("appsettings.json")));
-        return appSettings.ToObjectDictionary()["HostDir"].ToString()!;
-    }
-    
     [Test]
     public void Generate_Tags()
     {
-        var hostDir = GetHostDir();
+        var hostDir = TestUtils.GetHostDir();
         var tagsPath = Path.GetFullPath(Path.Combine(hostDir, "App_Data", "tags.txt"));
         
         using var db = ResolveDbFactory().OpenDbConnection();

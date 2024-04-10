@@ -549,3 +549,24 @@ public class Achievement
     
     public DateTime CreatedDate { get; set; }
 }
+
+public enum ImportSite
+{
+    Unknown,
+    StackOverflow,
+    Discourse,
+    Reddit,
+    GitHubDiscussions,
+}
+
+public class ImportQuestion : IGet, IReturn<ImportQuestionResponse>
+{
+    public required string Url { get; set; }
+    public required ImportSite Site { get; set; }
+    public List<string>? Tags { get; set; }
+}
+public class ImportQuestionResponse
+{
+    public required AskQuestion Result { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
+}

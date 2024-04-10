@@ -96,5 +96,7 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
+    [SupplyParameterFromQuery] string? Import { get; set; } //handled in Ask.mjs
+
     string Title => "Ask a Question";
 }
