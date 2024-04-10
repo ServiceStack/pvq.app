@@ -5,11 +5,19 @@ import { AskQuestion, PreviewMarkdown, FindSimilarQuestions, ImportQuestion, Imp
 
 export default {
     template:`
+        <div class="relative">
+            <div v-if="importLoading" class="absolute right-0 -mt-9">
+                <Loading />
+            </div>
+        </div>
         <ErrorSummary v-if="error" class="mb-2" :status="error" />
         <AutoForm ref="autoform" type="AskQuestion" v-model="request" header-class="" submit-label="Create Question" 
             :configureField="configureField" @success="onSuccess">
             <template #heading></template>
             <template #footer>
+                <div v-if="request.title || request.body || request.tags?.length" class="relative">
+                    <span @click="clear" title="clear form" class="absolute right-8 -mt-8 cursor-pointer select-none text-indigo-600 dark:text-indigo-800 hover:underline">clear</span>
+                </div>
                 <div v-if="similarQuestions.length" class="px-6">
                     <div class="px-4 pb-2 bg-gray-50 dark:bg-gray-900 rounded-md">
                         <div class="flex justify-between items-center">
@@ -52,6 +60,7 @@ export default {
         const expandSimilar = ref(true)
         const similarQuestions = ref([])
         const error = ref(null)
+        const importLoading = ref(false)
 
         const { createDebounce } = useUtils()
         let lastBody = ''
@@ -93,6 +102,14 @@ export default {
             }
         }
         
+        function clear() {
+            request.value.title = ''
+            request.value.body = ''
+            request.value.tags = []
+            localStorage.removeItem('ask')
+            autoform.value.forceUpdate()
+        }
+        
         function onSuccess(r) {
             localStorage.removeItem('ask')
             if (r.redirectTo) {
@@ -115,9 +132,12 @@ export default {
                                 ? ImportSite.Reddit
                                 : null
                 }
+                importLoading.value = true
                 const api = await client.api(importQuestion)
+                importLoading.value = false
                 if (api.succeeded) {
                     Object.assign(request.value, api.response.result)
+                    autoform.value.forceUpdate()
                 } else {
                     error.value = api.error
                 }
@@ -138,6 +158,7 @@ export default {
             }
         }
         
-        return { request, error, previewHtml, autoform, expandSimilar, similarQuestions, configureField, onSuccess }
+        return { request, error, previewHtml, autoform, expandSimilar, similarQuestions, importLoading, 
+                 clear, configureField, onSuccess }
     }
 }
