@@ -2,6 +2,7 @@
 using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Text;
 
 namespace MyApp.ServiceInterface.App;
 
@@ -9,6 +10,11 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
 {
     static readonly Regex ValidTagCharsRegex = new("[^a-zA-Z0-9#+.]", RegexOptions.Compiled);
     static readonly Regex SingleWhiteSpaceRegex = new(@"\s+", RegexOptions.Multiline | RegexOptions.Compiled);
+
+    public HashSet<string> IgnoreTags { get; set; } = new()
+    {
+        "this", "was", "feedback", "d", "c"
+    };
     
     public Dictionary<string, string> TagAliases { get; set; } = new()
     {
@@ -25,10 +31,15 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
     {
         if (string.IsNullOrEmpty(request.Url))
             throw new ArgumentNullException(nameof(request.Url));
+
+        if (!Uri.IsWellFormedUriString(request.Url, UriKind.Absolute))
+            throw new ArgumentException("Invalid URL", nameof(request.Url));
         
         if (request.Site == ImportSite.Unknown)
             request.Site = InferSiteFromUrl(request.Url);
         
+        var uri = new Uri(request.Url);
+
         if (request.Site == ImportSite.Discourse)
         {
             var url = request.Url.LeftPart('?');
@@ -47,17 +58,108 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
             var body = (string)postObj["raw"];
             var tags = request.Tags ?? [];
             tags.AddRange(ExtractTags(body, count:5 - tags.Count));
+
+            var parts = uri.AbsolutePath.Trim('/').Split('/');
+            var postId = parts.Length >= 3 && int.TryParse(parts[2], out var id) ? id : 0;
+            
             Result = new()
             {
                 Title = (string)obj["title"],
-                Body = body,
+                Body = body.Trim(),
                 Tags = ExtractTags(body),
+                RefId = postId > 0 ? $"{uri.Host}:{postId}" : null,
+            };
+        }
+        else if (request.Site == ImportSite.StackOverflow)
+        {
+            var parts = uri.AbsolutePath.Trim('/').Split('/');
+            if (parts.Length >= 2 && (parts[0] == "q" || parts[0] == "questions") && int.TryParse(parts[1], out var postId))
+            {
+                var htmlUrl = $"{uri.Scheme}://{uri.Host}/posts/{postId}/edit-inline";
+                var html = await htmlUrl.GetStringFromUrlAsync(requestFilter: c =>
+                {
+                    c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
+                    c.AddHeader(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                    c.AddHeader(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9");
+                    c.AddHeader(HttpHeaders.CacheControl, "max-age=0");
+                });
+                Result = CreateFromStackOverflowInlineEdit(html);
+                if (Result != null)
+                {
+                    Result.RefId = $"{uri.Host}:{postId}";
+                }
+            }
+        }
+        else if (request.Site == ImportSite.Reddit)
+        {
+            var url = request.Url.Trim('/') + ".json";
+            var json = await url.GetJsonFromUrlAsync(requestFilter: c =>
+            {
+                c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
+                c.AddHeader(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                c.AddHeader(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9");
+                c.AddHeader(HttpHeaders.CacheControl, "max-age=0");
+            });
+            var objs = (List<object>)JSON.parse(json);
+            var obj = (Dictionary<string, object>)objs[0];
+            var data = (Dictionary<string, object>)obj["data"];
+            var children = (List<object>)data["children"];
+            var post = (Dictionary<string, object>)children[0];
+            var postData = (Dictionary<string, object>)post["data"];
+            var id = (string)postData["id"];
+            var subreddit = (string)postData["subreddit"];
+            var title = (string)postData["title"];
+            var body = (string)postData["selftext"];
+            var tags = request.Tags ?? [];
+            tags.AddRange(ExtractTags(body, count:5 - tags.Count));
+            
+            Result = new()
+            {
+                Title = title.Trim(),
+                Body = body.Trim(),
+                Tags = ExtractTags(body),
+                RefId = $"reddit.{subreddit}:{id}",
             };
         }
         else throw new NotSupportedException("Unsupported Site");
 
         if (Result == null)
             throw new Exception("Import failed");
+    }
+    
+    public static AskQuestion? CreateFromStackOverflowInlineEdit(string html)
+    {
+        var span = html.AsSpan();
+
+        const string titleStart1 = "<input id=\"title\"";
+        const string titleStart2 = "value=\"";
+        span = span.Advance(span.IndexOf(titleStart1) + titleStart1.Length);
+        span = span.Advance(span.IndexOf(titleStart2) + titleStart2.Length);
+        
+        var title = span[..span.IndexOf('"')].ToString().HtmlDecode();
+        
+        const string bodyStart = "<textarea ";
+        span = span.Advance(span.IndexOf(bodyStart) + bodyStart.Length);
+        span = span.AdvancePastChar('>');
+        
+        var body = span[..span.IndexOf('<')].ToString().HtmlDecode();
+
+        const string tagsStart1 = "<input id=\"tagnames\"";
+        const string tagsStart2 = "value=\"";
+        span = span.Advance(span.IndexOf(tagsStart1) + tagsStart1.Length);
+        span = span.Advance(span.IndexOf(tagsStart2) + tagsStart2.Length);
+
+        var tagsValue = span[..span.IndexOf('"')].ToString().HtmlDecode();
+        var tags = tagsValue.Split(' ');
+
+        var to = new AskQuestion
+        {
+            Title = title,
+            Body = body.Trim(),
+            Tags = [..tags],
+        };
+
+        return to;
     }
 
     private ImportSite InferSiteFromUrl(string requestUrl)
@@ -75,12 +177,12 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
     string? GetMatchingTag(string candidate)
     {
         candidate = candidate.ToKebabCase();
-        if (TagAliases.TryGetValue(candidate, out var alias))
+        if (!IgnoreTags.Contains(candidate) && TagAliases.TryGetValue(candidate, out var alias))
             return alias;
-        if (appConfig.AllTags.Contains(candidate))
+        if (!IgnoreTags.Contains(candidate) && appConfig.AllTags.Contains(candidate))
             return candidate;
         candidate = candidate.Replace("-", "");
-        if (appConfig.AllTags.Contains(candidate))
+        if (!IgnoreTags.Contains(candidate) && appConfig.AllTags.Contains(candidate))
             return candidate;
         return null;
     }

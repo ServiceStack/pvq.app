@@ -20,4 +20,10 @@
         <PackageReference Include="ServiceStack.Kestrel" Version="8.*" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="App_Data\stackoverflow-import.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
