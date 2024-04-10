@@ -107,6 +107,7 @@ export default {
             request.value.body = ''
             request.value.tags = []
             localStorage.removeItem('ask')
+            similarQuestions.value = []
             autoform.value.forceUpdate()
         }
         
