@@ -1,5 +1,6 @@
 ﻿@page "/leaderboard"
 @using MyApp.ServiceInterface
+@using ServiceStack.Text
 @inherits AppComponentBase
 
 <PageTitle>Leaderboard</PageTitle>
@@ -23,12 +24,8 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        var api = await ApiAsync(new CalculateLeaderBoard());
-        if (api.Succeeded)
-            data = api.Response;
-        else
-            Console.WriteLine(api.Error?.Message);
-        
+        var jsonData = File.ReadAllText("leaderboard.json");
+        data = jsonData.FromJson<CalculateLeaderboardResponse>();
     }
 
 }

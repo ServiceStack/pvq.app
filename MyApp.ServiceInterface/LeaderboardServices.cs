@@ -38,7 +38,11 @@ public class LeaderboardServices : Service
         }).ToList();
         
         var leaderBoard = CalculateLeaderboardResponse(statsByUser, answers);
-
+        
+        // Serialize the response to a leaderboard json file
+        var json = leaderBoard.ToJson();
+        await File.WriteAllTextAsync("leaderboard.json", json);
+        
         return leaderBoard;
     }
 
