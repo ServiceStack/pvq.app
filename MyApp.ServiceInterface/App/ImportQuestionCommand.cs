@@ -18,6 +18,7 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
     
     public Dictionary<string, string> TagAliases { get; set; } = new()
     {
+        ["dotnet"] = ".net",
         ["csharp"] = "c#",
         ["fsharp"] = "f#",
         ["cpp"] = "c++",
@@ -122,7 +123,7 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
             {
                 Title = title.Trim(),
                 Body = body.HtmlDecode().Trim(),
-                Tags = ExtractTags(body),
+                Tags = tags,
                 RefId = $"reddit.{subreddit}:{id}",
             };
         }
