@@ -18,7 +18,7 @@ export const colors = [
 
 export default {
     template:`<div><canvas ref="chart"></canvas></div>`,
-    props:['type','data','options'],
+    props:['type','data','options','plugins'],
     setup(props) {
         const chart = ref()
         onMounted(async () => {
@@ -34,6 +34,7 @@ export default {
                 type: props.type || "bar",
                 data: props.data,
                 options,
+                plugins: props.plugins ?? []
             })
 
         })

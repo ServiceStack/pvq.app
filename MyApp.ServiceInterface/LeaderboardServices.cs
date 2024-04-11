@@ -128,10 +128,32 @@ public class LeaderboardServices : Service
             return 0;
         }
         
-        var winRate = statTotalsList.Where(x => questionsIncluded.Contains(x.PostId))
+        double winRate = statTotalsList.Where(x => questionsIncluded.Contains(x.PostId))
             .GroupBy(x => x.PostId)
-            .Select(x => x.OrderByDescending(y => y.GetScore()).First())
-            .Count(x => x.Id.Contains("-" + name)) / (double) questionsAnswered;
+            .Select(g => new
+            {
+                PostId = g.Key,
+                TopScores = g.GroupBy(x => x.GetScore())
+                    .OrderByDescending(x => x.Key)
+                    .Take(2)
+                    .Select(x => new { Score = x.Key, Count = x.Count() })
+                    .ToList()
+            })
+            .Select(x =>
+            {
+                var userScore = statTotalsList.FirstOrDefault(y => y.Id == $"{x.PostId}-{name}")?.GetScore();
+                return x.TopScores[0].Count > 1 && x.TopScores[0].Score == userScore
+                       || x.TopScores[0].Count == 1 && x.TopScores[0].Score == userScore;
+            })
+            .Count(x => x);
+
+        var totalQuestionsAnswered = statTotalsList
+            .Where(x => questionsIncluded.Contains(x.PostId) && x.Id.Contains($"-{name}"))
+            .Select(x => x.PostId)
+            .Distinct()
+            .Count();
+
+        winRate = totalQuestionsAnswered > 0 ? winRate / (double)totalQuestionsAnswered : 0;
         
         return winRate;
     }
@@ -161,7 +183,15 @@ WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight O
             FavoriteCount = x.Sum(y => y.FavoriteCount)
         }).ToList();
 
-        return CalculateLeaderboardResponse(statsByUser,answers);
+        var result = CalculateLeaderboardResponse(statsByUser,answers);
+
+        // Serialize the response to a leaderboard json file
+        var json = result.ToJson();
+        // Filter to only filename safe characters
+        request.Tag = request.Tag.GenerateSlug();
+        await File.WriteAllTextAsync($"App_Data/leaderboard-tag-{request.Tag}.json", json);
+        
+        return result;
     }
 
     public async Task<object> Any(GetLeaderboardStatsHuman request)
@@ -204,11 +234,7 @@ public class CalculateLeaderboardResponse
     public List<ModelTotalScore> MostLikedModels { get; set; }
     public List<ModelTotalStartUpVotes> MostLikedModelsByLlm { get; set; }
     public List<LeaderBoardWinRate> AnswererWinRate { get; set; }
-    public List<LeaderBoardWinRate> HumanVsLlmWinRateByHumanVotes { get; set; }
-    public List<LeaderBoardWinRate> HumanVsLlmWinRateByLlmVotes { get; set; }
-    public List<ModelWinRateByTag> ModelWinRateByTag { get; set; }
     public List<ModelTotalScore> ModelTotalScore { get; set; }
-    public List<ModelTotalScoreByTag> ModelTotalScoreByTag { get; set; }
     public List<ModelWinRate> ModelWinRate { get; set; }
     public List<LeaderBoardWinRate> HumanWinRate { get; set; }
 }
@@ -253,13 +279,6 @@ public class LeaderBoardWinRate
     public double WinRate { get; set; }
     
     public int NumberOfQuestions { get; set; }
-}
-
-public class LeaderBoardWinRateByTag
-{
-    public string Id { get; set; }
-    public string Tag { get; set; }
-    public double WinRate { get; set; }
 }
 
 public record LeaderboardStat

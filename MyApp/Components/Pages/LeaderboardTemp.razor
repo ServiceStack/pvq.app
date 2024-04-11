@@ -1,0 +1,254 @@
+@page "/leaderboard-temp"
+@using MyApp.ServiceInterface
+@attribute [OutputCache(Duration = 3600)]
+@inject IServiceGatewayFactory GatewayFactory
+@inject AppConfig AppConfig
+
+<PageTitle>Leaderboard</PageTitle>
+
+<div class="mt-8 mb-20 mx-auto max-w-screen-lg">
+
+    <h1 class="text-center my-12 text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">Leaderboard</h1>
+
+    @if (TotalVotes.Count > 0 && WinRates.Count > 0)
+    {
+        <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
+            <LeaderboardStats Title="Total Votes" Results=@TotalVotes />
+            <LeaderboardStats Title="Win Rates" Results=@WinRates />
+        </div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes</h3>
+        <div data-component="pages/Leaderboard/TotalVotesAvatar.mjs" data-props=@ToProps(TotalVotes)></div>
+        <p class="py-4">
+            Based on total number of total votes received by each model by a ranking model measuring how well each
+            answer answers the question asked.
+        </p>
+
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRates)></div>
+        <p class="py-4">
+            Calculated win rate of each model based on their participation in questions where they received votes.
+        </p>
+        
+        <div class="mt-24 text-center text-sm text-gray-500">* results updated daily</div>
+    }
+    
+    <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes by Language</h3>
+    
+    @if(TotalVotesCSharp.Count > 0)
+    {
+        <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
+            <LeaderboardStats Title="Total Votes - C#" Results=@TotalVotesCSharp />
+            <LeaderboardStats Title="Win Rates - C#" Results=@WinRatesCSharp />
+        </div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes - C#</h3>
+        <div data-component="pages/Leaderboard/TotalVotesAvatar.mjs" data-props=@ToProps(TotalVotesCSharp)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - C#</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesCSharp)></div>
+    }
+    
+    @if(TotalVotesPython.Count > 0)
+    {
+        <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
+            <LeaderboardStats Title="Total Votes - Python" Results=@TotalVotesPython />
+            <LeaderboardStats Title="Win Rates - Python" Results=@WinRatesPython />
+        </div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes - Python</h3>
+        <div data-component="pages/Leaderboard/TotalVotesAvatar.mjs" data-props=@ToProps(TotalVotesPython)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - Python</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesPython)></div>
+    }
+    
+    @if(TotalVotesJavaScript.Count > 0)
+    {
+        <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
+            <LeaderboardStats Title="Total Votes - JavaScript" Results=@TotalVotesJavaScript />
+            <LeaderboardStats Title="Win Rates - JavaScript" Results=@WinRatesJavaScript />
+        </div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes - JavaScript</h3>
+        <div data-component="pages/Leaderboard/TotalVotesAvatar.mjs" data-props=@ToProps(TotalVotesJavaScript)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - JavaScript</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesJavaScript)></div>
+    }
+    
+    @if(TotalVotesJava.Count > 0)
+    {
+        <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
+            <LeaderboardStats Title="Total Votes - Java" Results=@TotalVotesJava />
+            <LeaderboardStats Title="Win Rates - Java" Results=@WinRatesJava />
+        </div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes - Java</h3>
+        <div data-component="pages/Leaderboard/TotalVotesAvatar.mjs" data-props=@ToProps(TotalVotesJava)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - Java</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesJava)></div>
+    }
+    
+    @if (TotalVotesPhp.Count > 0)
+    {
+        <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
+            <LeaderboardStats Title="Total Votes - PHP" Results=@TotalVotesPhp/>
+            <LeaderboardStats Title="Win Rates - PHP" Results=@WinRatesPhp/>
+        </div>
+
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes - PHP</h3>
+        <div data-component="pages/Leaderboard/TotalVotesAvatar.mjs" data-props=@ToProps(TotalVotesPhp)></div>
+
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - PHP</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesPhp)></div>
+    }
+
+</div>
+
+@code {
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    CalculateLeaderboardResponse? data;
+
+    public List<LeaderboardStat> TotalVotes { get; set; } = [];
+    public List<LeaderboardStat> WinRates { get; set; } = [];
+    
+    public List<LeaderboardStat> TotalVotesCSharp { get; set; } = [];
+    public List<LeaderboardStat> WinRatesCSharp { get; set; } = [];
+    
+    public List<LeaderboardStat> TotalVotesPython { get; set; } = [];
+    public List<LeaderboardStat> WinRatesPython { get; set; } = [];
+    
+    public List<LeaderboardStat> TotalVotesJavaScript { get; set; } = [];
+    public List<LeaderboardStat> WinRatesJavaScript { get; set; } = [];
+    
+    public List<LeaderboardStat> TotalVotesJava { get; set; } = [];
+    public List<LeaderboardStat> WinRatesJava { get; set; } = [];
+    
+    public List<LeaderboardStat> TotalVotesPhp { get; set; } = [];
+    public List<LeaderboardStat> WinRatesPhp { get; set; } = [];
+    
+    public MarkupString ToProps(List<LeaderboardStat> results) => BlazorHtml.RawJson(new { results });
+
+    Dictionary<string,string> tagSlugMap = new()
+    {
+        ["c#"] = "csharp",
+        ["python"] = "python",
+        ["javascript"] = "javascript",
+        ["java"] = "java",
+        ["php"] = "php",
+    };
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        // Only generate if missing, otherwise background task will update it.
+        if (!File.Exists("App_Data/leaderboard.json"))
+        {
+            var gateway = GatewayFactory.GetServiceGateway(HttpContext.ToRequest());
+            await gateway.ApiAsync(new CalculateLeaderBoard());
+        }
+
+        var jsonData = await File.ReadAllTextAsync("App_Data/leaderboard.json");
+        data = jsonData.FromJson<CalculateLeaderboardResponse>();
+
+        TotalVotes = data.MostLikedModelsByLlm
+            .OrderByDescending(x => x.StartingUpVotes)
+            .Select((x, index) => SelectTotalScore(index, x))
+            .Where(FilterModels)
+            .ToList();
+
+        WinRates = data.ModelWinRate
+            .OrderByDescending(x => x.WinRate)
+            .Select((x, index) => SelectWinRate(index, x))
+            .Where(FilterModels).
+            ToList();
+        
+        TotalVotesCSharp = GetTotalVotes("c#");
+        WinRatesCSharp = GetWinRates("c#");
+        
+        TotalVotesPython = GetTotalVotes("python");
+        WinRatesPython = GetWinRates("python");
+        
+        TotalVotesJavaScript = GetTotalVotes("javascript");
+        WinRatesJavaScript = GetWinRates("javascript");
+        
+        TotalVotesJava = GetTotalVotes("java");
+        WinRatesJava = GetWinRates("java");
+        
+        TotalVotesPhp = GetTotalVotes("php");
+        WinRatesPhp = GetWinRates("php");
+        
+    }
+
+    private LeaderboardStat SelectTotalScore(int index, ModelTotalStartUpVotes x)
+    {
+        return new LeaderboardStat
+        {
+            Rank = index + 1,
+            DisplayName = AppConfig.GetApplicationUser(x.Id).DisplayName!,
+            AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
+            Stat = $"{x.StartingUpVotes.ToHumanReadable()} votes",
+            Value = x.StartingUpVotes,
+        };
+    }
+
+    private LeaderboardStat SelectWinRate(int index, ModelWinRate x)
+    {
+        return new LeaderboardStat
+        {
+            Rank = index + 1,
+            DisplayName = AppConfig.GetApplicationUser(x.Id).DisplayName!,
+            AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
+            Stat = $"{Math.Round(x.WinRate, 2)}% ({x.NumberOfQuestions.ToHumanReadable()})",
+            Value = Math.Round(x.WinRate, 2),
+        };
+    }
+
+    private bool FilterModels(LeaderboardStat x)
+    {
+        return !x.DisplayName.Contains("Claude") && 
+               !x.DisplayName.Contains("GPT-4") && 
+               !x.DisplayName.Contains("Gemini");
+    }
+
+    private List<LeaderboardStat> GetTotalVotes(string tag)
+    {
+        var jsonData = File.ReadAllText("App_Data/leaderboard-tag-" + tagSlugMap[tag] + ".json");
+        var data = jsonData.FromJson<CalculateLeaderboardResponse>();
+        return data.MostLikedModelsByLlm
+            .OrderByDescending(x => x.StartingUpVotes)
+            .Select((x, index) => new LeaderboardStat
+            {
+                Rank = index + 1,
+                DisplayName = AppConfig.GetApplicationUser(x.Id).DisplayName!,
+                AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
+                Stat = $"{x.StartingUpVotes.ToHumanReadable()} votes",
+                Value = x.StartingUpVotes,
+            })
+            .Where(FilterModels)
+            .ToList();
+    }
+    
+    private List<LeaderboardStat> GetWinRates(string tag)
+    {
+        var jsonData = File.ReadAllText("App_Data/leaderboard-tag-" + tagSlugMap[tag] + ".json");
+        var data = jsonData.FromJson<CalculateLeaderboardResponse>();
+        return data.ModelWinRate
+            .OrderByDescending(x => x.WinRate)
+            .Select((x, index) => new LeaderboardStat
+            {
+                Rank = index + 1,
+                DisplayName = AppConfig.GetApplicationUser(x.Id).DisplayName!,
+                AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
+                Stat = $"{Math.Round(x.WinRate, 2)}% ({x.NumberOfQuestions.ToHumanReadable()})",
+                Value = Math.Round(x.WinRate, 2),
+            })
+            .Where(FilterModels)
+            .ToList();
+    }
+}
