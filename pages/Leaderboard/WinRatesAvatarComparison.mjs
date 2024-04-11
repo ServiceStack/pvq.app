@@ -25,15 +25,24 @@ export default {
     template: `
         <ChartJs :data="data" :plugins="plugins" />
     `,
-    props:['results'],
+    props:['results1','results2','tag'],
     setup(props) {
-        let results = props.results
-        results.sort((a,b) => b.value - a.value)
-        results = results.slice(0,10)
+        let results = props.results1
         
+        let results2 = props.results2
+        let tag = props.tag
         const dataset = {
-            label: 'Win Rates',
+            label: 'Win Rates All vs',
             data: results.map(x => x.value),
+            avatars: results.map(x => avatarMapping[x.displayName]),
+            backgroundColor: results.map(x => colors[x.displayName] + '7F'),
+            borderColor: results.map(x => colors[x.displayName]),
+            borderWidth: 1
+        }
+        
+        const dataset2 = {
+            label: tag,
+            data: results2.map(x => x.value),
             avatars: results.map(x => avatarMapping[x.displayName]),
             backgroundColor: results.map(x => colors[x.displayName] + '7F'),
             borderColor: results.map(x => colors[x.displayName]),
@@ -42,7 +51,7 @@ export default {
 
         const data = {
             labels: results.map(x => x.displayName),
-            datasets: [dataset]
+            datasets: [dataset,dataset2]
         }
 
         const plugins = [{
@@ -54,12 +63,12 @@ export default {
                 ctx.save();
 
                 const avatarSize = 42
-                
+
                 results.forEach((r,i) => {
                     const avatar = new Image()
                     avatar.src = datasets[0].avatars[i]
-                    const dataValue = datasets[0].data[i]
-                    
+                    const dataValue = Math.max(datasets[0].data[i],datasets[1].data[i])
+
                     ctx.drawImage(avatar, x.getPixelForValue(i) - (avatarSize/2), y.getPixelForValue(dataValue) - (avatarSize*1.5), avatarSize, avatarSize);
                 });
             }
