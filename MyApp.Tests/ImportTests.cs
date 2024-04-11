@@ -1,4 +1,5 @@
-﻿using MyApp.Data;
+﻿using Microsoft.Extensions.Logging;
+using MyApp.Data;
 using MyApp.ServiceInterface.App;
 using MyApp.ServiceModel;
 using NUnit.Framework;
@@ -25,10 +26,18 @@ public class ImportTests
         appConfig = CreateAppConfig();
     }
 
+    class MockLogger<T> : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => false;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {}
+    }
+    private ImportQuestionCommand CreateCommand() => new (new MockLogger<ImportQuestionCommand>(), appConfig);
+
     [Test]
     public async Task Can_import_from_discourse_url()
     {
-        var command = new ImportQuestionCommand(appConfig);
+        var command = CreateCommand();
 
         await command.ExecuteAsync(new ImportQuestion
         {
@@ -47,7 +56,7 @@ public class ImportTests
     [Test]
     public async Task Can_import_from_discourse_answer_url()
     {
-        var command = new ImportQuestionCommand(appConfig);
+        var command = CreateCommand();
 
         await command.ExecuteAsync(new ImportQuestion
         {
@@ -76,7 +85,7 @@ public class ImportTests
     [Test]
     public async Task Can_import_from_stackoverflow_url()
     {
-        var command = new ImportQuestionCommand(appConfig);
+        var command = CreateCommand();
 
         await command.ExecuteAsync(new ImportQuestion
         {
@@ -94,7 +103,7 @@ public class ImportTests
     [Test]
     public async Task Can_import_from_shared_stackoverflow_url()
     {
-        var command = new ImportQuestionCommand(appConfig);
+        var command = CreateCommand();
 
         await command.ExecuteAsync(new ImportQuestion
         {
@@ -112,7 +121,7 @@ public class ImportTests
     [Test]
     public async Task Can_import_from_server_fault()
     {
-        var command = new ImportQuestionCommand(appConfig);
+        var command = CreateCommand();
 
         await command.ExecuteAsync(new ImportQuestion
         {
@@ -130,7 +139,7 @@ public class ImportTests
     [Test]
     public async Task Can_import_from_askubuntu()
     {
-        var command = new ImportQuestionCommand(appConfig);
+        var command = CreateCommand();
 
         await command.ExecuteAsync(new ImportQuestion
         {
@@ -148,7 +157,7 @@ public class ImportTests
     [Test]
     public async Task Can_import_from_reddit()
     {
-        var command = new ImportQuestionCommand(appConfig);
+        var command = CreateCommand();
 
         await command.ExecuteAsync(new ImportQuestion
         {

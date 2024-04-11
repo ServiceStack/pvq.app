@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
@@ -6,7 +7,7 @@ using ServiceStack.Text;
 
 namespace MyApp.ServiceInterface.App;
 
-public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQuestion>
+public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig appConfig) : IAsyncCommand<ImportQuestion>
 {
     static readonly Regex ValidTagCharsRegex = new("[^a-zA-Z0-9#+.]", RegexOptions.Compiled);
     static readonly Regex SingleWhiteSpaceRegex = new(@"\s+", RegexOptions.Multiline | RegexOptions.Compiled);
@@ -40,6 +41,8 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
             request.Site = InferSiteFromUrl(request.Url);
         
         var uri = new Uri(request.Url);
+        
+        log.LogInformation("Importing new question from {Site} URL: {Url}", request.Site, uri);
 
         if (request.Site == ImportSite.Discourse)
         {
@@ -76,15 +79,50 @@ public class ImportQuestionCommand(AppConfig appConfig) : IAsyncCommand<ImportQu
             var parts = uri.AbsolutePath.Trim('/').Split('/');
             if (parts.Length >= 2 && (parts[0] == "q" || parts[0] == "questions") && int.TryParse(parts[1], out var postId))
             {
-                var htmlUrl = $"{uri.Scheme}://{uri.Host}/posts/{postId}/edit-inline";
-                var html = await htmlUrl.GetStringFromUrlAsync(requestFilter: c =>
+                try
                 {
-                    c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
-                    c.AddHeader(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-                    c.AddHeader(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9");
-                    c.AddHeader(HttpHeaders.CacheControl, "max-age=0");
-                });
-                Result = CreateFromStackOverflowInlineEdit(html);
+                    var site = uri.Host.LeftPart('.');
+                    var apiUrl = $"https://api.stackexchange.com/2.3/questions/{postId}?filter=!9YdnSJ*_T&site={site}";
+                    var json = await apiUrl.GetJsonFromUrlAsync(requestFilter: c => {
+                        c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
+                        c.AddHeader(HttpHeaders.Accept, MimeTypes.Json);
+                    });
+                    var obj = (Dictionary<string, object>)JSON.parse(json);
+                    if (obj.TryGetValue("items", out var oItems) && oItems is List<object> items)
+                    {
+                        if (items.FirstOrDefault() is Dictionary<string, object> post)
+                        {
+                            var title = (string)post["title"];
+                            var body = (string)post["body"];
+                            var tags = ((List<object>)post["tags"]).Cast<string>().ToList();
+
+                            Result = new()
+                            {
+                                Title = title,
+                                Body = body.Trim(),
+                                Tags = tags,
+                            };
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    log.LogWarning("Failed to fetch StackOverflow API: {Message}\nTrying HTML...", e.Message);
+                }
+
+                if (Result == null)
+                {
+                    var htmlUrl = $"{uri.Scheme}://{uri.Host}/posts/{postId}/edit-inline";
+                    var html = await htmlUrl.GetStringFromUrlAsync(requestFilter: c =>
+                    {
+                        c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
+                        c.AddHeader(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                        c.AddHeader(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9");
+                        c.AddHeader(HttpHeaders.CacheControl, "max-age=0");
+                    });
+                    Result = CreateFromStackOverflowInlineEdit(html);
+                }
+                
                 if (Result != null)
                 {
                     Result.RefId = $"{uri.Host}:{postId}";
