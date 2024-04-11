@@ -21,14 +21,11 @@ public class LeaderboardServices : Service
     public async Task<object> Any(CalculateLeaderBoard request)
     {
         var statTotals = await Db.SelectAsync<StatTotals>();
+        var modelsToExclude = request.ModelsToExclude?.Split(",").ToList() ?? new List<string>();
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') 
-                                            && !x.Id.Contains("-accepted") 
-                                            && !x.Id.Contains("-most-voted")
-                                            && !x.Id.Contains("-undefined")
-                                            ).ToList();
+        var answers = statTotals.Where(x => FilterSpecificModels(x, modelsToExclude)).ToList();
         // Sum up votes by model, first group by UserName
-        var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
+        var statsByUser = answers.GroupBy(x => x.Id.RightPart('-')).Select(x => new StatTotals
         {
             Id = x.Key,
             UpVotes = x.Sum(y => y.UpVotes),
@@ -41,36 +38,39 @@ public class LeaderboardServices : Service
         
         // Serialize the response to a leaderboard json file
         var json = leaderBoard.ToJson();
-        await File.WriteAllTextAsync("App_Data/leaderboard.json", json);
+        var modelsToExcludeSlug = request.ModelsToExclude?.GenerateSlug();
+        var combinedSuffix = modelsToExcludeSlug.IsNullOrEmpty() ? "" : $"-{modelsToExcludeSlug}";
+        await File.WriteAllTextAsync($"App_Data/leaderboard{combinedSuffix}.json", json);
         
         return leaderBoard;
     }
 
+    private static bool FilterSpecificModels(StatTotals x,List<string> modelsToExclude)
+    {
+        return x.Id.Contains('-') 
+               && !x.Id.EndsWith("-accepted") 
+               && !x.Id.EndsWith("-most-voted")
+               && !x.Id.EndsWith("-undefined")
+               && !modelsToExclude.Contains(x.Id.RightPart('-'));
+    }
+
     private CalculateLeaderboardResponse CalculateLeaderboardResponse(List<StatTotals> statsByUser, List<StatTotals> answers)
     {
-
-
         var overallWinRates = statsByUser.GroupBy(x => x.Id).Select(y =>
         {
+            var id = "-" + y.Key;
             // sum all the wins for this user
             var res = new LeaderBoardWinRate
             {
                 Id = y.Key,
                 WinRate = CalculateWinRate(answers, y.Key),
-                NumberOfQuestions = answers.Count(x => x.Id.Contains("-" + y.Key))
+                NumberOfQuestions = answers.Count(x => x.Id.EndsWith(id))
             };
             return res;
         }).ToList();
 
         var leaderBoard = new CalculateLeaderboardResponse
         {
-            MostLikedModels = statsByUser.Where(x => IsHuman(x.Id) == false)
-                .OrderByDescending(x => x.GetScore())
-                .Select(x => new ModelTotalScore
-                {
-                    Id = x.Id,
-                    TotalScore = x.GetScore()
-                }).ToList(),
             MostLikedModelsByLlm = statsByUser.Where(x => IsHuman(x.Id) == false)
                 .OrderByDescending(x => x.StartingUpVotes)
                 .Select(x => new ModelTotalStartUpVotes
@@ -81,13 +81,6 @@ public class LeaderboardServices : Service
                 .ToList(),
             
             AnswererWinRate = overallWinRates,
-            HumanWinRate = overallWinRates.Where(x => IsHuman(x.Id))
-                .Select(x => new LeaderBoardWinRate
-                {
-                    Id = x.Id,
-                    WinRate = x.WinRate * 100,
-                    NumberOfQuestions = x.NumberOfQuestions
-                }).ToList(),
             ModelWinRate = overallWinRates.Where(x => IsHuman(x.Id) == false)
                 .Select(x => new ModelWinRate
                 {
@@ -109,31 +102,37 @@ public class LeaderboardServices : Service
     {
         return id == "accepted" || id == "most-voted";
     }
-    
-    
+
+
     /// <summary>
     /// Take all answers, group by PostId derived user, select the answer with the highest score
     /// all divided by the total question count
     /// </summary>
-    /// <param name="statTotalsList"></param>
+    /// <param name="answers"></param>
     /// <param name="name"></param>
+    /// <param name="modelsToExclude"></param>
     /// <param name="questionCount"></param>
     /// <returns></returns>
-    double CalculateWinRate(List<StatTotals> statTotalsList, string name)
+    double CalculateWinRate(List<StatTotals> answers, string name)
     {
-        var questionsIncluded = statTotalsList.Where(x => x.Id.Contains("-" + name)).Select(x => x.PostId).Distinct().ToList();
+        var questionsIncluded = answers.Where(x => x.Id.EndsWith("-" + name)).Select(x => x.PostId).Distinct().ToList();
         var questionsAnswered = questionsIncluded.Count;
         if (questionsAnswered == 0)
         {
             return 0;
         }
         
-        double winRate = statTotalsList.Where(x => questionsIncluded.Contains(x.PostId))
+        // Create a dictionary to store user scores
+        var userScoreDict = answers.Where(x => x.Id.EndsWith("-" + name)).ToDictionary(y => $"{y.PostId}-{name}", y => y.GetScore());
+
+        double winRate = answers
+            .Where(x => questionsIncluded.Contains(x.PostId))
             .GroupBy(x => x.PostId)
             .Select(g => new
             {
                 PostId = g.Key,
                 TopScores = g.GroupBy(x => x.GetScore())
+                    
                     .OrderByDescending(x => x.Key)
                     .Take(2)
                     .Select(x => new { Score = x.Key, Count = x.Count() })
@@ -141,13 +140,17 @@ public class LeaderboardServices : Service
             })
             .Select(x =>
             {
-                var userScore = statTotalsList.FirstOrDefault(y => y.Id == $"{x.PostId}-{name}")?.GetScore();
-                return x.TopScores[0].Count > 1 && x.TopScores[0].Score == userScore
-                       || x.TopScores[0].Count == 1 && x.TopScores[0].Score == userScore;
+                // Check if the user score exists in the dictionary
+                if (userScoreDict.TryGetValue($"{x.PostId}-{name}", out var userScore))
+                {
+                    return x.TopScores[0].Count > 1 && x.TopScores[0].Score == userScore
+                           || x.TopScores[0].Count == 1 && x.TopScores[0].Score == userScore;
+                }
+                return false;
             })
             .Count(x => x);
 
-        var totalQuestionsAnswered = statTotalsList
+        var totalQuestionsAnswered = answers
             .Where(x => questionsIncluded.Contains(x.PostId) && x.Id.Contains($"-{name}"))
             .Select(x => x.PostId)
             .Distinct()
@@ -160,21 +163,18 @@ public class LeaderboardServices : Service
 
     public async Task<object> Any(GetLeaderboardStatsByTag request)
     {
-        var statTotals = await Db.SelectAsync<StatTotals>(@"SELECT st.*
+        var allStatsForTag = await Db.SelectAsync<StatTotals>(@"SELECT st.*
 FROM main.StatTotals st
-         JOIN main.post p ON st.PostId = p.Id
-WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight OR p.Tags = @TagSolo)", new { TagSolo = $"[{request.Tag}]", 
-            TagRight = $"%,{request.Tag}", 
-            TagLeft = $"{request.Tag},%",
-            TagMiddle = $",{request.Tag},",
+WHERE st.PostId in (select Id from post p where p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight OR p.Tags = @TagSolo)", new { TagSolo = $"[{request.Tag}]", 
+            TagRight = $"%,{request.Tag}]", 
+            TagLeft = $"[{request.Tag},%",
+            TagMiddle = $"%,{request.Tag},%",
         });
+        var modelsToExclude = request.ModelsToExclude?.Split(",").ToList() ?? new List<string>();
         // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') 
-                                            && !x.Id.Contains("-accepted") 
-                                            && !x.Id.Contains("-most-voted")
-                                            && !x.Id.Contains("-undefined")).ToList();
+        var answers = allStatsForTag.Where(x => FilterSpecificModels(x,modelsToExclude)).ToList();
         // Sum up votes by model, first group by UserName
-        var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
+        var statsByUser = answers.GroupBy(x => x.Id.RightPart('-')).Select(x => new StatTotals
         {
             Id = x.Key,
             UpVotes = x.Sum(y => y.UpVotes),
@@ -189,34 +189,11 @@ WHERE (p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight O
         var json = result.ToJson();
         // Filter to only filename safe characters
         request.Tag = request.Tag.GenerateSlug();
-        await File.WriteAllTextAsync($"App_Data/leaderboard-tag-{request.Tag}.json", json);
+        var modelToExclude = request.ModelsToExclude?.GenerateSlug();
+        var combinedSuffix = modelToExclude.IsNullOrEmpty() ? "" : $"-{modelToExclude}";
+        await File.WriteAllTextAsync($"App_Data/leaderboard-tag-{request.Tag}{combinedSuffix}.json", json);
         
         return result;
-    }
-
-    public async Task<object> Any(GetLeaderboardStatsHuman request)
-    {
-        var statTotals = await Db.SelectAsync<StatTotals>(@"
-select * from main.StatTotals where PostId in (select PostId from StatTotals
-where PostId in (select StatTotals.PostId from StatTotals
-                 where Id like '%-accepted')
-group by PostId) and  (Id like '%-accepted' or Id like '%-most-voted' or Id not like '%-%')");
-        // filter to answers only
-        var answers = statTotals.Where(x => x.Id.Contains('-') 
-                                            && !x.Id.Contains("-accepted") 
-                                            && !x.Id.Contains("-most-voted")
-                                            && !x.Id.Contains("-undefined")).ToList();
-        // Sum up votes by model, first group by UserName
-        var statsByUser = answers.GroupBy(x => x.Id.SplitOnFirst('-')[1]).Select(x => new StatTotals
-        {
-            Id = x.Key,
-            UpVotes = x.Sum(y => y.UpVotes),
-            DownVotes = x.Sum(y => y.DownVotes),
-            StartingUpVotes = x.Sum(y => y.StartingUpVotes),
-            FavoriteCount = x.Sum(y => y.FavoriteCount)
-        }).ToList();
-
-        return CalculateLeaderboardResponse(statsByUser,answers);
     }
 }
 
@@ -227,16 +204,15 @@ public class GetLeaderboardStatsHuman
 public class GetLeaderboardStatsByTag
 {
     public string Tag { get; set; }
+    public string? ModelsToExclude { get; set; }
 }
 
 public class CalculateLeaderboardResponse
 {
-    public List<ModelTotalScore> MostLikedModels { get; set; }
     public List<ModelTotalStartUpVotes> MostLikedModelsByLlm { get; set; }
     public List<LeaderBoardWinRate> AnswererWinRate { get; set; }
     public List<ModelTotalScore> ModelTotalScore { get; set; }
     public List<ModelWinRate> ModelWinRate { get; set; }
-    public List<LeaderBoardWinRate> HumanWinRate { get; set; }
 }
 
 public class ModelTotalScoreByTag
@@ -292,5 +268,5 @@ public record LeaderboardStat
 
 public class CalculateLeaderBoard : IReturn<CalculateLeaderboardResponse>, IGet
 {
-    
+    public string? ModelsToExclude { get; set; }
 }

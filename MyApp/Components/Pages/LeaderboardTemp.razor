@@ -162,18 +162,21 @@
         ["java"] = "java",
         ["php"] = "php",
     };
+
+    string modelsToExclude = "gemini-pro,claude-3-opus,claude-3-sonnet,claude-3-haiku,gpt-4-turbo";
     
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        var suffix = modelsToExclude.GenerateSlug();
         // Only generate if missing, otherwise background task will update it.
-        if (!File.Exists("App_Data/leaderboard.json"))
+        if (!File.Exists($"App_Data/leaderboard-{suffix}.json"))
         {
             var gateway = GatewayFactory.GetServiceGateway(HttpContext.ToRequest());
             await gateway.ApiAsync(new CalculateLeaderBoard());
         }
 
-        var jsonData = await File.ReadAllTextAsync("App_Data/leaderboard.json");
+        var jsonData = await File.ReadAllTextAsync($"App_Data/leaderboard-{suffix}.json");
         data = jsonData.FromJson<CalculateLeaderboardResponse>();
 
         TotalVotes = data.MostLikedModelsByLlm
@@ -245,7 +248,8 @@
 
     private List<LeaderboardStat> GetTotalVotes(string tag)
     {
-        var jsonData = File.ReadAllText("App_Data/leaderboard-tag-" + tagSlugMap[tag] + ".json");
+        var suffix = modelsToExclude.GenerateSlug();
+        var jsonData = File.ReadAllText($"App_Data/leaderboard-tag-{tagSlugMap[tag]}-{suffix}.json");
         var data = jsonData.FromJson<CalculateLeaderboardResponse>();
         return data.MostLikedModelsByLlm
             .OrderByDescending(x => x.StartingUpVotes)
@@ -263,7 +267,8 @@
     
     private List<LeaderboardStat> GetWinRates(string tag)
     {
-        var jsonData = File.ReadAllText("App_Data/leaderboard-tag-" + tagSlugMap[tag] + ".json");
+        var suffix = modelsToExclude.GenerateSlug();
+        var jsonData = File.ReadAllText($"App_Data/leaderboard-tag-{tagSlugMap[tag]}-{suffix}.json");
         var data = jsonData.FromJson<CalculateLeaderboardResponse>();
         return data.ModelWinRate
             .OrderByDescending(x => x.WinRate)
