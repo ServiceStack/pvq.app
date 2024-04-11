@@ -92,6 +92,16 @@ async function updateUserData(postId) {
     }
 }
 
+function toHumanReadable(n) {
+    if (n >= 1_000_000_000)
+        return (n / 1_000_000_000).toFixed(1) + "b";
+    if (n >= 1_000_000)
+        return (n / 1_000_000).toFixed(1) + "m";
+    if (n >= 1_000)
+        return (n / 1_000).toFixed(1) + "k";
+    return n.toLocaleString();
+}
+
 async function loadVoting(ctx) {
     const { client, postId, userName, user, hasRole } = ctx
 
@@ -105,7 +115,7 @@ async function loadVoting(ctx) {
         up.innerHTML = value === 1 ? svgPaths.up.solid : svgPaths.up.empty
         down.classList.toggle('text-green-600',value === -1)
         down.innerHTML = value === -1 ? svgPaths.down.solid : svgPaths.down.empty
-        score.innerHTML = parseInt(score.dataset.score) + value - getValue(origPostValues, el.dataset.refid)
+        score.innerHTML = toHumanReadable(parseInt(score.dataset.score) + value - getValue(origPostValues, el.dataset.refid))
     }
 
     $$('.voting').forEach(el => {

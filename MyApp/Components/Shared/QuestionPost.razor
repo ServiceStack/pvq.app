@@ -58,7 +58,7 @@
                 <div data-refid=@Question.Post.Id class="voting flex flex-col items-center pr-2">
                     <!-- bx:up-arrow bxs:up-arrow <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19"/> -->
                     <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
-                    <b class="score text-xl" data-score=@Question.QuestionScore>@Question.QuestionScore</b>
+                    <b class="score text-xl" data-score=@Question.QuestionScore>@Question.QuestionScore.ToHumanReadable()</b>
                     <!-- bx:down-arrow bxs:down-arrow <path fill="currentColor" d="M11.178 19.569a.998.998 0 0 0 1.644 0l9-13A.999.999 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569z"/> -->
                     <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
                 </div>
@@ -79,14 +79,7 @@
                         }
                     </div>
                     <div class="flex flex-grow px-4 sm:px-6 text-sm justify-end">
-                        @if (Question.Post is { Id: < 100_000_000, CreatedBy: null })
-                        {
-                            <a class="text-indigo-700 dark:text-indigo-200 hover:underline" target="_blank" href=@StackOverflowUrl>@(Question.Post.LastEditDate == null ? "created" : "edited")</a>
-                        }
-                        else
-                        {
-                            <span>@(Question.Post.LastEditDate == null ? "created" : "edited")</span>
-                        }
+                        <span>@(Question.Post.LastEditDate == null ? "created" : "edited")</span>
                         <dd class="ml-2 text-gray-600 dark:text-gray-300">
                             <time datetime="@Markdown.GetDateTimestamp(Question.Post.GetModifiedDate())">@Markdown.GetDateLabel(Question.Post.GetModifiedDate())</time>
                             @if (Question.Post.ModifiedBy != null && Question.Post.ModifiedBy != Question.Post.CreatedBy)

@@ -258,15 +258,7 @@ public class QuestionServices(AppConfig appConfig,
         if (questionFile == null)
             throw HttpError.NotFound($"Question {request.Id} not found");
         
-        //TODO: Remove Hack when all files are converted to camelCase
         var json = await questionFile.ReadAllTextAsync();
-        if (json.Trim().StartsWith("{\"Id\":"))
-        {
-            var post = json.FromJson<Post>();
-            var camelCaseJson = questions.ToJson(post);
-            return new HttpResult(camelCaseJson, MimeTypes.Json);
-        }
-        
         return new HttpResult(json, MimeTypes.Json);
     }
     

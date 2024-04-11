@@ -295,7 +295,6 @@ public class GetQuestionResponse
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
-[ValidateIsAuthenticated]
 public class GetQuestionFile : IGet, IReturn<string>
 {
     public int Id { get; set; }
