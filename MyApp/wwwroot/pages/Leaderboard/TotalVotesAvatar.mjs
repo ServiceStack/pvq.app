@@ -51,7 +51,6 @@ export default {
                 const {ctx,chartArea: {top, bottom, left, right, width, height},
                     scales: {x, y}} = chart;
                 let datasets = chart.data.datasets;
-                console.log(args)
                 ctx.save();
 
                 const avatarSize = 42

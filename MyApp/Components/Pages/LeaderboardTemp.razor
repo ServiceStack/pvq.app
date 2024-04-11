@@ -47,6 +47,10 @@
         
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - C#</h3>
         <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesCSharp)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - C#</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatarComparison.mjs" 
+             data-props="{results1: @BlazorHtml.RawJson(WinRates), results2: @BlazorHtml.RawJson(WinRatesCSharp), tag: 'C#'}"></div>
     }
     
     @if(TotalVotesPython.Count > 0)
@@ -61,6 +65,10 @@
         
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - Python</h3>
         <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesPython)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - Python</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatarComparison.mjs" 
+             data-props="{results1: @BlazorHtml.RawJson(WinRates), results2: @BlazorHtml.RawJson(WinRatesPython), tag: 'Python'}"></div>
     }
     
     @if(TotalVotesJavaScript.Count > 0)
@@ -75,6 +83,10 @@
         
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - JavaScript</h3>
         <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesJavaScript)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - JavaScript</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatarComparison.mjs" 
+             data-props="{results1: @BlazorHtml.RawJson(WinRates), results2: @BlazorHtml.RawJson(WinRatesJavaScript), tag: 'JavaScript'}"></div>
     }
     
     @if(TotalVotesJava.Count > 0)
@@ -89,6 +101,10 @@
         
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - Java</h3>
         <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesJava)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - Java</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatarComparison.mjs" 
+             data-props="{results1: @BlazorHtml.RawJson(WinRates), results2: @BlazorHtml.RawJson(WinRatesJava), tag: 'Java'}"></div>
     }
     
     @if (TotalVotesPhp.Count > 0)
@@ -103,6 +119,10 @@
 
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - PHP</h3>
         <div data-component="pages/Leaderboard/WinRatesAvatar.mjs" data-props=@ToProps(WinRatesPhp)></div>
+        
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates - PHP</h3>
+        <div data-component="pages/Leaderboard/WinRatesAvatarComparison.mjs" 
+             data-props="{results1: @BlazorHtml.RawJson(WinRates), results2: @BlazorHtml.RawJson(WinRatesPhp), tag: 'PHP'}"></div>
     }
 
 </div>
@@ -158,15 +178,15 @@
 
         TotalVotes = data.MostLikedModelsByLlm
             .OrderByDescending(x => x.StartingUpVotes)
-            .Select((x, index) => SelectTotalScore(index, x))
             .Where(FilterModels)
+            .Select((x, index) => SelectTotalScore(index, x))
             .ToList();
 
         WinRates = data.ModelWinRate
             .OrderByDescending(x => x.WinRate)
+            .Where(FilterModels)
             .Select((x, index) => SelectWinRate(index, x))
-            .Where(FilterModels).
-            ToList();
+            .ToList();
         
         TotalVotesCSharp = GetTotalVotes("c#");
         WinRatesCSharp = GetWinRates("c#");
@@ -209,11 +229,18 @@
         };
     }
 
-    private bool FilterModels(LeaderboardStat x)
+    private bool FilterModels(ModelTotalStartUpVotes x)
     {
-        return !x.DisplayName.Contains("Claude") && 
-               !x.DisplayName.Contains("GPT-4") && 
-               !x.DisplayName.Contains("Gemini");
+        return !x.Id.Contains("claude") && 
+               !x.Id.Contains("gpt-4") && 
+               !x.Id.Contains("gemini");
+    }
+    
+    private bool FilterModels(ModelWinRate x)
+    {
+        return !x.Id.Contains("claude") && 
+               !x.Id.Contains("gpt-4") && 
+               !x.Id.Contains("gemini");
     }
 
     private List<LeaderboardStat> GetTotalVotes(string tag)
@@ -222,6 +249,7 @@
         var data = jsonData.FromJson<CalculateLeaderboardResponse>();
         return data.MostLikedModelsByLlm
             .OrderByDescending(x => x.StartingUpVotes)
+            .Where(FilterModels)
             .Select((x, index) => new LeaderboardStat
             {
                 Rank = index + 1,
@@ -230,7 +258,6 @@
                 Stat = $"{x.StartingUpVotes.ToHumanReadable()} votes",
                 Value = x.StartingUpVotes,
             })
-            .Where(FilterModels)
             .ToList();
     }
     
@@ -240,6 +267,7 @@
         var data = jsonData.FromJson<CalculateLeaderboardResponse>();
         return data.ModelWinRate
             .OrderByDescending(x => x.WinRate)
+            .Where(FilterModels)
             .Select((x, index) => new LeaderboardStat
             {
                 Rank = index + 1,
@@ -248,7 +276,6 @@
                 Stat = $"{Math.Round(x.WinRate, 2)}% ({x.NumberOfQuestions.ToHumanReadable()})",
                 Value = Math.Round(x.WinRate, 2),
             })
-            .Where(FilterModels)
             .ToList();
     }
 }
