@@ -181,13 +181,11 @@
 
         TotalVotes = data.MostLikedModelsByLlm
             .OrderByDescending(x => x.StartingUpVotes)
-            .Where(FilterModels)
             .Select((x, index) => SelectTotalScore(index, x))
             .ToList();
 
         WinRates = data.ModelWinRate
             .OrderByDescending(x => x.WinRate)
-            .Where(FilterModels)
             .Select((x, index) => SelectWinRate(index, x))
             .ToList();
         
@@ -232,28 +230,14 @@
         };
     }
 
-    private bool FilterModels(ModelTotalStartUpVotes x)
-    {
-        return !x.Id.Contains("claude") && 
-               !x.Id.Contains("gpt-4") && 
-               !x.Id.Contains("gemini");
-    }
-    
-    private bool FilterModels(ModelWinRate x)
-    {
-        return !x.Id.Contains("claude") && 
-               !x.Id.Contains("gpt-4") && 
-               !x.Id.Contains("gemini");
-    }
 
-    private List<LeaderboardStat> GetTotalVotes(string tag)
+    private List<LeaderboardStat> GetTotalVotes(string tag, string? excludeModels = null)
     {
-        var suffix = modelsToExclude.GenerateSlug();
+        var suffix = excludeModels == null ? modelsToExclude.GenerateSlug() : excludeModels.GenerateSlug();
         var jsonData = File.ReadAllText($"App_Data/leaderboard-tag-{tagSlugMap[tag]}-{suffix}.json");
         var data = jsonData.FromJson<CalculateLeaderboardResponse>();
         return data.MostLikedModelsByLlm
             .OrderByDescending(x => x.StartingUpVotes)
-            .Where(FilterModels)
             .Select((x, index) => new LeaderboardStat
             {
                 Rank = index + 1,
@@ -265,14 +249,13 @@
             .ToList();
     }
     
-    private List<LeaderboardStat> GetWinRates(string tag)
+    private List<LeaderboardStat> GetWinRates(string tag, string? excludeModels = null)
     {
-        var suffix = modelsToExclude.GenerateSlug();
+        var suffix = excludeModels == null ? modelsToExclude.GenerateSlug() : excludeModels.GenerateSlug();
         var jsonData = File.ReadAllText($"App_Data/leaderboard-tag-{tagSlugMap[tag]}-{suffix}.json");
         var data = jsonData.FromJson<CalculateLeaderboardResponse>();
         return data.ModelWinRate
             .OrderByDescending(x => x.WinRate)
-            .Where(FilterModels)
             .Select((x, index) => new LeaderboardStat
             {
                 Rank = index + 1,
