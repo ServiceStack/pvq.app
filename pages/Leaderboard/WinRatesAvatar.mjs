@@ -15,7 +15,7 @@ const avatarMapping = {
     "Gemma 2B": "/avatar/gemma-2b",
     "Mistral 7B": "/avatar/mistral",
     "Code Llama 7B": "/avatar/codellama",
-    "DeepSeek Coder 6.7B": "/avatar/deepseek-coder-6.7b",
+    "DeepSeek Coder 6.7B": "/avatar/deepseek-coder",
     "Phi-2 2.7B": "/avatar/phi",
     "Qwen 1.5 4B": "/avatar/qwen-4b"
 }
@@ -59,8 +59,10 @@ export default {
                     const avatar = new Image()
                     avatar.src = datasets[0].avatars[i]
                     const dataValue = datasets[0].data[i]
-                    
-                    ctx.drawImage(avatar, x.getPixelForValue(i) - (avatarSize/2), y.getPixelForValue(dataValue) - (avatarSize*1.5), avatarSize, avatarSize);
+                    let yPadding = 5
+                    let yLoc = y.getPixelForValue(dataValue) - (avatarSize + yPadding)
+                    yLoc = Math.max(top - avatarSize/2, yLoc)
+                    ctx.drawImage(avatar, x.getPixelForValue(i) - (avatarSize/2), yLoc, avatarSize, avatarSize);
                 });
             }
 

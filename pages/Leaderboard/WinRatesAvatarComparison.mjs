@@ -15,7 +15,7 @@ const avatarMapping = {
     "Gemma 2B": "/avatar/gemma-2b",
     "Mistral 7B": "/avatar/mistral",
     "Code Llama 7B": "/avatar/codellama",
-    "DeepSeek Coder 6.7B": "/avatar/deepseek-coder-6.7b",
+    "DeepSeek Coder 6.7B": "/avatar/deepseek-coder",
     "Phi-2 2.7B": "/avatar/phi",
     "Qwen 1.5 4B": "/avatar/qwen-4b"
 }
@@ -29,7 +29,21 @@ export default {
     setup(props) {
         let results = props.results1
         
+        // Align the data, avatars, and colors and they must have the same index
+        results.forEach((x,i) => {
+            x.avatar = avatarMapping[x.displayName];
+            x.color = colors[x.displayName];
+            x.index = i;
+        })
+        
         let results2 = props.results2
+        // The data in results2 needs to be ordered the same as results1
+        results2 = results2.map(x => {
+            const index = results.findIndex(y => y.displayName === x.displayName)
+            return { ...x, index }
+        });
+        results2.sort((a,b) => a.index - b.index)
+        
         let tag = props.tag
         const dataset = {
             label: 'Win Rates All vs',
@@ -43,9 +57,9 @@ export default {
         const dataset2 = {
             label: tag,
             data: results2.map(x => x.value),
-            avatars: results.map(x => avatarMapping[x.displayName]),
-            backgroundColor: results.map(x => colors[x.displayName] + '7F'),
-            borderColor: results.map(x => colors[x.displayName]),
+            avatars: results2.map(x => avatarMapping[x.displayName]),
+            backgroundColor: results2.map(x => colors[x.displayName] + '7F'),
+            borderColor: results2.map(x => colors[x.displayName]),
             borderWidth: 1
         }
 
@@ -68,8 +82,10 @@ export default {
                     const avatar = new Image()
                     avatar.src = datasets[0].avatars[i]
                     const dataValue = Math.max(datasets[0].data[i],datasets[1].data[i])
-
-                    ctx.drawImage(avatar, x.getPixelForValue(i) - (avatarSize/2), y.getPixelForValue(dataValue) - (avatarSize*1.5), avatarSize, avatarSize);
+                    let yPadding = 5
+                    let yLoc = y.getPixelForValue(dataValue) - (avatarSize + yPadding)
+                    yLoc = Math.max(top - avatarSize/2, yLoc)
+                    ctx.drawImage(avatar, x.getPixelForValue(i) - (avatarSize/2), yLoc, avatarSize, avatarSize);
                 });
             }
 
