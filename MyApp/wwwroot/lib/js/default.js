@@ -1,3 +1,4 @@
+window.hljs?.configure({ignoreUnescapedHTML:true})
 window.hljs?.highlightAll()
 
 function loadTags() {

@@ -15,6 +15,10 @@ const pageBus = new EventBus()
 let meta = null
 let userReputations = {}
 
+function highlightAll() {
+    globalThis.hljs?.highlightAll()
+}
+
 function getComments(id) {
     if (!meta) return []
     return meta.comments && meta.comments[id] || []
@@ -34,7 +38,7 @@ function formatDate(date) {
 }
 
 function applyGlobalChanges() {
-    globalThis?.hljs?.highlightAll()
+    highlightAll()
     addCopyButtonToCodeBlocks()
 }
 
@@ -82,6 +86,7 @@ function setValue(refId, value) {
     if (value === -1) {
         userPostVotes.downVoteIds.push(refId)
     }
+    pageBus.publish('userPostData:load')
 }
 
 async function updateUserData(postId) {
@@ -458,8 +463,12 @@ const Comments = {
                     </div>
                     <div class="inline-block mr-1">
                         <div class="flex flex-col">
-                            <svg v-if="comment.createdBy !== userName" :class="['w-4 h-4',hasVoted(comment) ? 'text-red-600' : 'cursor-pointer text-gray-400 hover:text-red-600']" @click="voteUp(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15"><path fill="currentColor" d="m7.5 3l7.5 8H0z"/></svg>
-                            <svg class="cursor-pointer w-4 h-4 text-gray-400 hover:text-red-600" @click="flag(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M4 5a1 1 0 0 1 .3-.714a6 6 0 0 1 8.213-.176l.351.328a4 4 0 0 0 5.272 0l.249-.227c.61-.483 1.527-.097 1.61.676L20 5v9a1 1 0 0 1-.3.714a6 6 0 0 1-8.213.176l-.351-.328A4 4 0 0 0 6 14.448V21a1 1 0 0 1-1.993.117L4 21z"/></svg>
+                            <svg v-if="comment.createdBy !== userName" :class="['w-4 h-4',hasVoted(comment) ? 'text-red-600' : 'cursor-pointer text-gray-400 hover:text-red-600']" @click="voteUp(comment)"  
+                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15"><title>upvote comment</title><path fill="currentColor" d="m7.5 3l7.5 8H0z"/></svg>
+                            <svg class="cursor-pointer w-4 h-4 text-gray-400 hover:text-red-600" @click="flag(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <title>flag comment</title>
+                                <path fill="currentColor" d="M4 5a1 1 0 0 1 .3-.714a6 6 0 0 1 8.213-.176l.351.328a4 4 0 0 0 5.272 0l.249-.227c.61-.483 1.527-.097 1.61.676L20 5v9a1 1 0 0 1-.3.714a6 6 0 0 1-8.213.176l-.351-.328A4 4 0 0 0 6 14.448V21a1 1 0 0 1-1.993.117L4 21z"/>
+                            </svg>
                         </div>
                     </div>
                     <svg v-if="isModerator || comment.createdBy === userName" class="mr-1 align-sub text-gray-400 hover:text-gray-500 w-4 h-4 inline-block cursor-pointer" @click="removeComment(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete comment</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
@@ -490,15 +499,19 @@ const Comments = {
         const postId = parseInt(leftPart(props.id, '-'))
         
         pageBus.subscribe('meta:load', () => {
+            console.log(`Comments: meta:load`)
             comments.value = getComments(props.id)
             instance?.proxy?.$forceUpdate()
         })
         pageBus.subscribe('userPostData:load', () => {
+            console.log(`Comments: userPostData:load`)
             instance?.proxy?.$forceUpdate()
         })
 
         function hasVoted(comment) { 
-            return userPostVotes.upVoteIds.includes(`${props.id}-${comment.created}`) 
+            const to = userPostVotes.upVoteIds.includes(`${props.id}-${comment.created}`)
+            console.log('hasVoted', to)
+            return to
         }
         
         function keyDown(e) {
@@ -605,7 +618,7 @@ const ContentFeatures = {
             editing.value = !editing.value
             if (editing.value) {
                 article.scrollIntoView({ behavior: 'smooth' })
-                setTimeout(() => globalThis?.hljs?.highlightAll(), 1)
+                setTimeout(highlightAll, 1)
             }
         }
         
@@ -620,10 +633,12 @@ const ContentFeatures = {
 
         onMounted(() => {
             const el = $1(`[data-comments='${props.id}']`)
-            el.style.display = 'none'
-            el.innerHTML = ''
-            preview.classList.add('hidden')
-            edit.classList.remove('hidden')
+            if (el) {
+                el.style.display = 'none'
+                el.innerHTML = ''
+                preview.classList.add('hidden')
+                edit.classList.remove('hidden')
+            }
         })
 
         return { editing, show, share, toggleEdit, flag }
@@ -723,7 +738,7 @@ const EditQuestion = {
             const api = await client.api(new PreviewMarkdown({ markdown }))
             if (api.succeeded) {
                 previewHtml.value = api.response
-                nextTick(() => globalThis?.hljs?.highlightAll())
+                nextTick(highlightAll)
             }
         }, 100)
 
@@ -735,7 +750,7 @@ const EditQuestion = {
             const api = await client.api(new PreviewMarkdown({ markdown:request.value.body }))
             if (api.succeeded) {
                 savedHtml.value = api.response
-                setTimeout(() => globalThis?.hljs?.highlightAll(), 1)
+                setTimeout(highlightAll, 1)
                 editing.value = false
                 props.bus.publish('editDone', request.value)
             }
@@ -910,7 +925,7 @@ const EditAnswer = {
             const api = await client.api(new PreviewMarkdown({ markdown }))
             if (api.succeeded) {
                 previewHtml.value = api.response
-                nextTick(() => globalThis?.hljs?.highlightAll())
+                nextTick(highlightAll)
             }
         }, 100)
 
@@ -922,7 +937,7 @@ const EditAnswer = {
             const api = await client.api(new PreviewMarkdown({ markdown:request.value.body }))
             if (api.succeeded) {
                 savedHtml.value = api.response
-                setTimeout(() => globalThis?.hljs?.highlightAll(), 1)
+                setTimeout(highlightAll, 1)
                 close()
             }
         }
@@ -936,7 +951,7 @@ const EditAnswer = {
             if (api.succeeded) {
                 answer.value = api.response?.result
                 request.value.body = answer.value.body || ''
-                nextTick(() => globalThis?.hljs?.highlightAll())
+                nextTick(highlightAll)
             }
         })
 

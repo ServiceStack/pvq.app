@@ -49,14 +49,17 @@
                     <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
                 </div>
                 
-                <div class="my-4 flex flex-col items-center text-sm">
-                    <img class="w-10 h-10 xl:w-16 xl:h-16 bg-cover inline-block" src="@Question.Post.CreatedBy.GetAvatarUrl()">
-                    <div class="mt-1 hidden md:block text-center whitespace-nowrap font-semibold">@Question.Post.CreatedBy</div>
-                    <div class="mt-1 flex items-center">
-                        <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
-                        <span class="font-semibold" data-rep-user=@Question.Post.CreatedBy>@AppConfig.GetReputation(Question.Post.CreatedBy)</span>
+                @if (Question.Post.CreatedBy != null)
+                {
+                    <div class="my-4 flex flex-col items-center text-sm">
+                        <img class="w-10 h-10 xl:w-16 xl:h-16 bg-cover inline-block" src="@Question.Post.CreatedBy.GetAvatarUrl()">
+                        <div class="mt-1 hidden md:block text-center whitespace-nowrap font-semibold">@Question.Post.CreatedBy</div>
+                        <div class="mt-1 flex items-center">
+                            <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                            <span class="font-semibold" data-rep-user=@Question.Post.CreatedBy>@AppConfig.GetReputation(Question.Post.CreatedBy)</span>
+                        </div>
                     </div>
-                </div>
+                }
 
                 <div class="question-aside"></div>
             </div>
