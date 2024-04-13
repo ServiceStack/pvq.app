@@ -247,7 +247,7 @@ const svg = {
 }
 
 globalThis.copyBlock = function copyBlock(btn) {
-    console.log('copyBlock',btn)
+    // console.log('copyBlock',btn)
     const label = btn.previousElementSibling
     const code = btn.parentElement.nextElementSibling
     label.classList.remove('hidden')
@@ -266,7 +266,7 @@ globalThis.copyBlock = function copyBlock(btn) {
 }
 
 export function addCopyButtonToCodeBlocks() {
-    console.log('addCopyButtonToCodeBlocks')
+    // console.log('addCopyButtonToCodeBlocks')
     $$('.prose pre>code').forEach(code => {
         let pre = code.parentElement;
         if (pre.classList.contains('group')) return
