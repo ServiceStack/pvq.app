@@ -338,7 +338,7 @@ public class QuestionServices(AppConfig appConfig,
             }
         }
 
-        json = json?.Trim();
+        json = json.Trim();
         if (string.IsNullOrEmpty(json))
             throw new ArgumentException("Json is required", nameof(request.Json));
         if (!json.StartsWith('{'))
@@ -358,9 +358,9 @@ public class QuestionServices(AppConfig appConfig,
         
         answerNotifier.NotifyNewAnswer(request.PostId, request.Model);
 
-        // Only add notifications for answers older than 25hr
+        // Only add notifications for answers older than 1hr
         var post = await Db.SingleByIdAsync<Post>(request.PostId);
-        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(25))
+        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
         {
             var userName = appConfig.GetUserName(request.Model);
             var body = questions.GetModelAnswerBody(json);
