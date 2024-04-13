@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-13 17:17:40
+Date: 2024-04-14 02:12:56
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -580,8 +580,10 @@ export class UpdateUserProfileResponse {
     responseStatus;
 }
 export class UserPostDataResponse {
-    /** @param {{upVoteIds?:string[],downVoteIds?:string[],responseStatus?:ResponseStatus}} [init] */
+    /** @param {{watching?:boolean,upVoteIds?:string[],downVoteIds?:string[],responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {boolean} */
+    watching;
     /** @type {string[]} */
     upVoteIds;
     /** @type {string[]} */
@@ -605,6 +607,24 @@ export class GetLatestAchievementsResponse {
     /** @type {boolean} */
     hasUnread;
     /** @type {Achievement[]} */
+    results;
+    /** @type {?ResponseStatus} */
+    responseStatus;
+}
+export class BoolResponse {
+    /** @param {{result?:boolean,meta?:{ [index: string]: string; },responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {boolean} */
+    result;
+    /** @type {{ [index: string]: string; }} */
+    meta;
+    /** @type {ResponseStatus} */
+    responseStatus;
+}
+export class GetWatchedTagsResponse {
+    /** @param {{results?:string[],responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string[]} */
     results;
     /** @type {?ResponseStatus} */
     responseStatus;
@@ -1097,6 +1117,56 @@ export class FlagContent {
     getTypeName() { return 'FlagContent' }
     getMethod() { return 'POST' }
     createResponse() { return new EmptyResponse() }
+}
+export class WatchContent {
+    /** @param {{postId?:number,tag?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?number} */
+    postId;
+    /** @type {?string} */
+    tag;
+    getTypeName() { return 'WatchContent' }
+    getMethod() { return 'POST' }
+    createResponse() { return new EmptyResponse() }
+}
+export class UnwatchContent {
+    /** @param {{postId?:number,tag?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?number} */
+    postId;
+    /** @type {?string} */
+    tag;
+    getTypeName() { return 'UnwatchContent' }
+    getMethod() { return 'POST' }
+    createResponse() { return new EmptyResponse() }
+}
+export class WatchStatus {
+    /** @param {{postId?:number,tag?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?number} */
+    postId;
+    /** @type {?string} */
+    tag;
+    getTypeName() { return 'WatchStatus' }
+    getMethod() { return 'GET' }
+    createResponse() { return new BoolResponse() }
+}
+export class WatchTags {
+    /** @param {{subscribe?:string[],unsubscribe?:string[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?string[]} */
+    subscribe;
+    /** @type {?string[]} */
+    unsubscribe;
+    getTypeName() { return 'WatchTags' }
+    getMethod() { return 'POST' }
+    createResponse() { return new EmptyResponse() }
+}
+export class GetWatchedTags {
+    constructor(init) { Object.assign(this, init) }
+    getTypeName() { return 'GetWatchedTags' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetWatchedTagsResponse() }
 }
 export class RenderComponent {
     /** @param {{regenerateMeta?:RegenerateMeta,question?:QuestionAndAnswers,home?:RenderHome}} [init] */

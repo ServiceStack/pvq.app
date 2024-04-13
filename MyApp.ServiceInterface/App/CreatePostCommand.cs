@@ -101,6 +101,16 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
                 CreatedDate = DateTime.UtcNow,
             });
             appConfig.IncrUnreadAchievementsFor(post.CreatedBy!);
+
+            // Setup auto-watch for new questions (Sending Emails for new Answers)
+            await db.InsertAsync(new WatchPost
+            {
+                UserName = post.CreatedBy!,
+                PostId = post.Id,
+                CreatedDate = post.CreationDate,
+                // Email new answers 1hr after asking question
+                AfterDate = DateTime.UtcNow.Add(TimeSpan.FromHours(1)),
+            });
         }
     }
 }

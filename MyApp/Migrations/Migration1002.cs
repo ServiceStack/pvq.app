@@ -12,8 +12,8 @@ public class Migration1002 : MigrationBase
         public int Id { get; set; }
         public string UserName { get; set; }
         public int PostId { get; set; }
-        public DateTime CreatedDate { get; }
-        public DateTime? AfterDate { get; } // Email new answers 1hr after asking question
+        public DateTime CreatedDate { get; set; }
+        public DateTime? AfterDate { get; set; } // Email new answers 1hr after asking question
     }
     
     [UniqueConstraint(nameof(UserName), nameof(Tag))]
@@ -23,7 +23,7 @@ public class Migration1002 : MigrationBase
         public int Id { get; set; }
         public string UserName { get; set; }
         public string Tag { get; set; }
-        public DateTime CreatedDate { get; }
+        public DateTime CreatedDate { get; set; }
     }
     
     public enum PostEmailType
@@ -41,7 +41,7 @@ public class Migration1002 : MigrationBase
         public string Email { get; set; }
         public string? UserName { get; set; }        
         public string? DisplayName { get; set; }
-        public DateTime? AfterDate { get; } // Email new answers 1hr after receiving them
+        public DateTime? AfterDate { get; set; } // Email new answers 1hr after receiving them
         public int? MailMessageId { get; set; }
     }
 

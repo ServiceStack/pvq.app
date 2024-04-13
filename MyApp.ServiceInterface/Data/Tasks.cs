@@ -142,6 +142,12 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     
     [Command<MarkPostAsReadCommand>]
     public MarkPostAsRead? MarkPostAsRead { get; set; }
+    
+    [Command<PostSubscriptionsCommand>]
+    public PostSubscriptions? PostSubscriptions { get; set; }
+    
+    [Command<TagSubscriptionsCommand>]
+    public TagSubscriptions? TagSubscriptions { get; set; }
 }
 
 public class RenderHome

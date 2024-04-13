@@ -96,4 +96,10 @@ public static class DbExtensions
         }
         return posts;
     }
+
+    public static async Task<bool> IsWatchingPostAsync(this IDbConnection db, string userName, int? postId) => 
+        await db.ExistsAsync(db.From<WatchPost>().Where(x => x.UserName == userName && x.PostId == postId));
+
+    public static async Task<bool> IsWatchingTagAsync(this IDbConnection db, string userName, string tag) => 
+        await db.ExistsAsync(db.From<WatchTag>().Where(x => x.UserName == userName && x.Tag == tag));
 }

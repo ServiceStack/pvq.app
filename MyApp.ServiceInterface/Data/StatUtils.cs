@@ -11,6 +11,9 @@ public static class StatUtils
     public static string? GetUserName(this ClaimsPrincipal? user) => user?.Identity?.Name;
     public static bool IsAdminOrModerator(this ClaimsPrincipal? user) => Stats.IsAdminOrModerator(user?.Identity?.Name);
     
+    public static string GetRequiredUserName(this ClaimsPrincipal? user) => user?.GetUserName()
+        ?? throw new ArgumentNullException(nameof(user));
+    
     public static AuthenticateResponse? ToAuthenticateResponse(this ClaimsPrincipal? user, Action<AuthenticateResponse>? configure=null)
     {
         if (user?.Identity is not { IsAuthenticated: true })

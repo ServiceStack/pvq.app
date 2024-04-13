@@ -237,6 +237,7 @@ public class UserPostData : IGet, IReturn<UserPostDataResponse>
 
 public class UserPostDataResponse
 {
+    public bool Watching { get; set; }
     public HashSet<string> UpVoteIds { get; set; } = [];
     public HashSet<string> DownVoteIds { get; set; } = [];
     public ResponseStatus? ResponseStatus { get; set; }

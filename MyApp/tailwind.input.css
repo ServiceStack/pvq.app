@@ -87,6 +87,9 @@ select{
 .highlighted {
     background-color: #ffe;
 }
+/*Notification Subscription*/
+[data-watching=on] .off { display: none; }
+[data-watching=off] .on { display: none; }
 
 @tailwind utilities;
 

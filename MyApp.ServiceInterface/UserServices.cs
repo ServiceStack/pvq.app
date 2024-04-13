@@ -88,9 +88,12 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
     {
         var userName = Request.GetClaimsPrincipal().Identity!.Name!;
         var allUserPostVotes = await Db.SelectAsync<Vote>(x => x.PostId == request.PostId && x.UserName == userName);
-        
+
+        var watchingPost = await Db.ExistsAsync(Db.From<WatchPost>()
+            .Where(x => x.PostId == request.PostId && x.UserName == userName && DateTime.UtcNow > x.AfterDate));
         var to = new UserPostDataResponse
         {
+            Watching = watchingPost,
             UpVoteIds = allUserPostVotes.Where(x => x.Score > 0).Select(x => x.RefId).ToSet(),
             DownVoteIds = allUserPostVotes.Where(x => x.Score < 0).Select(x => x.RefId).ToSet(),
         };
@@ -217,6 +220,9 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
             CreatedDate = x.CreatedDate,
             Href = $"/questions/{x.PostId}/{x.Slug}",
         });
+        
+        // Reset Achievements after every check
+        appConfig.UsersUnreadAchievements[userName!] = 0;
 
         return new GetLatestAchievementsResponse
         {
