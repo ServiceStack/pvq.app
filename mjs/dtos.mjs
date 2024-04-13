@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-10 16:20:54
+Date: 2024-04-13 11:31:59
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -291,14 +291,6 @@ export class ResponseStatus {
     /** @type {{ [index: string]: string; }} */
     meta;
 }
-export class ModelTotalScore {
-    /** @param {{id?:string,totalScore?:number}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {string} */
-    id;
-    /** @type {number} */
-    totalScore;
-}
 export class ModelTotalStartUpVotes {
     /** @param {{id?:string,startingUpVotes?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -308,40 +300,32 @@ export class ModelTotalStartUpVotes {
     startingUpVotes;
 }
 export class LeaderBoardWinRate {
-    /** @param {{id?:string,winRate?:number}} [init] */
+    /** @param {{id?:string,winRate?:number,numberOfQuestions?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
     id;
     /** @type {number} */
     winRate;
-}
-export class ModelWinRateByTag {
-    /** @param {{id?:string,tag?:string,winRate?:number}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {string} */
-    id;
-    /** @type {string} */
-    tag;
     /** @type {number} */
-    winRate;
+    numberOfQuestions;
 }
-export class ModelTotalScoreByTag {
-    /** @param {{id?:string,tag?:string,totalScore?:number}} [init] */
+export class ModelTotalScore {
+    /** @param {{id?:string,totalScore?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
     id;
-    /** @type {string} */
-    tag;
     /** @type {number} */
     totalScore;
 }
 export class ModelWinRate {
-    /** @param {{id?:string,winRate?:number}} [init] */
+    /** @param {{id?:string,winRate?:number,numberOfQuestions?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
     id;
     /** @type {number} */
     winRate;
+    /** @type {number} */
+    numberOfQuestions;
 }
 /** @typedef {'Unknown'|'NewComment'|'NewAnswer'|'QuestionMention'|'AnswerMention'|'CommentMention'} */
 export var NotificationType;
@@ -455,28 +439,16 @@ export class StringsResponse {
     responseStatus;
 }
 export class CalculateLeaderboardResponse {
-    /** @param {{mostLikedModels?:ModelTotalScore[],mostLikedModelsByLlm?:ModelTotalStartUpVotes[],answererWinRate?:LeaderBoardWinRate[],humanVsLlmWinRateByHumanVotes?:LeaderBoardWinRate[],humanVsLlmWinRateByLlmVotes?:LeaderBoardWinRate[],modelWinRateByTag?:ModelWinRateByTag[],modelTotalScore?:ModelTotalScore[],modelTotalScoreByTag?:ModelTotalScoreByTag[],modelWinRate?:ModelWinRate[],humanWinRate?:LeaderBoardWinRate[]}} [init] */
+    /** @param {{mostLikedModelsByLlm?:ModelTotalStartUpVotes[],answererWinRate?:LeaderBoardWinRate[],modelTotalScore?:ModelTotalScore[],modelWinRate?:ModelWinRate[]}} [init] */
     constructor(init) { Object.assign(this, init) }
-    /** @type {ModelTotalScore[]} */
-    mostLikedModels;
     /** @type {ModelTotalStartUpVotes[]} */
     mostLikedModelsByLlm;
     /** @type {LeaderBoardWinRate[]} */
     answererWinRate;
-    /** @type {LeaderBoardWinRate[]} */
-    humanVsLlmWinRateByHumanVotes;
-    /** @type {LeaderBoardWinRate[]} */
-    humanVsLlmWinRateByLlmVotes;
-    /** @type {ModelWinRateByTag[]} */
-    modelWinRateByTag;
     /** @type {ModelTotalScore[]} */
     modelTotalScore;
-    /** @type {ModelTotalScoreByTag[]} */
-    modelTotalScoreByTag;
     /** @type {ModelWinRate[]} */
     modelWinRate;
-    /** @type {LeaderBoardWinRate[]} */
-    humanWinRate;
 }
 export class GetAllAnswerModelsResponse {
     /** @param {{results?:string[]}} [init] */
@@ -537,6 +509,12 @@ export class GetQuestionResponse {
     result;
     /** @type {?ResponseStatus} */
     responseStatus;
+}
+export class GetAnswerResponse {
+    /** @param {{result?:Post}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {Post} */
+    result;
 }
 export class IdResponse {
     /** @param {{id?:string,responseStatus?:ResponseStatus}} [init] */
@@ -753,23 +731,22 @@ export class RestoreModelQueues {
     createResponse() { return new StringsResponse() }
 }
 export class CalculateLeaderBoard {
+    /** @param {{modelsToExclude?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {?string} */
+    modelsToExclude;
     getTypeName() { return 'CalculateLeaderBoard' }
     getMethod() { return 'GET' }
     createResponse() { return new CalculateLeaderboardResponse() }
 }
 export class GetLeaderboardStatsByTag {
-    /** @param {{tag?:string}} [init] */
+    /** @param {{tag?:string,modelsToExclude?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
     tag;
+    /** @type {?string} */
+    modelsToExclude;
     getTypeName() { return 'GetLeaderboardStatsByTag' }
-    getMethod() { return 'POST' }
-    createResponse () { };
-}
-export class GetLeaderboardStatsHuman {
-    constructor(init) { Object.assign(this, init) }
-    getTypeName() { return 'GetLeaderboardStatsHuman' }
     getMethod() { return 'POST' }
     createResponse () { };
 }
@@ -870,7 +847,16 @@ export class GetAnswerFile {
     id;
     getTypeName() { return 'GetAnswerFile' }
     getMethod() { return 'GET' }
-    createResponse () { };
+    createResponse() { return '' }
+}
+export class GetAnswer {
+    /** @param {{id?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    getTypeName() { return 'GetAnswer' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetAnswerResponse() }
 }
 export class GetAnswerBody {
     /** @param {{id?:string}} [init] */

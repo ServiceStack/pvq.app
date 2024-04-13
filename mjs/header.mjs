@@ -1,6 +1,6 @@
 import { ref, computed, watch, onMounted } from "vue"
 import { forceMount } from "app.mjs"
-import { $1, $$, on, createElement, toDate, EventBus } from "@servicestack/client"
+import { $1, $$, createElement, toDate, EventBus } from "@servicestack/client"
 import { useClient, useUtils } from "@servicestack/vue"
 import { GetLatestNotifications, GetLatestAchievements, MarkAsRead } from "dtos.mjs"
 
