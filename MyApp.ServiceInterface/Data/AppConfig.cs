@@ -180,6 +180,12 @@ public class AppConfig
             "SELECT UserName, Count(*) AS Total FROM Notification WHERE Read = false GROUP BY UserName HAVING COUNT(*) > 0"));
     }
 
+    public async Task ResetUnreadNotificationsForAsync(IDbConnection db, string userName)
+    {
+        UsersUnreadNotifications[userName] =
+            (int)await db.CountAsync(db.From<Notification>().Where(x => x.UserName == userName && x.Read == false));
+    }
+
     public void ResetUsersUnreadAchievements(IDbConnection db)
     {
         UsersUnreadAchievements = new(db.Dictionary<string, int>(

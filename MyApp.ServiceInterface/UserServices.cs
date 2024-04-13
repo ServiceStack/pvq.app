@@ -217,11 +217,9 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
             Href = $"/questions/{x.PostId}/{x.Slug}",
         });
 
-        // Reset everytime they view the latest achievements
-        appConfig.UsersUnreadAchievements[userName!] = 0;
-        
         return new GetLatestAchievementsResponse
         {
+            HasUnread = appConfig.HasUnreadAchievements(userName),
             Results = results
         };
     }

@@ -76,6 +76,12 @@ public class AnswerAddedToPost
 }
 public class UpdateReputations {}
 
+public class MarkPostAsRead
+{
+    public int PostId { get; set; }
+    public string UserName { get; set; }
+}
+
 [Tag(Tag.Tasks)]
 [Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
 public class DbWrites : IGet, IReturn<EmptyResponse>
@@ -133,6 +139,9 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     
     [Command<ImportQuestionCommand>]
     public ImportQuestion? ImportQuestion { get; set; }
+    
+    [Command<MarkPostAsReadCommand>]
+    public MarkPostAsRead? MarkPostAsRead { get; set; }
 }
 
 public class RenderHome

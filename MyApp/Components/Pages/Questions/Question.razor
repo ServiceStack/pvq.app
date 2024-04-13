@@ -74,6 +74,18 @@
         MessageProducer.Publish(new AnalyticsTasks {
             CreatePostStat = new PostStat { PostId = Id, Type = PostStatType.View}.WithRequest(HttpContext)
         });
+
+        var userName = HttpContext.GetUserName();
+        if (userName != null)
+        {
+            MessageProducer.Publish(new DbWrites {
+                MarkPostAsRead = new()
+                {
+                    PostId = Id,
+                    UserName = userName,
+                }
+            });
+        }
         
         var noCache = Force != null && (Env.IsDevelopment() || HttpContext?.User.IsAdminOrModerator() == true);
         

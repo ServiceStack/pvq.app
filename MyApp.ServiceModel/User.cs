@@ -72,6 +72,7 @@ public class GetLatestNotificationsResponse
 public class GetLatestAchievements : IGet, IReturn<GetLatestAchievementsResponse> {}
 public class GetLatestAchievementsResponse
 {
+    public bool HasUnread { get; set; }
     public List<Achievement> Results { get; set; } = [];
     public ResponseStatus? ResponseStatus { get; set; }
 }
