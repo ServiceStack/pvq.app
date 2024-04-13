@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-13 11:31:59
+Date: 2024-04-13 16:03:28
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -588,8 +588,10 @@ export class GetLatestNotificationsResponse {
     responseStatus;
 }
 export class GetLatestAchievementsResponse {
-    /** @param {{results?:Achievement[],responseStatus?:ResponseStatus}} [init] */
+    /** @param {{hasUnread?:boolean,results?:Achievement[],responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {boolean} */
+    hasUnread;
     /** @type {Achievement[]} */
     results;
     /** @type {?ResponseStatus} */
