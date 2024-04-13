@@ -83,7 +83,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "admin",
-            Email = "admin@email.com",
+            Email = "servicestack.mail+admin@gmail.com",
             DisplayName = "Administrator",
             EmailConfirmed = true,
         }, "p@55wOrd", allRoles);
@@ -91,7 +91,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "pvq",
-            Email = "pvq@email.com",
+            Email = "servicestack.mail+pvq@gmail.com",
             DisplayName = "pvq",
             EmailConfirmed = true,
             ProfilePath = "/profiles/pv/pvq/pvq.svg",
@@ -100,7 +100,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "stackoverflow",
-            Email = "stackoverflow@email.com",
+            Email = "servicestack.mail+stackoverflow@gmail.com",
             DisplayName = "StackOverflow",
             EmailConfirmed = true,
             ProfilePath = "/profiles/st/stackoverflow/stackoverflow.svg",
@@ -109,7 +109,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "most-voted",
-            Email = "most-voted@email.com",
+            Email = "servicestack.mail+most-voted@gmail.com",
             DisplayName = "Most Voted",
             EmailConfirmed = true,
             ProfilePath = "/profiles/mo/most-voted/most-voted.svg",
@@ -118,7 +118,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "accepted",
-            Email = "accepted@email.com",
+            Email = "servicestack.mail+accepted@gmail.com",
             DisplayName = "Accepted",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ac/accepted/accepted.svg",
@@ -127,7 +127,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "phi",
-            Email = "phi@email.com",
+            Email = "servicestack.mail+phi@gmail.com",
             DisplayName = "Phi-2 2.7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ph/phi/phi.svg",
@@ -137,7 +137,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "gemma-2b",
-            Email = "gemma-2b@email.com",
+            Email = "servicestack.mail+gemma-2b@gmail.com",
             DisplayName = "Gemma 2B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemma-2b/gemma-2b.svg",
@@ -147,7 +147,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "qwen-4b",
-            Email = "qwen@email.com",
+            Email = "servicestack.mail+qwen@gmail.com",
             DisplayName = "Qwen 1.5 4B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/qw/qwen-4b/qwen-4b.svg",
@@ -157,7 +157,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "codellama",
-            Email = "codellama-13B@email.com",
+            Email = "servicestack.mail+codellama-13B@gmail.com",
             DisplayName = "Code Llama 7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/co/codellama/codellama.svg",
@@ -167,7 +167,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "gemma",
-            Email = "gemma@email.com",
+            Email = "servicestack.mail+gemma@gmail.com",
             DisplayName = "Gemma 7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemma/gemma.svg",
@@ -177,7 +177,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "deepseek-coder",
-            Email = "deepseek-coder@email.com",
+            Email = "servicestack.mail+deepseek-coder@gmail.com",
             DisplayName = "DeepSeek Coder 6.7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/de/deepseek-coder/deepseek-coder.jpg",
@@ -187,7 +187,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "mistral",
-            Email = "mistral-7B@email.com",
+            Email = "servicestack.mail+mistral-7B@gmail.com",
             DisplayName = "Mistral 7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/mi/mistral/mistral.svg",
@@ -197,7 +197,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "mixtral",
-            Email = "mixtral-8x7b@email.com",
+            Email = "servicestack.mail+mixtral-8x7b@gmail.com",
             DisplayName = "Mixtral 8x7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/mi/mixtral/mixtral.jpg",
@@ -207,7 +207,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "gemini-pro",
-            Email = "gemini-pro@email.com",
+            Email = "servicestack.mail+gemini-pro@gmail.com",
             DisplayName = "Gemini Pro 1.0",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemini-pro/gemini-pro.svg",
@@ -217,7 +217,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "deepseek-coder-33b",
-            Email = "deepseek-coder-33b@email.com",
+            Email = "servicestack.mail+deepseek-coder-33b@gmail.com",
             DisplayName = "DeepSeek Coder 33B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/de/deepseek-coder-33b/deepseek-coder-33b.jpg",
@@ -227,7 +227,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "gpt4-turbo",
-            Email = "gpt4-turbo@email.com",
+            Email = "servicestack.mail+gpt4-turbo@gmail.com",
             DisplayName = "GPT-4 Turbo",
             EmailConfirmed = true,
             ProfilePath = "/profiles/gp/gpt4-turbo/gpt4-turbo.svg",
@@ -237,7 +237,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "claude3-haiku",
-            Email = "claude3-haiku@email.com",
+            Email = "servicestack.mail+claude3-haiku@gmail.com",
             DisplayName = "Claude 3 Haiku",
             EmailConfirmed = true,
             ProfilePath = "/profiles/cl/claude3-haiku/claude3-haiku.svg",
@@ -247,7 +247,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "claude3-sonnet",
-            Email = "claude3-sonnet@email.com",
+            Email = "servicestack.mail+claude3-sonnet@gmail.com",
             DisplayName = "Claude 3 Sonnet",
             EmailConfirmed = true,
             ProfilePath = "/profiles/cl/claude3-sonnet/claude3-sonnet.svg",
@@ -257,7 +257,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "claude3-opus",
-            Email = "claude3-opus@email.com",
+            Email = "servicestack.mail+claude3-opus@gmail.com",
             DisplayName = "Claude 3 Opus",
             EmailConfirmed = true,
             ProfilePath = "/profiles/cl/claude3-opus/claude3-opus.svg",
@@ -294,7 +294,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "reddit",
-            Email = "reddit@email.com",
+            Email = "servicestack.mail+reddit@gmail.com",
             DisplayName = "Reddit",
             EmailConfirmed = true,
             ProfilePath = "/profiles/re/reddit/reddit.svg",
@@ -303,10 +303,37 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "discourse",
-            Email = "discourse@email.com",
+            Email = "servicestack.mail+discourse@gmail.com",
             DisplayName = "Discourse",
             EmailConfirmed = true,
             ProfilePath = "/profiles/di/discourse/discourse.svg",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "twitter",
+            Email = "servicestack.mail+twitter@gmail.com",
+            DisplayName = "Twitter",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/tw/twitter/twitter.svg",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "threads",
+            Email = "servicestack.mail+threads@gmail.com",
+            DisplayName = "threads",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/th/threads/threads.svg",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "mastodon",
+            Email = "servicestack.mail+mastodon@gmail.com",
+            DisplayName = "mastodon",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ma/mastodon/mastodon.svg",
         }, "p@55wOrd");
     }
 }
