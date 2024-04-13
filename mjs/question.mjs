@@ -670,7 +670,7 @@ const EditQuestion = {
         <div v-html="savedHtml" class="xl:flex-grow prose"></div>
         <div class="pt-6 flex flex-1 items-end">
         
-            <div class="flex justify-between w-full">
+            <div class="flex justify-between w-full items-center">
                 <div class="flex-grow">
                     <div class="flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
                         <div class="flex flex-wrap gap-x-2 gap-y-2">
@@ -678,7 +678,7 @@ const EditQuestion = {
                         </div>
                     </div>
                 </div>
-                <div class="text-xs">
+                <div class="ml-2 text-xs">
                     <div v-if="request.lastEditDate ?? request.creationDate" class="flex">
                         <span>{{request.lastEditDate ? "edited" : "created"}}</span>
                         <dd class="ml-1 text-gray-600 dark:text-gray-300">
