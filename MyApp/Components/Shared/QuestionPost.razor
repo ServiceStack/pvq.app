@@ -65,7 +65,7 @@
                 </div>
                 <div id=@($"edit-{Question.Id}") class="edit w-full hidden"></div>
             
-                <div class="question-footer flex justify-between w-full">
+                <div class="question-footer flex justify-between w-full items-center">
                     <div class="flex-grow">
                         <div class="flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
                             <div class="flex flex-wrap gap-x-2 gap-y-2">
@@ -84,7 +84,7 @@
                             </div>
                         }
                     </div>
-                    <div class="text-xs">
+                    <div class="ml-2 text-xs">
                         <div class="flex">
                             <span>@(Question.Post.LastEditDate == null ? "created" : "edited")</span>
                             <dd class="ml-1 text-gray-600 dark:text-gray-300">
