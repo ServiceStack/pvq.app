@@ -26,6 +26,7 @@
                 @if (Question.Post.LastEditDate != null)
                 {
                     <div>
+                        <span>last updated</span>
                         <b>@((DateTime.UtcNow - Question.Post.LastEditDate.Value).TimeAgo())</b>
                     </div>
                 }
