@@ -80,11 +80,16 @@ const NotificationsMenu = {
             transition(rule1, transition1, show.value)
         })
 
-        onMounted(async () => {
+        async function updateNotifications() {
             const api = await client.api(new GetLatestNotifications())
             if (api.succeeded) {
                 results.value = api.response.results || []
+                toggleUnreadNotifications(api.response.hasUnread)
             }
+        }
+
+        onMounted(async () => {
+            await updateNotifications()
         })
         
         const typeLabels = {
@@ -103,11 +108,7 @@ const NotificationsMenu = {
             results.value.forEach(x => x.read = true)
             const api = await client.api(new MarkAsRead({ allNotifications: true }))
             if (api.succeeded) {
-                const alert = $1('#new-notifications')
-                if (alert) {
-                    alert.classList.remove('text-red-500')
-                    alert.classList.add('text-transparent')
-                }
+                toggleUnreadNotifications(false)
             }
         }
         
@@ -189,13 +190,17 @@ const AchievementsMenu = {
         watch(show, () => {
             transition(rule1, transition1, show.value)
         })
-
-        onMounted(async () => {
+        
+        async function updateAchievements() {
             const api = await client.api(new GetLatestAchievements())
             if (api.succeeded) {
                 results.value = api.response.results || []
-                toggleUnreadNotifications(api.response.hasUnread)
+                toggleUnreadAchievements(api.response.hasUnread)
             }
+        }
+
+        onMounted(async () => {
+            await updateAchievements()
         })
 
         async function goto(item) {
@@ -207,12 +212,17 @@ const AchievementsMenu = {
 }
 
 function toggleUnreadNotifications(hasUnread) {
+    const alert = $1('#new-notifications')
+    if (!alert) return
+    alert.classList.toggle('text-red-500', hasUnread)
+    alert.classList.toggle('text-transparent', !hasUnread)
+}
+function toggleUnreadAchievements(hasUnread) {
     const alert = $1('#new-achievements')
     if (!alert) return
     alert.classList.toggle('text-red-500', hasUnread)
-    alert.classList.add('text-transparent', !hasUnread)
+    alert.classList.toggle('text-transparent', !hasUnread)
 }
-
 
 function toggleNotifications(el) {
     bus.publish('toggleNotifications')
@@ -221,12 +231,12 @@ function toggleNotifications(el) {
 function toggleAchievements(el) {
     bus.publish('toggleAchievements')
     bus.publish('hideNotifications')
-    $1('#new-achievements').classList.remove('text-red-500')
-    $1('#new-achievements').classList.add('text-transparent')
+    toggleUnreadAchievements(false)
 }
 
 function bindGlobals() {
     globalThis.toggleUnreadNotifications = toggleUnreadNotifications
+    globalThis.toggleUnreadAchievements = toggleUnreadAchievements
     globalThis.toggleNotifications = toggleNotifications
     globalThis.toggleAchievements = toggleAchievements
 }
@@ -283,10 +293,7 @@ export default {
         bindGlobals()
         addCopyButtonToCodeBlocks()
 
-        const elNotificationsMenu = $1('#notifications-menu')
-        const elAchievementsMenu = $1('#achievements-menu')
-
-        forceMount(elNotificationsMenu, NotificationsMenu)
-        forceMount(elAchievementsMenu, AchievementsMenu)
+        forceMount($1('#notifications-menu'), NotificationsMenu)
+        forceMount($1('#achievements-menu'), AchievementsMenu)
     }
 }

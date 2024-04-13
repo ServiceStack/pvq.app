@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-04-13 16:03:28
+Date: 2024-04-13 17:17:40
 Version: 8.22
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -237,6 +237,32 @@ export class PageStats {
     /** @type {number} */
     total;
 }
+export class ResponseError {
+    /** @param {{errorCode?:string,fieldName?:string,message?:string,meta?:{ [index: string]: string; }}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    errorCode;
+    /** @type {string} */
+    fieldName;
+    /** @type {string} */
+    message;
+    /** @type {{ [index: string]: string; }} */
+    meta;
+}
+export class ResponseStatus {
+    /** @param {{errorCode?:string,message?:string,stackTrace?:string,errors?:ResponseError[],meta?:{ [index: string]: string; }}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    errorCode;
+    /** @type {string} */
+    message;
+    /** @type {string} */
+    stackTrace;
+    /** @type {ResponseError[]} */
+    errors;
+    /** @type {{ [index: string]: string; }} */
+    meta;
+}
 export class PostJob {
     /** @param {{id?:number,postId?:number,model?:string,title?:string,createdBy?:string,createdDate?:string,startedDate?:string,worker?:string,workerIp?:string,completedDate?:string,error?:string,retryCount?:number}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -264,32 +290,6 @@ export class PostJob {
     error;
     /** @type {number} */
     retryCount;
-}
-export class ResponseError {
-    /** @param {{errorCode?:string,fieldName?:string,message?:string,meta?:{ [index: string]: string; }}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {string} */
-    errorCode;
-    /** @type {string} */
-    fieldName;
-    /** @type {string} */
-    message;
-    /** @type {{ [index: string]: string; }} */
-    meta;
-}
-export class ResponseStatus {
-    /** @param {{errorCode?:string,message?:string,stackTrace?:string,errors?:ResponseError[],meta?:{ [index: string]: string; }}} [init] */
-    constructor(init) { Object.assign(this, init) }
-    /** @type {string} */
-    errorCode;
-    /** @type {string} */
-    message;
-    /** @type {string} */
-    stackTrace;
-    /** @type {ResponseError[]} */
-    errors;
-    /** @type {{ [index: string]: string; }} */
-    meta;
 }
 export class ModelTotalStartUpVotes {
     /** @param {{id?:string,startingUpVotes?:number}} [init] */
@@ -411,6 +411,16 @@ export class AdminDataResponse {
     constructor(init) { Object.assign(this, init) }
     /** @type {PageStats[]} */
     pageStats;
+}
+export class StringResponse {
+    /** @param {{result?:string,meta?:{ [index: string]: string; },responseStatus?:ResponseStatus}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    result;
+    /** @type {{ [index: string]: string; }} */
+    meta;
+    /** @type {ResponseStatus} */
+    responseStatus;
 }
 export class ViewModelQueuesResponse {
     /** @param {{jobs?:PostJob[],responseStatus?:ResponseStatus}} [init] */
@@ -580,8 +590,10 @@ export class UserPostDataResponse {
     responseStatus;
 }
 export class GetLatestNotificationsResponse {
-    /** @param {{results?:Notification[],responseStatus?:ResponseStatus}} [init] */
+    /** @param {{hasUnread?:boolean,results?:Notification[],responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {boolean} */
+    hasUnread;
     /** @type {Notification[]} */
     results;
     /** @type {?ResponseStatus} */
@@ -662,6 +674,15 @@ export class GetRequestInfo {
     getTypeName() { return 'GetRequestInfo' }
     getMethod() { return 'GET' }
     createResponse() { return '' }
+}
+export class Sync {
+    /** @param {{tasks?:string[]}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?string[]} */
+    tasks;
+    getTypeName() { return 'Sync' }
+    getMethod() { return 'GET' }
+    createResponse() { return new StringResponse() }
 }
 export class DeleteCdnFilesMq {
     /** @param {{files?:string[]}} [init] */
