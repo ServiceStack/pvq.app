@@ -42,9 +42,9 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
     {
         var (dir1, dir2, fileId) = id.ToFileParts();
         
-        var files = fs.GetDirectory($"{dir1}/{dir2}").GetAllMatchingFiles($"{fileId}.*")
+        var files = fs.GetDirectory($"{dir1}/{dir2}")?.GetAllMatchingFiles($"{fileId}.*")
             .OrderByDescending(x => x.LastModified)
-            .ToList();
+            .ToList() ?? [];
         
         return new QuestionFiles(id: id, dir1: dir1, dir2: dir2, fileId: fileId, files: files);
     }
