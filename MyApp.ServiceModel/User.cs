@@ -64,6 +64,7 @@ public class CreateAvatar : IGet, IReturn<string>
 public class GetLatestNotifications : IGet, IReturn<GetLatestNotificationsResponse> {}
 public class GetLatestNotificationsResponse
 {
+    public bool HasUnread { get; set; }
     public List<Notification> Results { get; set; } = [];
     public ResponseStatus? ResponseStatus { get; set; }
 }

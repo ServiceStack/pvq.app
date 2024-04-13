@@ -180,7 +180,8 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
         
         return new GetLatestNotificationsResponse
         {
-            Results = results
+            HasUnread = appConfig.HasUnreadNotifications(userName),
+            Results = results,
         };
     }
     
