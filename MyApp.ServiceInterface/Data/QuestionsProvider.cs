@@ -12,7 +12,8 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
     public const int AcceptedScore = 9;
     public static List<string> ModelUserNames { get; } = [
         "phi", "gemma-2b", "qwen-4b", "codellama", "gemma", "deepseek-coder", "mistral", "mixtral","gpt-4-turbo",
-        "claude-3-haiku","claude-3-sonnet","claude-3-opus"
+        "claude-3-haiku","claude-3-sonnet","claude-3-opus",
+        "deepseek-coder-6.7b", "gemini-pro"
     ];
     public static Dictionary<string,int> ModelScores = new()
     {
@@ -261,6 +262,36 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         await Task.WhenAll(tasks);
     }
 
+    public async Task<Post> GetAnswerAsPostAsync(IVirtualFile existingAnswer)
+    {
+        var now = DateTime.UtcNow;
+        var existingAnswerJson = await existingAnswer.ReadAllTextAsync();
+        var fileName = existingAnswer.VirtualPath.TrimStart('/').Replace("/", "");
+        var postId = fileName.LeftPart('.').ToInt();
+        var newAnswer = new Post
+        {
+            Id = postId,
+        };
+        
+        if (fileName.Contains(".a."))
+        {
+            newAnswer.CreatedBy ??= fileName.RightPart(".a.").LastLeftPart('.');
+            var obj = (Dictionary<string,object>)JSON.parse(existingAnswerJson);
+            newAnswer.CreationDate = obj.TryGetValue("created", out var oCreated) && oCreated is int created
+                ? DateTimeOffset.FromUnixTimeSeconds(created).DateTime
+                : existingAnswer.LastModified;
+            newAnswer.Body = GetModelAnswerBody(obj);
+        }
+        else if (fileName.Contains(".h."))
+        {
+            newAnswer = existingAnswerJson.FromJson<Post>();
+            newAnswer.CreatedBy ??= fileName.RightPart(".h.").LastLeftPart('.');
+        }
+        else throw new ArgumentException($"Invalid Answer File {existingAnswer.Name}", nameof(existingAnswer));
+
+        return newAnswer;
+    }
+
     public async Task SaveAnswerEditAsync(IVirtualFile existingAnswer, string userName, string body, string editReason)
     {
         var now = DateTime.UtcNow;
@@ -327,6 +358,11 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
     public string? GetModelAnswerBody(string json)
     {
         var obj = (Dictionary<string,object>)JSON.parse(json);
+        return GetModelAnswerBody(obj);
+    }
+
+    public static string? GetModelAnswerBody(Dictionary<string, object> obj)
+    {
         if (!obj.TryGetValue("choices", out var oChoices) || oChoices is not List<object> choices) 
             return null;
         if (choices.Count <= 0 || choices[0] is not Dictionary<string, object> choice) 

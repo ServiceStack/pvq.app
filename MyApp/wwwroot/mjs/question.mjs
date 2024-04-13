@@ -7,12 +7,13 @@ import {
     UserPostData, PostVote, GetQuestionFile,
     AnswerQuestion, UpdateQuestion, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta,
     DeleteQuestion, DeleteComment, GetUserReputations, CommentVote,
-    ShareContent, FlagContent,
+    ShareContent, FlagContent, GetAnswer,
 } from "dtos.mjs"
 
 const client = new JsonServiceClient()
 const pageBus = new EventBus()
 let meta = null
+let userReputations = {}
 
 function getComments(id) {
     if (!meta) return []
@@ -28,7 +29,7 @@ function getContentType(refId) {
 
 function formatDate(date) {
     const d = toDate(date)
-    return d.getDate() + ' ' + d.toLocaleString('en-US', { month: 'short' }) + ' at '
+    return d.toLocaleString('en-US', { month: 'short' }) + ' ' + d.getDate() + ' at '
         + `${d.getHours()}`.padStart(2,'0')+ `:${d.getMinutes()}`.padStart(2,'0')
 }
 
@@ -138,8 +139,8 @@ async function loadVoting(ctx) {
                 setValue(refId, prevValue)
                 updateVote(el)
             } else {
-                loadUserReputations(ctx)
-                setTimeout(() => loadUserReputations(ctx), 5000)
+                loadUserReputations(userName)
+                setTimeout(() => loadUserReputations(userName), 5000)
             }
         }
         function disableSelf(svg) {
@@ -562,137 +563,6 @@ const Comments = {
     }
 }
 
-const EditQuestion = {
-    template:`
-    <div v-if="editing">
-        <div v-if="user?.userName">
-            <div v-if="request.body">
-                <Alert class="mb-2" v-if="!canUpdate">You need at least 10 reputation to Edit other User's Questions.</Alert>
-                <AutoForm ref="autoform" type="UpdateQuestion" v-model="request" header-class="" submit-label="Update Question" 
-                    :configureField="configureField" @success="onSuccess">
-                    <template #heading>
-                        <div class="pt-4 pb-2 px-6 flex justify-between">
-                            <h3 class="text-2xl font-semibold">Edit Question</h3>
-                            <div>
-                                <img class="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-contain" :src="'/avatar/' + user.userName" :alt="user.userName">
-                            </div>
-                        </div>
-                    </template>
-                    <template #leftbuttons>
-                        <SecondaryButton @click="close">Cancel</SecondaryButton>            
-                    </template>
-                </AutoForm>
-                <div v-if="previewHtml">
-                    <h3 class="my-4 select-none text-xl font-semibold flex items-center cursor-pointer" @click="expandPreview=!expandPreview">
-                        <svg :class="['w-4 h-4 inline-block mr-1 transition-all',!expandPreview ? '-rotate-90' : '']" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M11.178 19.569a.998.998 0 0 0 1.644 0l9-13A.999.999 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569z"/></svg>
-                        Preview
-                    </h3>
-                    <div v-if="expandPreview" class="border-t border-gray-200 pt-4">
-                        <div id="question" class="flex-grow prose" v-html="previewHtml"></div>
-                    </div>
-                </div>
-            </div>
-            <div v-else>
-                <Loading />
-            </div>
-        </div>
-    </div>
-    <div v-else>
-        <div v-html="savedHtml" class="xl:flex-grow prose"></div>
-        <div class="pt-6 flex flex-1 items-end">
-            <dl class="question-footer flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
-                <div class="flex flex-wrap gap-x-2 gap-y-2">
-                    <a v-for="tag in request.tags" :href="'questions/tagged/' + encodeURIComponent(tag)" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">{{tag}}</a>
-                </div>
-                <div v-if="request.lastEditDate ?? request.creationDate" class="flex flex-grow px-4 sm:px-6 text-sm justify-end">
-                    <span>{{request.lastEditDate ? "edited" : "created"}}</span>
-                    <dd class="ml-2 text-gray-600 dark:text-gray-300">
-                        <time :datetime="request.lastEditDate ?? request.creationDate">{{formatDate(request.lastEditDate ?? request.creationDate)}}</time>
-                    </dd>
-                </div>
-            </dl>
-        </div>
-    </div>
-    `,
-    props:['bus','id','createdBy','previewHtml'],
-    emits:['done'],
-    setup(props) {
-        const { user, hasRole } = useAuth()
-        const isModerator = hasRole('Moderator')
-        const client = useClient()
-        const autoform = ref()
-        const editing = ref(false)
-        const expandPreview = ref(true)
-        const request = ref(new UpdateQuestion())
-        let original = null
-        request.value.id = props.id
-        const previewHtml = ref(props.previewHtml || '')
-        const savedHtml = ref(props.previewHtml || '')
-        let allTags = localStorage.getItem('data:tags.txt')?.split('\n') || []
-        const rep = document.querySelector('[data-rep]')?.dataset?.rep || 1
-        const canUpdate = computed(() => rep.value >= 10 || props.createdBy === user.value?.userName || isModerator)
-
-        const { createDebounce } = useUtils()
-        let lastBody = ''
-        let i = 0
-        let tagsInput = null
-
-        const debounceApi = createDebounce(async markdown => {
-            if (lastBody === request.value.body) return
-            lastBody = request.value.body
-            const api = await client.api(new PreviewMarkdown({ markdown }))
-            if (api.succeeded) {
-                previewHtml.value = api.response
-                nextTick(() => globalThis?.hljs?.highlightAll())
-            }
-        }, 100)
-
-        watchEffect(async () => {
-            debounceApi(request.value.body)
-        })
-
-        async function onSuccess(r) {
-            const api = await client.api(new PreviewMarkdown({ markdown:request.value.body }))
-            if (api.succeeded) {
-                savedHtml.value = api.response
-                setTimeout(() => globalThis?.hljs?.highlightAll(), 1)
-                editing.value = false
-                props.bus.publish('editDone', request.value)
-            }
-        }
-
-        onMounted(async () => {
-            props.bus.subscribe('toggleEdit', () => {
-                editing.value = !editing.value
-            })
-            
-            const api = await client.api(new GetQuestionFile({ id: props.id }))
-            if (api.succeeded) {
-                original = JSON.parse(api.response)
-                Object.assign(request.value, original)
-            }
-            
-            nextTick(applyGlobalChanges)
-        })
-
-        function close() {
-            Object.assign(request.value, original) //revert changes
-            editing.value = false
-            props.bus.publish('editDone')
-        }
-
-        function configureField(inputProp) {
-            if (inputProp.type === 'tag') {
-                tagsInput = inputProp
-                inputProp.allowableValues = allTags
-            }
-        }
-
-        return { user, editing, canUpdate, request, previewHtml, savedHtml, autoform, expandPreview, 
-                 configureField, onSuccess, close, formatDate }
-    }
-}
-
 const ContentFeatures = {
     components: {
         Comments,
@@ -760,6 +630,157 @@ const ContentFeatures = {
     }
 }
 
+const EditQuestion = {
+    components: { ContentFeatures },
+    template:`
+    <div v-if="editing">
+        <div v-if="user?.userName">
+            <div v-if="request.body">
+                <Alert class="mb-2" v-if="!canUpdate">You need at least 10 reputation to Edit other User's Questions.</Alert>
+                <AutoForm ref="autoform" type="UpdateQuestion" v-model="request" header-class="" submit-label="Update Question" 
+                    :configureField="configureField" @success="onSuccess">
+                    <template #heading>
+                        <div class="pt-4 pb-2 px-6 flex justify-between">
+                            <h3 class="text-2xl font-semibold">Edit Question</h3>
+                            <div>
+                                <img class="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-contain" :src="'/avatar/' + user.userName" :alt="user.userName">
+                            </div>
+                        </div>
+                    </template>
+                    <template #leftbuttons>
+                        <SecondaryButton @click="close">Cancel</SecondaryButton>            
+                    </template>
+                </AutoForm>
+                <div v-if="previewHtml">
+                    <h3 class="my-4 select-none text-xl font-semibold flex items-center cursor-pointer" @click="expandPreview=!expandPreview">
+                        <svg :class="['w-4 h-4 inline-block mr-1 transition-all',!expandPreview ? '-rotate-90' : '']" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M11.178 19.569a.998.998 0 0 0 1.644 0l9-13A.999.999 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569z"/></svg>
+                        Preview
+                    </h3>
+                    <div v-if="expandPreview" class="border-t border-gray-200 pt-4">
+                        <div id="question" class="flex-grow prose" v-html="previewHtml"></div>
+                    </div>
+                </div>
+            </div>
+            <div v-else>
+                <Loading />
+            </div>
+        </div>
+    </div>
+    <div v-else>
+        <div v-html="savedHtml" class="xl:flex-grow prose"></div>
+        <div class="pt-6 flex flex-1 items-end">
+        
+            <div class="flex justify-between w-full">
+                <div class="flex-grow">
+                    <div class="flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
+                        <div class="flex flex-wrap gap-x-2 gap-y-2">
+                            <a v-for="tag in request.tags" :href="'questions/tagged/' + encodeURIComponent(tag)" class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">{{tag}}</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-xs">
+                    <div v-if="request.lastEditDate ?? request.creationDate" class="flex">
+                        <span>{{request.lastEditDate ? "edited" : "created"}}</span>
+                        <dd class="ml-1 text-gray-600 dark:text-gray-300">
+                            <time :datetime="request.lastEditDate ?? request.creationDate">{{formatDate(request.lastEditDate ?? request.creationDate)}}</time>
+                            <span v-if="request.modifiedBy && request.modifiedBy != request.createdBy">
+                                <span> by </span><b>{{request.modifiedBy}}</b>
+                            </span>
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <ContentFeatures :bus="bus" :id="id" />
+    </div>
+    `,
+    props:['bus','id','createdBy','previewHtml'],
+    emits:['done'],
+    setup(props) {
+        const { user, hasRole } = useAuth()
+        const isModerator = hasRole('Moderator')
+        const client = useClient()
+        const autoform = ref()
+        const editing = ref(false)
+        const expandPreview = ref(true)
+        const request = ref(new UpdateQuestion())
+        let original = null
+        request.value.id = props.id
+        const previewHtml = ref(props.previewHtml || '')
+        const savedHtml = ref(props.previewHtml || '')
+        let allTags = localStorage.getItem('data:tags.txt')?.split('\n') || []
+        const rep = document.querySelector('[data-rep]')?.dataset?.rep || 1
+        const canUpdate = computed(() => rep.value >= 10 || props.createdBy === user.value?.userName || isModerator)
+
+        const { createDebounce } = useUtils()
+        let lastBody = ''
+        let i = 0
+        let tagsInput = null
+
+        const debounceApi = createDebounce(async markdown => {
+            if (lastBody === request.value.body) return
+            lastBody = request.value.body
+            const api = await client.api(new PreviewMarkdown({ markdown }))
+            if (api.succeeded) {
+                previewHtml.value = api.response
+                nextTick(() => globalThis?.hljs?.highlightAll())
+            }
+        }, 100)
+
+        watchEffect(async () => {
+            debounceApi(request.value.body)
+        })
+
+        async function onSuccess(r) {
+            const api = await client.api(new PreviewMarkdown({ markdown:request.value.body }))
+            if (api.succeeded) {
+                savedHtml.value = api.response
+                setTimeout(() => globalThis?.hljs?.highlightAll(), 1)
+                editing.value = false
+                props.bus.publish('editDone', request.value)
+            }
+        }
+
+        onMounted(async () => {
+            const footer = $1('.question-footer')
+            if (footer) {
+                footer.classList.add('hidden')
+                footer.innerHTML = ''
+            }
+
+            props.bus.subscribe('toggleEdit', () => {
+                editing.value = !editing.value
+            })
+
+            const api = await client.api(new GetQuestionFile({ id: props.id }))
+            if (api.succeeded) {
+                original = JSON.parse(api.response)
+                Object.assign(request.value, original)
+            }
+
+            nextTick(applyGlobalChanges)
+        })
+
+        function close() {
+            Object.assign(request.value, original) //revert changes
+            editing.value = false
+            props.bus.publish('editDone')
+        }
+
+        function configureField(inputProp) {
+            if (inputProp.type === 'tag') {
+                tagsInput = inputProp
+                inputProp.allowableValues = allTags
+            }
+        }
+
+        return { user, editing, canUpdate, request, previewHtml, savedHtml, autoform, expandPreview,
+            configureField, onSuccess, close, formatDate, getUserRep }
+    }
+}
+
+
+
 async function loadEditQuestion(ctx) {
     const { client, postId, userName, user, hasRole } = ctx
 
@@ -770,7 +791,6 @@ async function loadEditQuestion(ctx) {
     const question = el,
         edit = el.querySelector('.edit'),
         title = el.querySelector('h1 span'),
-        footer = el.querySelector('.question-footer'),
         preview = el.querySelector('.preview'),
         previewHtml = preview?.innerHTML,
         questionAside = el.querySelector('.question-aside'),
@@ -791,20 +811,14 @@ async function loadEditQuestion(ctx) {
         console.warn(`could not find .question-aside'`)
     }
     if (edit) {
-        mount(edit, EditQuestion, { bus, id:postId, createdBy:question.dataset.createdby, previewHtml })
-        footer.classList.add('hidden')
-        footer.innerHTML = ''
+        mount(edit, EditQuestion, { bus, id:`${postId}`, createdBy:question.dataset.createdby, previewHtml })
     } else {
         console.warn(`could not find .edit'`)
-    }
-    if (features) {
-        mount(features, ContentFeatures, { bus, id })
-    } else {
-        console.warn(`could not find data-question='${id}'`)
     }
 }
 
 const EditAnswer = {
+    components: { ContentFeatures },
     template:`
     <div v-if="editing">
         <div v-if="user?.userName">
@@ -849,7 +863,26 @@ const EditAnswer = {
             </div>
         </div>
     </div>
-    <div v-else v-html="savedHtml" class="xl:flex-grow prose"></div>
+    <div v-else>
+        <div v-html="savedHtml" class="xl:flex-grow prose"></div>
+        
+        <div v-if="answer" class="pt-6 flex flex-1 items-end">
+            <div class="flex justify-end w-full">
+                <div class="text-xs">
+                    <div v-if="answer.lastEditDate || answer.creationDate" class="flex">
+                        <span>{{answer.lastEditDate ? "edited" : "created"}}</span>
+                        <dd class="ml-1 text-gray-600 dark:text-gray-300">
+                            <time :datetime="answer.lastEditDate ?? answer.creationDate">{{formatDate(answer.lastEditDate ?? answer.creationDate)}}</time>
+                            <span v-if="answer.modifiedBy && answer.modifiedBy != answer.createdBy">
+                                <span> by </span><b>{{answer.modifiedBy}}</b>
+                            </span>
+                        </dd>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <ContentFeatures :bus="bus" :id="id" />
+    </div>
     `,
     props:['bus','id','createdBy','previewHtml'],
     setup(props) {
@@ -862,6 +895,7 @@ const EditAnswer = {
         const autoform = ref()
         const editing = ref(false)
         const expandPreview = ref(true)
+        const answer = ref()
         const request = ref(new AnswerQuestion(props))
         request.value.postId = props.id
         const previewHtml = ref(props.previewHtml || '')
@@ -898,9 +932,12 @@ const EditAnswer = {
                 editing.value = !editing.value
             })
 
-            const api = await client.api(new GetAnswerBody({ id: props.id }))
-            request.value.body = api.response || ''
-            nextTick(() => globalThis?.hljs?.highlightAll())
+            const api = await client.api(new GetAnswer({ id: props.id }))
+            if (api.succeeded) {
+                answer.value = api.response?.result
+                request.value.body = answer.value.body || ''
+                nextTick(() => globalThis?.hljs?.highlightAll())
+            }
         })
 
         function close() {
@@ -915,7 +952,8 @@ const EditAnswer = {
             }
         }
 
-        return { editing, user, isModerator, canUpdate, request, previewHtml, savedHtml, autoform, expandPreview, signInUrl, onSuccess, close }
+        return { editing, user, answer, isModerator, canUpdate, request, previewHtml, savedHtml, autoform, expandPreview, 
+            signInUrl, onSuccess, close, formatDate }
     }
 }
 
@@ -931,46 +969,52 @@ async function loadEditAnswers(ctx) {
             edit = el.querySelector('.edit'),
             preview = el.querySelector('.preview'),
             previewHtml = preview?.innerHTML,
-            features = el.querySelector(`[data-answer='${id}']`)
-        
-        if (!features) return // Locked Questions
+            footer = el.querySelector('.answer-footer')
 
         const bus = new EventBus()
 
         const answerId = answer.dataset.answer
         if (edit) {
             mount(edit, EditAnswer, { bus, id:answerId, createdBy:answer.dataset.createdby, previewHtml })
+
+            if (footer) {
+                footer.classList.add('hidden')
+                footer.innerHTML = ''
+            }
         } else {
             console.warn(`could not find .edit'`)
-        }
-        if (features) {
-            mount(features, ContentFeatures, { bus, id })
-        } else {
-            console.warn(`could not find data-answer='${id}'`)
         }
     })
 }
 
-async function loadUserReputations(ctx) {
-    const { client, postId, userName, user, hasRole } = ctx
+function getUserRep(userName) {
+    return userReputations[userName] || ''
+}
+
+async function loadUserReputations(userName) {
 
     const userNames = new Set()
     if (userName) userNames.add(userName)
+    const createdBy = $1('#question')?.dataset?.createdby
+    if (createdBy) userNames.add(createdBy)
+    if (meta?.createdBy) userNames.add(meta.createdBy)
+    
     $$('[data-rep-user]').forEach(x => {
         userNames.add(x.dataset.repUser)
     })
     if (userNames.size > 0) {
         const api = await client.api(new GetUserReputations({ userNames: Array.from(userNames) }))
         if (api.succeeded) {
-            const results = api.response.results
+            userReputations = api.response.results
+            pageBus.publish('userReputations:load')
             Object.keys(api.response.results).forEach(userName => {
                 $$(`[data-rep-user="${userName}"]`).forEach(el => {
-                    el.innerHTML = results[userName] || 1
+                    el.innerHTML = userReputations[userName] || 1
                 })
             })
             if (userName) {
                 $$('[data-rep]').forEach(el => {
-                    el.innerHTML = results[userName] || 1
+                    el.innerHTML = userReputations[userName] || 1
                 })
             }
         }
@@ -1004,7 +1048,7 @@ export default  {
                 loadVoting(ctx),
                 loadEditQuestion(ctx),
                 loadEditAnswers(ctx),
-                loadUserReputations(ctx)
+                loadUserReputations(userName)
             ])
         }
     }

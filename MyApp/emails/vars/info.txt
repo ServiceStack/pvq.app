@@ -1,0 +1,14 @@
+Company           PvQ
+CompanyOfficial   PvQ
+Domain            pvq.app
+MailingAddress    470 Schooleys Mt Road #636, Hackettstown, NJ 07840-4096
+MailPreferences   Mail Preferences
+Unsubscribe       Unsubscribe
+Contact           Contact
+Privacy           Privacy policy
+OurAddress        Our mailing address:
+MailReason        You received this email because you are subscribed to pvq news and announcements.
+SignOffTeam       The PvQ Team
+NewsletterFmt     PvQ Newsletter, {0}
+SocialUrls        Website,Twitter
+SocialImages      website_24x24,twitter_24x24

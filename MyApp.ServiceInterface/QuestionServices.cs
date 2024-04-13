@@ -272,6 +272,19 @@ public class QuestionServices(AppConfig appConfig,
         return new HttpResult(json, MimeTypes.Json);
     }
 
+    public async Task<object> Get(GetAnswer request)
+    {
+        var answerFile = await questions.GetAnswerFileAsync(request.Id);
+        if (answerFile == null)
+            throw HttpError.NotFound("Answer does not exist");
+
+        var post = await questions.GetAnswerAsPostAsync(answerFile);
+        return new GetAnswerResponse
+        {
+            Result = post
+        };
+    }
+
     public async Task<object> Any(GetAnswerBody request)
     {
         var answerFile = await questions.GetAnswerFileAsync(request.Id);
@@ -504,18 +517,29 @@ public class CreateRankingPostJob : IReturn<EmptyResponse>
     public int PostId { get; set; }
 }
 
-[ValidateIsAuthenticated]
-public class GetAnswerFile
+[ValidateHasRole(Roles.Moderator)]
+public class GetAnswerFile : IGet, IReturn<string>
 {
     /// <summary>
     /// Format is {PostId}-{UserName}
     /// </summary>
     public string Id { get; set; }
 }
-
 public class GetAllAnswerModelsResponse
 {
     public List<string> Results { get; set; }
+}
+
+public class GetAnswer : IGet, IReturn<GetAnswerResponse>
+{
+    /// <summary>
+    /// Format is {PostId}-{UserName}
+    /// </summary>
+    public string Id { get; set; }
+}
+public class GetAnswerResponse
+{
+    public Post Result { get; set; }
 }
 
 [ValidateIsAuthenticated]

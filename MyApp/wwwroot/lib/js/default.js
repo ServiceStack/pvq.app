@@ -1,10 +1,15 @@
 window.hljs?.highlightAll()
 
+function loadTags() {
+    if (!window.assetsUrl) return
+    fetch(window.assetsUrl('/data/tags.txt'))
+        .then(r => r.text())
+        .then(txt => localStorage.setItem('data:tags.txt', txt.replace(/\r\n/g,'\n')))
+}
+
 if (!localStorage.getItem('data:tags.txt'))
 {
-    fetch(assetsUrl('/data/tags.txt'))
-        .then(r => r.text())
-        .then(txt => localStorage.setItem('data:tags.txt', txt.replace(/\r\n/g,'\n')));
+    loadTags()
 }
 
 function metadataDate(metadataJson) {
@@ -44,9 +49,11 @@ if (location.hash) {
     highlightElement(location.hash.substring(1))
 }
 
-document.addEventListener('DOMContentLoaded', () =>
+document.addEventListener('DOMContentLoaded', () => {
     Blazor.addEventListener('enhancedload', (e) => {
         if (location.hash) {
             highlightElement(location.hash.substring(1))
         }
-    }))
+    })
+    loadTags()
+})

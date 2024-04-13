@@ -14,6 +14,8 @@ public static class Databases
     // Keep heavy writes of stats + analytics in separate DB
     public const string Analytics = nameof(Analytics);
     public const string Search = nameof(Search);
+    public const string CreatorKit = nameof(CreatorKit);
+    public const string Archive = nameof(Archive);
 }
 
 /// <summary>
