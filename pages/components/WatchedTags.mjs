@@ -61,9 +61,11 @@ export default {
         let allTags = localStorage.getItem('data:tags.txt')?.split('\n') || []
         
         onMounted(async () => {
-            const api = await client.api(new GetWatchedTags())
-            if (api.succeeded) {
-                tags.value = api.response.results
+            if (user.userName) {
+                const api = await client.api(new GetWatchedTags())
+                if (api.succeeded) {
+                    tags.value = api.response.results
+                }
             }
         })
         

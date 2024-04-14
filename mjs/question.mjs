@@ -168,7 +168,9 @@ async function loadVoting(ctx) {
         })
     })
 
-    await updateUserData(postId)
+    if (userName) {
+        await updateUserData(postId)
+    }
     $$('.voting').forEach(updateVote)
 }
 
