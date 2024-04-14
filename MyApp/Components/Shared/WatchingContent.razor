@@ -1,7 +1,7 @@
 ﻿@using MyApp.Data
 @inject IDbConnectionFactory DbFactory
 
-@if (Watching != null)
+@if (Watching != null && HttpContext?.User.GetUserName() != null)
 {
     <div id="watching" class="w-80" data-postid=@PostId data-tag=@Tag data-type=@Type data-watching=@(Watching.Value ? "on" : "off")>
         <b class="text-xs">Notifications</b>
@@ -22,28 +22,6 @@
             You’re receiving notifications because you’re watching this <span>@Type.ToLower()</span>.
         </p>
     </div>
-    <script type="module">
-    import { client } from "app.mjs"
-    import { WatchContent, UnwatchContent, WatchStatus } from "dtos.mjs"
-    
-    globalThis.toggleWatching = async function () {
-        const el = document.querySelector('#watching'),
-            postId = parseInt(el.dataset.postid),
-            tag = el.dataset.tag,
-            args = postId ? { postId } : { tag }
-
-        el.dataset.watching = el.dataset.watching === 'on' ? 'off' : 'on'
-        if (el.dataset.watching === 'on') {
-            await client.api(new WatchContent(args))
-        } else {
-            await client.api(new UnwatchContent(args))
-        }
-        setTimeout(async () => {
-            const api = await client.api(new WatchStatus(args))
-            el.dataset.watching = api.response.result ? 'on' : 'off'
-        }, 2000)
-    }
-    </script>
 }
     
 @code {

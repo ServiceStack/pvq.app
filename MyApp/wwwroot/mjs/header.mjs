@@ -1,20 +1,29 @@
 import { ref, computed, watch, onMounted } from "vue"
-import { forceMount } from "app.mjs"
+import { forceMount, client } from "app.mjs"
 import { $1, $$, createElement, toDate, EventBus } from "@servicestack/client"
 import { useClient, useUtils } from "@servicestack/vue"
-import { GetLatestNotifications, GetLatestAchievements, MarkAsRead } from "dtos.mjs"
+import { GetLatestNotifications, GetLatestAchievements, MarkAsRead,
+         WatchContent, UnwatchContent, WatchStatus} from "dtos.mjs"
 
 const bus = new EventBus()
-const { transition } = useUtils()
+const {transition} = useUtils()
 const rule1 = {
-    entering: { cls: 'transition ease-out duration-100', from: 'transform opacity-0 scale-95', to: 'transform opacity-100 scale-100' },
-    leaving:  { cls: 'transition ease-in duration-75', from: 'transform opacity-100 scale-100', to: 'transform opacity-0 scale-95' }
+    entering: {
+        cls: 'transition ease-out duration-100',
+        from: 'transform opacity-0 scale-95',
+        to: 'transform opacity-100 scale-100'
+    },
+    leaving: {
+        cls: 'transition ease-in duration-75',
+        from: 'transform opacity-100 scale-100',
+        to: 'transform opacity-0 scale-95'
+    }
 }
 
 function formatDate(date) {
     const d = toDate(date)
-    return d.getDate() + ' ' + d.toLocaleString('en-US', { month: 'short' }) + ' at '
-        + `${d.getHours()}`.padStart(2,'0')+ `:${d.getMinutes()}`.padStart(2,'0')
+    return d.getDate() + ' ' + d.toLocaleString('en-US', {month: 'short'}) + ' at '
+        + `${d.getHours()}`.padStart(2, '0') + `:${d.getMinutes()}`.padStart(2, '0')
 }
 
 const NotificationsMenu = {
@@ -91,7 +100,7 @@ const NotificationsMenu = {
         onMounted(async () => {
             await updateNotifications()
         })
-        
+
         const typeLabels = {
             NewComment: 'comment',
             NewAnswer: 'answer',
@@ -99,26 +108,26 @@ const NotificationsMenu = {
             AnswerMention: 'mentioned in answer',
             CommentMention: 'mentioned in comment',
         }
-        
+
         function typeLabel(type) {
             return typeLabels[type] || type
         }
-        
+
         async function markAll() {
             results.value.forEach(x => x.read = true)
-            const api = await client.api(new MarkAsRead({ allNotifications: true }))
+            const api = await client.api(new MarkAsRead({allNotifications: true}))
             if (api.succeeded) {
                 toggleUnreadNotifications(false)
             }
         }
-        
+
         async function goto(item) {
             item.read = true
-            await client.api(new MarkAsRead({ notificationIds:[item.id] }))
+            await client.api(new MarkAsRead({notificationIds: [item.id]}))
             location.href = item.href
         }
-        
-        return { transition1, hide, filteredResults, filter, typeLabel, formatDate, goto, markAll }
+
+        return {transition1, hide, filteredResults, filter, typeLabel, formatDate, goto, markAll}
     }
 }
 
@@ -160,17 +169,17 @@ const AchievementsMenu = {
             const sevenDaysAgo = new Date() - 7 * 24 * 60 * 60 * 1000
             const last7days = results.value.filter(x => new Date(x.createdDate) >= sevenDaysAgo)
             if (last7days.length > 0) {
-                to.push({ title: 'Last 7 days', results: last7days })
+                to.push({title: 'Last 7 days', results: last7days})
             }
             const thirtyDaysAgo = new Date() - 30 * 24 * 60 * 60 * 1000
             const last30days = results.value.filter(x => new Date(x.createdDate) >= thirtyDaysAgo && !last7days.includes(x))
             if (last30days.length > 0) {
-                to.push({ title: 'Last 30 days', results: last30days })
+                to.push({title: 'Last 30 days', results: last30days})
             }
             const title = last7days.length + last30days.length === 0 ? 'All time' : 'Older'
             const remaining = results.value.filter(x => !last7days.includes(x) && !last30days.includes(x))
             if (remaining.length > 0) {
-                to.push({ title, results: remaining })
+                to.push({title, results: remaining})
             }
             return to
         })
@@ -190,7 +199,7 @@ const AchievementsMenu = {
         watch(show, () => {
             transition(rule1, transition1, show.value)
         })
-        
+
         async function updateAchievements() {
             const api = await client.api(new GetLatestAchievements())
             if (api.succeeded) {
@@ -207,7 +216,7 @@ const AchievementsMenu = {
             location.href = item.href
         }
 
-        return { transition1, hide, filteredResults, formatDate, goto }
+        return {transition1, hide, filteredResults, formatDate, goto}
     }
 }
 
@@ -217,6 +226,7 @@ function toggleUnreadNotifications(hasUnread) {
     alert.classList.toggle('text-red-500', hasUnread)
     alert.classList.toggle('text-transparent', !hasUnread)
 }
+
 function toggleUnreadAchievements(hasUnread) {
     const alert = $1('#new-achievements')
     if (!alert) return
@@ -228,6 +238,7 @@ function toggleNotifications(el) {
     bus.publish('toggleNotifications')
     bus.publish('hideAchievements')
 }
+
 function toggleAchievements(el) {
     bus.publish('toggleAchievements')
     bus.publish('hideNotifications')
@@ -239,6 +250,8 @@ function bindGlobals() {
     globalThis.toggleUnreadAchievements = toggleUnreadAchievements
     globalThis.toggleNotifications = toggleNotifications
     globalThis.toggleAchievements = toggleAchievements
+    globalThis.toggleWatching = toggleWatching
+    globalThis.copyBlock = copyBlock
 }
 
 const svg = {
@@ -246,7 +259,7 @@ const svg = {
     check: `<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`,
 }
 
-globalThis.copyBlock = function copyBlock(btn) {
+function copyBlock(btn) {
     // console.log('copyBlock',btn)
     const label = btn.previousElementSibling
     const code = btn.parentElement.nextElementSibling
@@ -272,19 +285,37 @@ export function addCopyButtonToCodeBlocks() {
         if (pre.classList.contains('group')) return
         pre.classList.add('relative', 'group')
 
-        const div = createElement('div', { attrs: { className: 'opacity-0 group-hover:opacity-100 transition-opacity duration-100 flex absolute right-2 -mt-1 select-none' } })
-        const label = createElement('div', { attrs: { className:'hidden font-sans p-1 px-2 mr-1 rounded-md border border-gray-600 bg-gray-700 text-gray-400' } })
-        const btn = createElement('button', { 
-            attrs: { 
-                className:'p-1 rounded-md border block text-gray-500 hover:text-gray-400 border-gray-700 hover:border-gray-600',
+        const div = createElement('div', {attrs: {className: 'opacity-0 group-hover:opacity-100 transition-opacity duration-100 flex absolute right-2 -mt-1 select-none'}})
+        const label = createElement('div', {attrs: {className: 'hidden font-sans p-1 px-2 mr-1 rounded-md border border-gray-600 bg-gray-700 text-gray-400'}})
+        const btn = createElement('button', {
+            attrs: {
+                className: 'p-1 rounded-md border block text-gray-500 hover:text-gray-400 border-gray-700 hover:border-gray-600',
                 onclick: 'copyBlock(this)'
-            } 
+            }
         })
         btn.innerHTML = svg.clipboard
         div.appendChild(label)
         div.appendChild(btn)
-        pre.insertBefore(div,code)
+        pre.insertBefore(div, code)
     })
+}
+
+async function toggleWatching() {
+    const el = document.querySelector('#watching'),
+        postId = parseInt(el.dataset.postid),
+        tag = el.dataset.tag,
+        args = postId ? {postId} : {tag}
+
+    el.dataset.watching = el.dataset.watching === 'on' ? 'off' : 'on'
+    if (el.dataset.watching === 'on') {
+        await client.api(new WatchContent(args))
+    } else {
+        await client.api(new UnwatchContent(args))
+    }
+    setTimeout(async () => {
+        const api = await client.api(new WatchStatus(args))
+        el.dataset.watching = api.response.result ? 'on' : 'off'
+    }, 2000)
 }
 
 export default {
