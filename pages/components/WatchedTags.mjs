@@ -1,6 +1,8 @@
 ﻿import { ref, onMounted } from "vue"
-import { useClient } from '@servicestack/vue'
+import { useClient, useAuth } from '@servicestack/vue'
 import { GetWatchedTags, WatchTags } from "dtos.mjs"
+
+const signInUrl = () => `/Account/Login?ReturnUrl=${location.pathname}`
 
 export default {
     template:`
@@ -14,7 +16,7 @@ export default {
                         </button>                    
                     </div>
                 </div>
-                <div v-if="edit" class="my-4 flex gap-2 text-sm">
+                <div v-if="edit && tags.length" class="my-4 flex gap-2 text-sm">
                     <span v-for="tag in tags" class="inline-flex items-center gap-x-0.5 rounded-md bg-blue-50 dark:bg-blue-900 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">
                       {{tag}}
                       <button v-if="edit" @click="remove(tag)" type="button" class="group relative -mr-1 h-3.5 w-3.5 rounded-sm hover:bg-blue-600/20">
@@ -26,7 +28,7 @@ export default {
                       </button>
                     </span>
                 </div>
-                <div v-else class="my-4 flex gap-2 text-sm">
+                <div v-else-if="user" class="my-4 flex gap-2 text-sm">
                     <a v-for="tag in tags" :href="'/questions/tagged/' + encodeURIComponent(tag)" class="inline-flex items-center gap-x-0.5 rounded-md bg-blue-50 dark:bg-blue-900 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10 cursor-pointer">
                       {{tag}}
                     </a>
@@ -43,7 +45,8 @@ export default {
                         </div>
                     </div>
                     <div v-else class="flex">
-                        <span class="text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-200 cursor-pointer" @click="edit=!edit">edit</span>
+                        <span v-if="user" class="text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-200 cursor-pointer" @click="edit=!edit">edit</span>
+                        <a v-else :href="signInUrl()" class="text-indigo-600 dark:text-indigo-300">sign in</a>
                     </div>
                 </div>
             </div>
@@ -51,6 +54,7 @@ export default {
     `,
     setup() {
         const client = useClient()
+        const { user } = useAuth()
         const tags = ref([])
         const edit = ref()
         const newTags = ref([])
@@ -89,6 +93,6 @@ export default {
             }
         }
         
-        return { tags, edit, newTags, allTags, add, remove }
+        return { user, tags, edit, newTags, allTags, add, remove, signInUrl }
     }
 }
