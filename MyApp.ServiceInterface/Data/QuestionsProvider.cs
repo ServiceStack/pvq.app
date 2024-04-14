@@ -264,7 +264,6 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
 
     public async Task<Post> GetAnswerAsPostAsync(IVirtualFile existingAnswer)
     {
-        var now = DateTime.UtcNow;
         var existingAnswerJson = await existingAnswer.ReadAllTextAsync();
         var fileName = existingAnswer.VirtualPath.TrimStart('/').Replace("/", "");
         var postId = fileName.LeftPart('.').ToInt();
@@ -353,6 +352,19 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         fs.DeleteFiles(localQuestionFiles.Files.Select(x => x.VirtualPath));
         var remoteQuestionFiles = await GetRemoteQuestionFilesAsync(id);
         r2.DeleteFiles(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
+    }
+
+    public async Task<string?> GetAnswerBodyAsync(string answerId)
+    {
+        var answerFile = await GetAnswerFileAsync(answerId);
+        if (answerFile == null)
+            return null;
+
+        var json = await answerFile.ReadAllTextAsync();
+        var body = answerFile.Name.Contains(".a.")
+            ? GetModelAnswerBody(json)
+            : GetHumanAnswerBody(json);
+        return body;
     }
 
     public string? GetModelAnswerBody(string json)

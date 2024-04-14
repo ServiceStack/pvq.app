@@ -13,6 +13,7 @@ public class AppConfig
     public string PublicBaseUrl { get; set; }
     public string CacheDir { get; set; }
     public string ProfilesDir { get; set; }
+    public string NotificationsEmail { get; set; } = "notifications@pvq.app";
     public string? GitPagesBaseUrl { get; set; }
     public ConcurrentDictionary<string,int> UsersReputation { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersQuestions { get; set; } = new();

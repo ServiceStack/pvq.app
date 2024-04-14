@@ -287,16 +287,11 @@ public class QuestionServices(AppConfig appConfig,
 
     public async Task<object> Any(GetAnswerBody request)
     {
-        var answerFile = await questions.GetAnswerFileAsync(request.Id);
-        if (answerFile == null)
+        var body = await questions.GetAnswerBodyAsync(request.Id);
+        if (body == null)
             throw HttpError.NotFound("Answer does not exist");
 
-        var json = await answerFile.ReadAllTextAsync();
-        var body = answerFile.Name.Contains(".a.")
-            ? questions.GetModelAnswerBody(json)
-            : questions.GetHumanAnswerBody(json);
-
-        return new HttpResult(body ?? "", MimeTypes.PlainText);
+        return new HttpResult(body, MimeTypes.PlainText);
     }
 
     /// <summary>

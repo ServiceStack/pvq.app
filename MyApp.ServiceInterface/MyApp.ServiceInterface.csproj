@@ -13,6 +13,7 @@
         <PackageReference Include="ServiceStack.Ormlite" Version="8.*" />
         <PackageReference Include="ServiceStack.Aws" Version="8.*" />
         <PackageReference Include="SixLabors.ImageSharp" Version="2.1.7" />
+        <PackageReference Include="Markdig" Version="0.37.*" />
     </ItemGroup>
 
     <ItemGroup>

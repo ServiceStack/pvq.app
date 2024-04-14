@@ -1,8 +1,14 @@
 ﻿@using MyApp.Data
 @inject IDbConnectionFactory DbFactory
+@inject IMessageProducer MessageProducer
 
 @if (Watching != null && HttpContext?.User.GetUserName() != null)
 {
+    @if (Unsubscribe == true)
+    {
+        <Alert class="mb-2" Type="AlertType.Success">You've unsubscribed to this @Type.ToLower()</Alert>
+    }
+    
     <div id="watching" class="w-80" data-postid=@PostId data-tag=@Tag data-type=@Type data-watching=@(Watching.Value ? "on" : "off")>
         <b class="text-xs">Notifications</b>
         <div class="my-2">
@@ -32,21 +38,50 @@
     
     [Parameter] public int? PostId { get; set; }
     [Parameter] public string? Tag { get; set; }
+    [Parameter] public bool? Unsubscribe { get; set; }
+
     string Type => PostId != null ? nameof(Post) : nameof(Tag);
     
     bool? Watching { get; set; }
-
     protected override async Task OnInitializedAsync()
     {
         var userName = HttpContext.GetUserName();
         if (userName == null)
             return;
-        
+
         using var db = await DbFactory.OpenAsync();
         Watching = PostId != null
             ? await db.IsWatchingPostAsync(userName, PostId)
             : Tag != null 
                 ? await db.IsWatchingTagAsync(userName, Tag)
                 : null;
+
+        if (Unsubscribe == true)
+        {
+            if (PostId != null)
+            {
+                MessageProducer.Publish(new DbWrites
+                {
+                    PostSubscriptions = new()
+                    {
+                        UserName = userName,
+                        Unsubscriptions = [PostId.Value]
+                    }
+                });
+                Watching = false;
+            }
+            else if (Tag != null)
+            {
+                MessageProducer.Publish(new DbWrites
+                {
+                    TagSubscriptions = new()
+                    {
+                        UserName = userName,
+                        Unsubscriptions = [Tag]
+                    }
+                });
+                Watching = false;
+            }
+        }
     }
 }

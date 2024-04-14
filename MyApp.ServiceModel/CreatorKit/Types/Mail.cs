@@ -1,35 +1,20 @@
-﻿using ServiceStack;
+﻿using System;
+using System.Collections.Generic;
+using MyApp.ServiceModel;
+using ServiceStack;
 using ServiceStack.DataAnnotations;
 
-namespace MyApp.ServiceModel.Types;
-
-[Flags]
-public enum MailingList
-{
-    [Description("None")]
-    None = 0,                            //0
-    [Description("Test Group")]
-    TestGroup = 1 << 0,                  //1
-    [Description("Monthly Newsletter")]
-    MonthlyNewsletter = 1 << 1,          //2
-    [Description("New Blog Posts")]
-    BlogPostReleases = 1 << 2,           //4
-    [Description("New Videos")]
-    VideoReleases = 1 << 3,              //8
-    [Description("New Product Releases")]
-    ProductReleases = 1 << 4,            //16
-    [Description("Yearly Updates")]
-    YearlyUpdates = 1 << 5,              //32
-}
+namespace CreatorKit.ServiceModel.Types;
 
 [Icon(Svg = Icons.Contact)]
+[NamedConnection(Databases.CreatorKit)]
 public class Contact
 {
     [AutoIncrement]
     public int Id { get; set; }
     public string Email { get; set; }
     public string FirstName { get; set; }
-    public string LastName { get; set; }
+    public string? LastName { get; set; }
     public Source Source { get; set; }
     [FormatEnumFlags(nameof(MailingList))]
     public MailingList MailingLists { get; set; }
@@ -58,6 +43,7 @@ public enum InvalidEmailStatus
     Disposable,
 }
 
+[NamedConnection(Databases.CreatorKit)]
 public class InvalidEmail
 {
     [AutoIncrement]
@@ -68,6 +54,7 @@ public class InvalidEmail
 }
 
 [Icon(Svg = Icons.Mail)]
+[NamedConnection(Databases.CreatorKit)]
 public class MailMessage
 {
     [AutoIncrement]
@@ -87,6 +74,7 @@ public class MailMessage
 }
 
 [Icon(Svg = Icons.MailRun)]
+[NamedConnection(Databases.CreatorKit)]
 public class MailRun
 {
     [AutoIncrement]
@@ -107,6 +95,7 @@ public class MailRun
 
 [Icon(Svg = Icons.Mail)]
 [UniqueConstraint(nameof(MailRunId), nameof(ContactId))]
+[NamedConnection(Databases.CreatorKit)]
 public class MailMessageRun
 {
     [AutoIncrement]

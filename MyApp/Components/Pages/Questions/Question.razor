@@ -47,7 +47,7 @@
             </div>
         }
     </div>
-    <Aside PostId=@Id />
+    <Aside PostId=@Id Unsubscribe=@(Unsubscribe==1) />
 </div>
 <LiteYoutubeIncludes />
 
@@ -60,6 +60,7 @@
     [Parameter] public required string Slug { get; set; }
 
     [SupplyParameterFromQuery] int? Force { get; set; }
+    [SupplyParameterFromQuery] int? Unsubscribe { get; set; }
 
     QuestionAndAnswers? question;
     ResponseStatus? error;
