@@ -1,10 +1,11 @@
 ﻿using MyApp.Data;
+using MyApp.ServiceInterface.Renderers;
 using MyApp.ServiceModel;
 using ServiceStack;
 
 namespace MyApp.ServiceInterface;
 
-public class AdminServices(AppConfig appConfig) : Service
+public class AdminServices(AppConfig appConfig, ICommandExecutor executor) : Service
 {
     public async Task<object> Any(Sync request)
     {
@@ -29,4 +30,16 @@ public class AdminServices(AppConfig appConfig) : Service
         }
         return new StringResponse { Result = "OK" };
     }
+
+    public async Task<object?> Any(GenerateMeta request)
+    {
+        var regenerateMeta = executor.Command<RegenerateMetaCommand>();
+        await executor.ExecuteAsync(regenerateMeta, new RegenerateMeta
+        {
+            ForPost = request.Id
+        });
+        
+        return regenerateMeta.Question;
+    }
+   
 }
