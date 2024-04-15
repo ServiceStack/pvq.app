@@ -10,6 +10,9 @@ public class Meta
     // ModelName => Votes
     public Dictionary<string, int> ModelVotes { get; set; } = [];
 
+    // ModelName => Vote Reason
+    public Dictionary<string, string> ModelReasons { get; set; } = [];
+
     // RefId => Comments
     public Dictionary<string, List<Comment>> Comments { get; set; } = [];
 
