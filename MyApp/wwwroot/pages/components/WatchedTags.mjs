@@ -7,7 +7,7 @@ const signInUrl = () => `/Account/Login?ReturnUrl=${location.pathname}`
 export default {
     template:`
         <div class="mt-8 bg-white dark:bg-black shadow sm:rounded-lg relative">
-            <div class="p-4 sm:p-6">
+            <div class="p-3 lg:p-6">
                 <div class="flex justify-between">
                     <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-gray-50">Watched Tags</h3>
                     <div v-if="edit" class="-mt-4 -mr-4">

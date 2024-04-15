@@ -7,8 +7,8 @@
 
 <PageTitle>pvq.app</PageTitle>
 
-<div class="sm:flex flex-wrap justify-center px-2">
-    <div>
+<div class="pt-12 pb-24 md:grid md:grid-cols-8 md:gap-x-8 max-w-screen-xl mx-auto">
+    <div class="md:col-span-6">
         @if (Html != null)
         {
             @BlazorHtml.Raw(Html)
@@ -18,7 +18,9 @@
             <HomeTab Tab=@Tab Posts=@Posts />
         }
     </div>
-    <Aside />
+    <div class="md:col-span-2 pt-8 md:pt-24 pb-12">
+        <Aside />
+    </div>
 </div>
 
 @code {

@@ -49,14 +49,10 @@
 
 /* override typography */
 :root {
-    --content-width: 54rem;
+    --content-width: 50rem;
 }
 
 .prose { max-width: var(--content-width); }
-.prose :where(code):not(:where([class~="not-prose"] *)) {
-    width: var(--content-width);
-    max-width: var(--content-width);
-}
 .dark .prose :where(a):not(:where([class~="not-prose"] *)):hover {
     opacity: .8;
     color: rgb(165 180 252); /* text-slate-300 */
@@ -87,6 +83,12 @@
 @media (max-width: 1024px) {
     .prose :where(pre):not(:where([class~="not-prose"] *)) {
         min-width: unset;
+    }
+}
+@media (min-width: 1280px) {
+    .prose :where(code):not(:where([class~="not-prose"] *)) {
+        width: var(--content-width);
+        max-width: var(--content-width);
     }
 }
 

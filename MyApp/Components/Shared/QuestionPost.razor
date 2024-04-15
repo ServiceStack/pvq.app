@@ -6,7 +6,7 @@
 <template id="Post">@Question.Post.ToJson()</template>
 <div id="dialogs"></div>
 
-<div class="mt-8 mb-20 mx-auto sm:max-w-4xl sm:w-[56rem] xl:max-w-5xl xl:w-[64rem]" data-module="mjs/question.mjs">
+<div class="mb-20" data-module="mjs/question.mjs">
     <article id="question" data-postid=@Question.Id data-createdby=@Question.Post.CreatedBy>
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lg:text-4xl xl:text-5xl">
             <span class="block xl:inline">@Question.Post.Title</span>
@@ -150,31 +150,6 @@
             {
                 var userName = AppConfig.GetUserName(answer.Model);
 
-                if (Question.Meta?.ModelVotes?.TryGetValue(answer.Model, out var votes) == true &&
-                    Question.Meta?.ModelReasons?.TryGetValue(answer.Model, out var reason) == true)
-                {
-                    var grade = ImageCreator.GradeLetter(votes);
-                    
-                    <div class="relative float-right w-10 h-10">
-                        <div class="absolute mt-4 group">
-                            <img class="cursor-help	w-10 h-10 rounded-full" src=@ImageCreator.CreateGradeDataUri(grade) alt=@($"Grade: {grade}") />
-
-                            <div class="hidden group-hover:block absolute z-10 mt-2 flex w-screen max-w-max -translate-x-1/2 px-4">
-                                <div class="w-screen max-w-md flex-auto overflow-hidden rounded-3xl bg-white text-sm leading-6 shadow-lg ring-1 ring-gray-900/5">
-                                    <div class="p-4">
-                                        @BlazorHtml.Raw(Markdown.GenerateHtml(reason))
-                                    </div>
-                                    <div class="bg-gray-50 flex items-center justify-center gap-x-2.5 p-3 text-gray-900">
-                                        <span>
-                                            graded by <b>mixtral</b>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-
                 <article data-answer=@answer.Id data-createdby=@userName class="py-8 border-b border-gray-200 dark:border-gray-700">
                     <div id=@answer.Id class="flex">
                         <div class="md:w-32 pr-2">
@@ -199,6 +174,30 @@
                             </div>
                         </div>
                         <div>
+                            @if (Question.Meta?.ModelVotes?.TryGetValue(answer.Model, out var votes) == true &&
+                                Question.Meta?.ModelReasons?.TryGetValue(answer.Model, out var reason) == true)
+                            {
+                                var grade = ImageCreator.GradeLetter(votes);
+                                <div class="relative -mt-6 lg:-mr-12 ml-4 mb-4 float-right w-10 h-10">
+                                    <div class="absolute mt-4 group" title=@($"Grade: {grade}")>
+                                        <img class="cursor-help	w-10 h-10 rounded-full" src=@ImageCreator.CreateGradeDataUri(grade) alt=@($"Grade: {grade}")/>
+
+                                        <div class="hidden group-hover:block absolute right-0 -mr-6 z-10 mt-2 flex w-screen max-w-max px-4">
+                                            <div class="w-screen max-w-md flex-auto overflow-hidden rounded-3xl bg-white text-sm leading-6 shadow-lg ring-1 ring-gray-900/5">
+                                                <div class="p-4">
+                                                    @BlazorHtml.Raw(Markdown.GenerateHtml(reason))
+                                                </div>
+                                                <div class="bg-gray-50 flex items-center justify-center gap-x-2.5 p-3 text-gray-900">
+                                                    <span>
+                                                        graded by <b>mixtral</b>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
                             <div id=@($"preview-{answer.Id}") class="preview xl:flex-grow prose">
                                 @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Choices.FirstOrDefault()?.Message.Content))
                             </div>

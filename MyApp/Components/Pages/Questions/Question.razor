@@ -19,8 +19,8 @@
     <meta name="og:description" content="@summary" />
 </HeadContent>
 
-<div class="lg:flex flex-wrap justify-center px-2">
-    <div>
+<div class="pt-12 pb-24 lg:grid lg:grid-cols-8 lg:gap-x-8 max-w-screen-xl mx-auto">
+    <div class="lg:col-span-6">
         @if (Html != null)
         {
             @BlazorHtml.Raw(Html)
@@ -47,7 +47,9 @@
             </div>
         }
     </div>
-    <Aside PostId=@Id Unsubscribe=@(Unsubscribe==1) />
+    <div class="lg:col-span-2 pt-8 lg:pt-24 pb-12">
+        <Aside PostId=@Id Unsubscribe=@(Unsubscribe==1) />
+    </div>
 </div>
 <LiteYoutubeIncludes />
 
