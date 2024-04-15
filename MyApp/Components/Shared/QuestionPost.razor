@@ -140,6 +140,11 @@
             @foreach (var answer in Question.Answers)
             {
                 var userName = AppConfig.GetUserName(answer.Model);
+                if (Question.Meta?.ModelReasons.TryGetValue(answer.Model, out var reason) == true)
+                {
+                    <Heading1>REASON</Heading1>
+                    <div>@reason</div>
+                }
                 <article data-answer=@answer.Id data-createdby=@userName class="py-8 border-b border-gray-200 dark:border-gray-700">
                     <div id=@answer.Id class="flex">
                         <div class="md:w-32 pr-2">
@@ -157,37 +162,40 @@
                                 </div>
                             </div>
                         </div>
-                        <div id=@($"preview-{answer.Id}") class="preview xl:flex-grow prose">
-                            @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Choices.FirstOrDefault()?.Message.Content))
-                        </div>
-                        <div id=@($"edit-{answer.Id}") class="edit w-full pl-2 hidden"></div>
-                        
-                        <div class="answer-footer mt-2 flex flex-1 items-end">
-                            <div class="ml-8 sm:pl-6 xl:ml-20 xl:pl-12 w-full">
-                                <div class="flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
-                                    <div class="flex flex-grow px-4 sm:px-6 text-sm justify-end">
-                                        <div class="text-gray-700 dark:text-gray-200 text-sm">
-                                            answered <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
+                        <div>
+                            <div id=@($"preview-{answer.Id}") class="preview xl:flex-grow prose">
+                                @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Choices.FirstOrDefault()?.Message.Content))
+                            </div>
+                            <div id=@($"edit-{answer.Id}") class="edit w-full pl-2 hidden"></div>
+                            
+                            <div class="answer-footer">
+                                <div class="pt-6 flex flex-1 items-end">
+                                    <div class="flex justify-end w-full">
+                                        <div class="text-xs">
+                                            <div class="flex">
+                                                <span>answered</span>
+                                                <dd class="ml-1 text-gray-600 dark:text-gray-300">
+                                                    <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
+                                                </dd>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 @if (Question.Post.LockedDate == null)
                                 {
                                     <div data-answer=@answer.Id class="relative mt-4 text-sm">
                                         <div class="share-dialog absolute"></div>
-                                        <span class="share-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Share this Answer"></span>
-                                        <span class="edit-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Answer"></span>
-                                        <span class="flag-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Flag this Answer"></span>
+                                        <span class="share-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Share this Answer">share</span>
+                                        <span class="edit-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Answer">edit</span>
+                                        <span class="flag-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Flag this Answer">flag</span>
                                     </div>
                                 }
-                                
-                                <PostComments RefId=@answer.Id Comments=@Question.GetAnswerComments(answer.Id) />
+
+                                <PostComments RefId=@answer.Id Comments=@Question.GetAnswerComments(answer.Id)/>
                             </div>
                         </div>
-                        
                     </div>
-                    
                 </article>
             }
         </div>
