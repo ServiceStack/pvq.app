@@ -7,7 +7,7 @@ const signInUrl = () => `/Account/Login?ReturnUrl=${location.pathname}`
 export default {
     template:`
         <div class="mt-8 bg-white dark:bg-black shadow sm:rounded-lg relative">
-            <div class="px-4 py-5 sm:p-6">
+            <div class="p-4 sm:p-6">
                 <div class="flex justify-between">
                     <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-gray-50">Watched Tags</h3>
                     <div v-if="edit" class="-mt-4 -mr-4">
@@ -15,8 +15,12 @@ export default {
                             <span class="sr-only">Close</span><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>                    
                     </div>
+                    <div v-else class="flex">
+                        <span v-if="user" class="text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-200 cursor-pointer" @click="edit=!edit">edit</span>
+                        <a v-else :href="signInUrl()" class="text-indigo-600 dark:text-indigo-300">sign in</a>
+                    </div>
                 </div>
-                <div v-if="edit && tags.length" class="my-4 flex gap-2 text-sm">
+                <div v-if="edit && tags.length" class="mt-4 flex gap-2 text-sm">
                     <span v-for="tag in tags" class="inline-flex items-center gap-x-0.5 rounded-md bg-blue-50 dark:bg-blue-900 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10">
                       {{tag}}
                       <button v-if="edit" @click="remove(tag)" type="button" class="group relative -mr-1 h-3.5 w-3.5 rounded-sm hover:bg-blue-600/20">
@@ -28,13 +32,13 @@ export default {
                       </button>
                     </span>
                 </div>
-                <div v-else-if="user" class="my-4 flex gap-2 text-sm">
-                    <a v-for="tag in tags" :href="'/questions/tagged/' + encodeURIComponent(tag)" class="inline-flex items-center gap-x-0.5 rounded-md bg-blue-50 dark:bg-blue-900 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10 cursor-pointer">
+                <div v-else-if="user && tags.length" class="mt-4 flex gap-2 text-sm">
+                    <a v-for="tag in tags" :href="'/questions/tagged/' + encodeURIComponent(tag)" class="inline-flex items-center gap-x-0.5 rounded-md bg-blue-50 dark:bg-blue-900 hover:bg-blue-100 dark:hover:bg-blue-800 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-200 ring-1 ring-inset ring-blue-700/10 cursor-pointer">
                       {{tag}}
                     </a>
                 </div>
-                <div class="mt-5">
-                    <div v-if="edit">
+                <div v-if="edit" class="mt-5">
+                    <div>
                         <div class="flex items-end w-full">
                             <div class="w-60">
                                 <TagInput id="newTags" label="" v-model="newTags" :allowableValues="allTags.filter(x => !tags.includes(x))" />
@@ -43,10 +47,6 @@ export default {
                                 <secondary-button @click="add" class="ml-2 w-10">Add</secondary-button>
                             </div>
                         </div>
-                    </div>
-                    <div v-else class="flex">
-                        <span v-if="user" class="text-indigo-600 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-200 cursor-pointer" @click="edit=!edit">edit</span>
-                        <a v-else :href="signInUrl()" class="text-indigo-600 dark:text-indigo-300">sign in</a>
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@ export default {
         let allTags = localStorage.getItem('data:tags.txt')?.split('\n') || []
         
         onMounted(async () => {
-            if (user.userName) {
+            if (user.value.userName) {
                 const api = await client.api(new GetWatchedTags())
                 if (api.succeeded) {
                     tags.value = api.response.results
