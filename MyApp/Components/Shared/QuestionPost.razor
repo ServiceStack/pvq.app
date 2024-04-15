@@ -1,6 +1,7 @@
 ﻿@using MyApp.Data
 @inject AppConfig AppConfig
 @inject MarkdownQuestions Markdown
+@inject ServiceInterface.ImageCreator ImageCreator
 
 <template id="Post">@Question.Post.ToJson()</template>
 <div id="dialogs"></div>
@@ -43,19 +44,25 @@
             <div class="md:w-32 pr-2">
                 <div data-refid=@Question.Post.Id class="voting flex flex-col items-center pr-2">
                     <!-- bx:up-arrow bxs:up-arrow <path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19"/> -->
-                    <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
+                    <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/>
+                    </svg>
                     <b class="score text-xl" data-score=@Question.QuestionScore>@Question.QuestionScore.ToHumanReadable()</b>
                     <!-- bx:down-arrow bxs:down-arrow <path fill="currentColor" d="M11.178 19.569a.998.998 0 0 0 1.644 0l9-13A.999.999 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569z"/> -->
-                    <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
+                    <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/>
+                    </svg>
                 </div>
-                
+
                 @if (Question.Post.CreatedBy != null)
                 {
                     <div class="my-4 flex flex-col items-center text-sm">
                         <img class="w-10 h-10 xl:w-16 xl:h-16 bg-cover inline-block" src="@Question.Post.CreatedBy.GetAvatarUrl()">
                         <div class="mt-1 hidden md:block text-center whitespace-nowrap font-semibold">@Question.Post.CreatedBy</div>
                         <div class="mt-1 flex items-center">
-                            <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                            <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32">
+                                <circle cx="16" cy="16" r="8" fill="currentColor"/>
+                            </svg>
                             <span class="font-semibold" data-rep-user=@Question.Post.CreatedBy>@AppConfig.GetReputation(Question.Post.CreatedBy)</span>
                         </div>
                     </div>
@@ -68,7 +75,7 @@
                     @BlazorHtml.Raw(Markdown.GenerateHtml(Question.Post.Body))
                 </div>
                 <div id=@($"edit-{Question.Id}") class="edit w-full hidden"></div>
-            
+
                 <div class="question-footer flex justify-between w-full items-center">
                     <div class="flex-grow">
                         <div class="flex space-x-4 divide-x divide-gray-200 dark:divide-gray-800 text-sm sm:space-x-6 w-full">
@@ -111,7 +118,9 @@
                         <div class="mt-4 w-full border-l-4 border-red-400 bg-red-50 p-4">
                             <div class="flex w-full">
                                 <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2m-6 9c-1.1 0-2-.9-2-2s.9-2 2-2s2 .9 2 2s-.9 2-2 2M9 8V6c0-1.66 1.34-3 3-3s3 1.34 3 3v2z"/></svg>
+                                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2m-6 9c-1.1 0-2-.9-2-2s.9-2 2-2s2 .9 2 2s-.9 2-2 2M9 8V6c0-1.66 1.34-3 3-3s3 1.34 3 3v2z"/>
+                                    </svg>
                                 </div>
                                 <div class="ml-3">
                                     <p class="text-sm text-red-700">
@@ -122,13 +131,13 @@
                             </div>
                         </div>
                     }
-                    <PostComments RefId=@($"{Question.Id}") Comments=@Question.QuestionComments />
+                    <PostComments RefId=@($"{Question.Id}") Comments=@Question.QuestionComments/>
                 </div>
-                
+
             </div>
         </div>
     </article>
-    
+
     <div id="answers" class="mt-16">
         @if (Question.Answers.Count > 0)
         {
@@ -140,24 +149,51 @@
             @foreach (var answer in Question.Answers)
             {
                 var userName = AppConfig.GetUserName(answer.Model);
-                if (Question.Meta?.ModelReasons.TryGetValue(answer.Model, out var reason) == true)
+
+                if (Question.Meta?.ModelVotes?.TryGetValue(answer.Model, out var votes) == true &&
+                    Question.Meta?.ModelReasons?.TryGetValue(answer.Model, out var reason) == true)
                 {
-                    <Heading1>REASON</Heading1>
-                    <div>@reason</div>
+                    var grade = ImageCreator.GradeLetter(votes);
+                    
+                    <div class="relative w-full flex justify-end">
+                        <div class="absolute mt-4 group">
+                            <img class="cursor-help	w-10 h-10 rounded-full" src=@ImageCreator.CreateGradeDataUri(grade) alt=@($"Grade: {grade}") />
+
+                            <div class="hidden group-hover:block absolute z-10 mt-2 flex w-screen max-w-max -translate-x-1/2 px-4">
+                                <div class="w-screen max-w-md flex-auto overflow-hidden rounded-3xl bg-white text-sm leading-6 shadow-lg ring-1 ring-gray-900/5">
+                                    <div class="p-4">
+                                        @reason
+                                    </div>
+                                    <div class="bg-gray-50 flex items-center justify-center gap-x-2.5 p-3 text-gray-900">
+                                        <span>
+                                            graded by <b>mixtral</b>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 }
+
                 <article data-answer=@answer.Id data-createdby=@userName class="py-8 border-b border-gray-200 dark:border-gray-700">
                     <div id=@answer.Id class="flex">
                         <div class="md:w-32 pr-2">
                             <div data-refid=@answer.Id class="voting flex flex-col items-center">
-                                <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/></svg>
+                                <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/>
+                                </svg>
                                 <b class="score text-xl" data-score=@Question.GetAnswerScore(answer.Id)>@Question.GetAnswerScore(answer.Id).ToHumanReadable()</b>
-                                <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/></svg>
+                                <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/>
+                                </svg>
                             </div>
                             <div class="mt-8 flex flex-col items-center">
                                 <img class="w-10 h-10 xl:w-20 xl:h-20 bg-cover inline-block" src="@userName.GetAvatarUrl()">
                                 <div class="mt-1 hidden md:block text-center whitespace-nowrap text-xs xl:text-sm font-semibold">@userName</div>
                                 <div class="mt-1 flex items-center">
-                                    <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8" fill="currentColor"/></svg>
+                                    <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32">
+                                        <circle cx="16" cy="16" r="8" fill="currentColor"/>
+                                    </svg>
                                     <span data-rep-user=@userName class="text-xs font-semibold">@AppConfig.GetReputation(userName)</span>
                                 </div>
                             </div>
@@ -167,7 +203,7 @@
                                 @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Choices.FirstOrDefault()?.Message.Content))
                             </div>
                             <div id=@($"edit-{answer.Id}") class="edit w-full pl-2 hidden"></div>
-                            
+
                             <div class="answer-footer">
                                 <div class="pt-6 flex flex-1 items-end">
                                     <div class="flex justify-end w-full">
@@ -204,7 +240,6 @@
 
 @code {
     string StackOverflowUrl => $"https://stackoverflow.com/questions/{Question.Post.Id}/{Question.Post.Title.GenerateSlug()}";
-    
-    [Parameter]
-    public required QuestionAndAnswers Question { get; set; }
+
+    [Parameter] public required QuestionAndAnswers Question { get; set; }
 }

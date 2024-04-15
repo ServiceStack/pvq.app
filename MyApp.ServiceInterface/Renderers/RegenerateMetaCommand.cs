@@ -179,16 +179,13 @@ public class RegenerateMetaCommand(
         {
             var answerId = remoteFiles.GetAnswerId(answerFile.Name);
             var answerModel = remoteFiles.GetAnswerUserName(answerFile.Name);
-            var answer = answerFile.Name.Contains(".h.")
-                ? (await answerFile.ReadAllTextAsync()).FromJson<Post>()
-                : null;
             var answerStats = new StatTotals
             {
                 Id = answerId,
                 PostId = id,
                 UpVotes = allPostVotes.Count(x => x.RefId == answerId && x.Score > 0),
                 DownVotes = allPostVotes.Count(x => x.RefId == answerId && x.Score < 0),
-                StartingUpVotes = answer?.Score ?? meta.ModelVotes.GetValueOrDefault(answerModel, 0),
+                StartingUpVotes = meta.ModelVotes.GetValueOrDefault(answerModel, 0),
                 CreatedBy = answerModel,
             };
             liveStats.Add(answerStats);

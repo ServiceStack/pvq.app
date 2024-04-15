@@ -89,4 +89,27 @@ public class ImageCreator
     }
 
     public string DataUriToSvg(string dataUri) => Decode(dataUri.RightPart(','));
+
+    public char GradeLetter(int votes) => votes >= 9
+        ? 'A'
+        : votes >= 6
+            ? 'B'
+            : votes >= 3
+                ? 'C'
+                : votes >= 2
+                    ? 'D'
+                    : 'F';
+    
+    public string GradeBgColor(char grade) => grade switch
+    {
+        'A' => "#16a34a",
+        'B' => "#2563eb",
+        'C' => "#4b5563",
+        'D' => "#dc2626",
+        _ => "#7f1d1d"
+    };
+    
+    public string CreateGradeSvg(char grade) => CreateSvg(grade, GradeBgColor(grade), "#fff");
+    
+    public string CreateGradeDataUri(char grade) => Svg.ToDataUri(CreateGradeSvg(grade));
 }
