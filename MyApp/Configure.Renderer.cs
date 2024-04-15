@@ -23,6 +23,7 @@ public class ConfigureRenderer : IHostingStartup
             svc.AddSingleton<AppConfig>(c => RequiredService<AppConfig>());
             svc.AddSingleton<MarkdownQuestions>(c => RequiredService<MarkdownQuestions>());
             svc.AddSingleton<NavigationManager>(c => new StaticNavigationManager());
+            svc.AddSingleton<ImageCreator>();
             var sp = svc.BuildServiceProvider();
             services.AddScoped<HtmlRenderer>(c => new HtmlRenderer(sp, c.GetRequiredService<ILoggerFactory>()));
             
