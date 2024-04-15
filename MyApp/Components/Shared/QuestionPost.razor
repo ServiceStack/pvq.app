@@ -155,14 +155,14 @@
                 {
                     var grade = ImageCreator.GradeLetter(votes);
                     
-                    <div class="relative w-full flex justify-end">
+                    <div class="relative float-right w-10 h-10">
                         <div class="absolute mt-4 group">
                             <img class="cursor-help	w-10 h-10 rounded-full" src=@ImageCreator.CreateGradeDataUri(grade) alt=@($"Grade: {grade}") />
 
                             <div class="hidden group-hover:block absolute z-10 mt-2 flex w-screen max-w-max -translate-x-1/2 px-4">
                                 <div class="w-screen max-w-md flex-auto overflow-hidden rounded-3xl bg-white text-sm leading-6 shadow-lg ring-1 ring-gray-900/5">
                                     <div class="p-4">
-                                        @reason
+                                        @BlazorHtml.Raw(Markdown.GenerateHtml(reason))
                                     </div>
                                     <div class="bg-gray-50 flex items-center justify-center gap-x-2.5 p-3 text-gray-900">
                                         <span>
