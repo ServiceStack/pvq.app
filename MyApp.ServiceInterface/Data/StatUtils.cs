@@ -9,7 +9,9 @@ public static class StatUtils
 {
     public static string? GetUserName(this HttpContext? ctx) => ctx?.User.GetUserName();
     public static string? GetUserName(this ClaimsPrincipal? user) => user?.Identity?.Name;
-    public static bool IsAdminOrModerator(this ClaimsPrincipal? user) => Stats.IsAdminOrModerator(user?.Identity?.Name);
+
+    public static bool IsAdminOrModerator(this ClaimsPrincipal? user) => 
+        user?.GetUserName() is "admin" || user.HasRole(Roles.Moderator); 
     
     public static string GetRequiredUserName(this ClaimsPrincipal? user) => user?.GetUserName()
         ?? throw new ArgumentNullException(nameof(user));
