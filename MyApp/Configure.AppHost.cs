@@ -153,8 +153,8 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
 
         var tagsSiteMap = new Sitemap
         {
-            Location = baseUrl.CombineWith("/sitemaps/sitemap-tags.xml"),
-            AtPath = "/sitemaps/sitemap-tags.xml",
+            Location = baseUrl.CombineWith("/sitemap-tags.xml"),
+            AtPath = "/sitemap-tags.xml",
             LastModified = now,
             UrlSet = tags.Select(x => new SitemapUrl
             {
@@ -169,15 +169,15 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             {
                 new Sitemap
                 {
-                    Location = baseUrl.CombineWith("/sitemaps/sitemap.xml"),
-                    AtPath = "/sitemaps/sitemap.xml",
+                    Location = baseUrl.CombineWith("/sitemap.xml"),
+                    AtPath = "/sitemap.xml",
                     LastModified = now,
                     UrlSet = urlSet
                 },
                 new Sitemap
                 {
-                    Location = baseUrl.CombineWith("/sitemaps/sitemap-questions.xml"),
-                    AtPath = "/sitemaps/sitemap-questions.xml",
+                    Location = baseUrl.CombineWith("/sitemap-questions.xml"),
+                    AtPath = "/sitemap-questions.xml",
                     LastModified = ValidDate(posts.Max(x => x.LastEditDate)!.Value),
                     UrlSet = batches.Select(batch => new SitemapUrl {
                         Location = baseUrl.CombineWith($"/questions?tab=newest&page={page++}&pagesize=200"),
