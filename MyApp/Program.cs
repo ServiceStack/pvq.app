@@ -100,11 +100,7 @@ app.MapAdditionalIdentityEndpoints();
 AppTasks.Register("prerender", args =>
 {
     var appHost = (AppHost)HostContext.AppHost;
-    var distDir = appHost.ContentRootDirectory.RealPath.CombineWith("wwwroot/sitemaps");
-    if (Directory.Exists(distDir))
-        FileSystemVirtualFiles.DeleteDirectory(distDir);
-
-    distDir.AssertDir();
+    var distDir = appHost.ContentRootDirectory.RealPath.CombineWith("wwwroot");
     var appConfig = AppConfig.Instance;
     appHost.PrerenderSitemapAsync(appHost, distDir, appConfig.PublicBaseUrl).GetAwaiter().GetResult();
 });
