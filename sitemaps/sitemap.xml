@@ -1,15 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<sitemap>
-  <loc>https://pvq.app/sitemaps/sitemap.xml</loc>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+  <loc>https://pvq.app/questions/ask</loc>
   <lastmod>2024-04-16</lastmod>
-</sitemap>
-<sitemap>
-  <loc>https://pvq.app/sitemaps/sitemap-questions.xml</loc>
-  <lastmod>2023-03-05</lastmod>
-</sitemap>
-<sitemap>
-  <loc>https://pvq.app/sitemaps/sitemap-tags.xml</loc>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://pvq.app/leaderboard</loc>
   <lastmod>2024-04-16</lastmod>
-</sitemap>
-</sitemapindex>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://pvq.app/blog</loc>
+  <lastmod>2024-04-16</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://pvq.app/posts</loc>
+  <lastmod>2024-04-16</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://pvq.app/posts/pvq-intro</loc>
+  <lastmod>2024-04-16</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://pvq.app/about</loc>
+  <lastmod>2024-04-16</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+</urlset>
