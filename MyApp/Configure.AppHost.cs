@@ -169,8 +169,8 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             {
                 new Sitemap
                 {
-                    Location = baseUrl.CombineWith("/sitemap.xml"),
-                    AtPath = "/sitemap.xml",
+                    Location = baseUrl.CombineWith("/sitemap-app.xml"),
+                    AtPath = "/sitemap-app.xml",
                     LastModified = now,
                     UrlSet = urlSet
                 },
