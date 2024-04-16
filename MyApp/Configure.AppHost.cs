@@ -1,10 +1,14 @@
-﻿using Amazon.S3;
+﻿using System.Data;
+using System.Diagnostics;
+using Amazon.S3;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ServiceStack.IO;
 using ServiceStack.OrmLite;
 using MyApp.Data;
 using MyApp.ServiceInterface;
 using MyApp.ServiceModel;
+using ServiceStack.Data;
+using ServiceStack.Text;
 
 [assembly: HostingStartup(typeof(MyApp.AppHost))]
 
@@ -92,6 +96,104 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         }
         return null;
     }
+
+    public async Task PrerenderSitemapAsync(ServiceStackHost appHost, string distDir, string baseUrl)
+    {
+        var log = appHost.Resolve<ILogger<SitemapFeature>>();
+        log.LogInformation("Prerendering Sitemap...");
+        var sw = Stopwatch.StartNew();
+
+        using var db = await appHost.Resolve<IDbConnectionFactory>().OpenDbConnectionAsync();
+        var feature = await CreateSitemapAsync(log, db, baseUrl);
+        await feature.RenderToAsync(distDir);
+
+        log.LogInformation("Sitemap took {Elapsed} to prerender", sw.Elapsed.Humanize());
+    }
+
+    async Task<SitemapFeature> CreateSitemapAsync(ILogger log, IDbConnection db, string baseUrl)
+    {
+        var now = DateTime.UtcNow;
+
+        DateTime NValidDate(DateTime? date) => date == null
+            ? new DateTime(now.Year, now.Month, 1)
+            : ValidDate(date.Value);
+        DateTime ValidDate(DateTime date) =>
+            date.Year < 2000 ? new DateTime(now.Year, date.Month, date.Day) : date;
+
+        var posts = await db.SelectAsync(db.From<Post>());
+        var page = 1;
+        var batches = posts.BatchesOf(200);
+
+        var urlSet = new List<SitemapUrl>();
+        urlSet.AddRange([
+            new() { Location = "/questions/ask" },
+            new() { Location = "/leaderboard" },
+            new() { Location = "/blog" },
+            new() { Location = "/posts" },
+            new() { Location = "/posts/pvq-intro" },
+            //new() { Location = "/posts/leaderboard-intro" }, 20/04/2024
+            new() { Location = "/about" },
+        ]);
+        urlSet.ForEach(x =>
+        {
+            x.LastModified ??= now;
+            x.ChangeFrequency ??= SitemapFrequency.Weekly;
+            if (x.Location.StartsWith('/'))
+                x.Location = baseUrl.CombineWith(x.Location);
+        });
+
+        var tags = new HashSet<string>();
+        foreach (var post in posts)
+        {
+            foreach (var tag in post.Tags.Safe())
+            {
+                tags.Add(tag);
+            }
+        }
+
+        var tagsSiteMap = new Sitemap
+        {
+            Location = baseUrl.CombineWith("/sitemaps/sitemap-tags.xml"),
+            AtPath = "/sitemaps/sitemap-tags.xml",
+            LastModified = now,
+            UrlSet = tags.Select(x => new SitemapUrl
+            {
+                Location = baseUrl.CombineWith($"/questions/tagged/{x.UrlEncode()}"),
+                LastModified = now,
+                ChangeFrequency = SitemapFrequency.Weekly,
+            }).ToList()
+        };
+        
+        var to = new SitemapFeature {
+            SitemapIndex =
+            {
+                new Sitemap
+                {
+                    Location = baseUrl.CombineWith("/sitemaps/sitemap.xml"),
+                    AtPath = "/sitemaps/sitemap.xml",
+                    LastModified = now,
+                    UrlSet = urlSet
+                },
+                new Sitemap
+                {
+                    Location = baseUrl.CombineWith("/sitemaps/sitemap-questions.xml"),
+                    AtPath = "/sitemaps/sitemap-questions.xml",
+                    LastModified = ValidDate(posts.Max(x => x.LastEditDate)!.Value),
+                    UrlSet = batches.Select(batch => new SitemapUrl {
+                        Location = baseUrl.CombineWith($"/questions?tab=newest&page={page++}&pagesize=200"),
+                        LastModified = NValidDate(batch.Max(x => x.LastEditDate)),
+                        ChangeFrequency = SitemapFrequency.Weekly,
+                    }).ToList()
+                },
+                tagsSiteMap,
+            }
+        };
+        log.LogInformation("Sitemap Batches: {Count}", page);
+
+        return to;
+    }
+
+    
 }
 
 public static class HtmlHelpers

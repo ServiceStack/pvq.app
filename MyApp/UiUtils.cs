@@ -4,7 +4,7 @@ namespace MyApp;
 
 public static class UiUtils
 {
-    public const int MaxPageSize = 50;
+    public const int MaxPageSize = 200;
     public const int DefaultPageSize = 25;
     static DateTime MinDateTime = new(2008, 8, 1);
 

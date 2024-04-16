@@ -8,6 +8,7 @@ using ServiceStack.Blazor;
 using MyApp.Components;
 using MyApp.Data;
 using MyApp.Components.Account;
+using ServiceStack.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,6 +95,19 @@ app.MapRazorComponents<App>();
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+// prerender with: `$ npm run prerender` 
+AppTasks.Register("prerender", args =>
+{
+    var appHost = (AppHost)HostContext.AppHost;
+    var distDir = appHost.ContentRootDirectory.RealPath.CombineWith("wwwroot/sitemaps");
+    if (Directory.Exists(distDir))
+        FileSystemVirtualFiles.DeleteDirectory(distDir);
+
+    distDir.AssertDir();
+    var appConfig = AppConfig.Instance;
+    appHost.PrerenderSitemapAsync(appHost, distDir, appConfig.PublicBaseUrl).GetAwaiter().GetResult();
+});
 
 app.UseServiceStack(new AppHost(), options => {
     options.MapEndpoints();

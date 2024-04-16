@@ -9,6 +9,7 @@
         "migrate": "dotnet run --AppTasks=migrate",
         "revert:last": "dotnet run --AppTasks=migrate.revert:last",
         "revert:all": "dotnet run --AppTasks=migrate.revert:all",
-        "rerun:last": "npm run revert:last && npm run migrate"
+        "rerun:last": "npm run revert:last && npm run migrate",
+        "prerender": "dotnet run --AppTasks=prerender --environment Production"
     }
 }
