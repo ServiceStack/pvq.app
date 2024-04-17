@@ -8,11 +8,11 @@
 
 <PageTitle>@title</PageTitle>
 
-<div class="lg:flex flex-wrap justify-center px-2">
-    <div>
+<div class="pt-12 pb-24 lg:grid lg:grid-cols-8 lg:gap-x-8 max-w-screen-xl mx-auto">
+    <div class="lg:col-span-6">
         @if (question?.Post?.Title != null)
         {
-            <div class="my-8 mx-auto sm:max-w-4xl sm:w-[56rem] xl:max-w-5xl xl:w-[64rem]">
+            <div>
                 <article data-postid=@question.Id>
                     <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lg:text-4xl xl:text-5xl">
                         <span class="block xl:inline">@question.Post.Title</span>
@@ -37,7 +37,7 @@
                         @if (question.Post.CreatedBy != null)
                         {
                             <div class="flex mr-4">
-                                <img class="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-contain" src="/avatar/@question.Post.CreatedBy" alt=@($"{question.Post.CreatedBy} avatar")>
+                                <img class="h-6 w-6 sm:h-8 sm:w-8 bg-contain" src="/avatar/@question.Post.CreatedBy" alt=@($"{question.Post.CreatedBy} avatar")>
                                 <div>
                                     <b class="ml-2">@question.Post.CreatedBy</b>
                                 </div>
@@ -138,7 +138,7 @@
             </div>
         }
     </div>
-    <div class="mt-12">
+    <div class="lg:col-span-2 pt-8 lg:pt-24 pb-12">
         <Aside />
     </div>
 </div>
