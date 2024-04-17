@@ -1616,6 +1616,10 @@ select{
   width: 1.75rem;
 }
 
+.w-72 {
+  width: 18rem;
+}
+
 .w-8 {
   width: 2rem;
 }
@@ -5272,6 +5276,10 @@ select{
     width: 24rem;
   }
 
+  .md\:max-w-4xl {
+    max-width: 56rem;
+  }
+
   .md\:max-w-xl {
     max-width: 36rem;
   }
@@ -5335,6 +5343,10 @@ select{
     padding-top: 6rem;
   }
 
+  .md\:pl-0 {
+    padding-left: 0px;
+  }
+
   .md\:text-left {
     text-align: left;
   }
@@ -5342,6 +5354,11 @@ select{
   .md\:text-4xl {
     font-size: 2.25rem;
     line-height: 2.5rem;
+  }
+
+  .md\:text-5xl {
+    font-size: 3rem;
+    line-height: 1;
   }
 
   .md\:text-6xl {
@@ -5446,6 +5463,10 @@ select{
 
   .lg\:w-80 {
     width: 20rem;
+  }
+
+  .lg\:w-\[56rem\] {
+    width: 56rem;
   }
 
   .lg\:max-w-none {

@@ -2,11 +2,11 @@
 @inject AppConfig AppConfig
 
 <PageTitle>@Title</PageTitle>
-<div class="sm:flex flex-wrap justify-center px-2">
-    <div>
-        <div class="mt-8 mb-12 mx-auto sm:max-w-4xl sm:w-[56rem] xl:max-w-5xl xl:w-[64rem]">
-            <div class="mb-4 flex justify-between sm:w-[56rem]">
-                <h1 class="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">
+<div class="pt-12 pb-24 lg:grid lg:grid-cols-8 lg:gap-x-8 max-w-screen-xl mx-auto">
+    <div class="lg:col-span-6">
+        <div class="mt-8 mb-12 md:max-w-4xl">
+            <div class="mb-4 flex justify-between">
+                <h1 class="text-4xl pl-4 md:pl-0 font-bold tracking-tight text-gray-900 dark:text-gray-100 md:text-5xl">
                     <span class="block xl:inline">@Title</span>
                 </h1>
                 <div data-component="pages/Questions/Import.mjs"></div>
@@ -14,7 +14,7 @@
         </div>
         @if (HttpContext.GetUserName() != null)
         {
-            <div class="sm:w-[56rem]" data-component="pages/Questions/Ask.mjs"></div>
+            <div class="lg:w-[56rem]" data-component="pages/Questions/Ask.mjs"></div>
         }
         else
         {
@@ -24,8 +24,8 @@
             <NavLink class=@CssUtils.ClassNames(PrimaryButton.Classes(ButtonStyle.Green), "mt-2") href="Account/Login?ReturnUrl=/questions/ask">Sign In</NavLink>
         }
     </div>
-    <div>
-        <div class="w-76 ml-8 pt-4 pb-12">
+    <div class="lg:col-span-2 pb-12">
+        <div class="w-72 ml-8 pb-12">
             <div>
                 @{
                     var totalQuestions = AppConfig.GetQuestionCount(HttpContext.GetUserName());
