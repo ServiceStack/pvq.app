@@ -966,6 +966,10 @@ select{
   top: 1rem;
 }
 
+.left-1 {
+  left: 0.25rem;
+}
+
 .isolate {
   isolation: isolate;
 }
@@ -1362,6 +1366,18 @@ select{
 
 .mt-auto {
   margin-top: auto;
+}
+
+.-ml-12 {
+  margin-left: -3rem;
+}
+
+.-ml-32 {
+  margin-left: -8rem;
+}
+
+.-ml-44 {
+  margin-left: -11rem;
 }
 
 .block {
