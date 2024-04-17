@@ -1,7 +1,7 @@
 <html class="h-full bg-white">
 <head>
-<title>Admin Portal</title>
-<link rel="icon" type="image/svg" href="/portal/logo.svg">
+<title>CreatorKit Portal</title>
+<link rel="icon" type="image/svg" href="/creatorkit/logo.svg">
 <link rel="stylesheet" href="/css/app.css">
 <script type="importmap">
 {
@@ -9,8 +9,8 @@
         "vue": "/lib/mjs/vue.mjs",
         "@servicestack/client": "/lib/mjs/servicestack-client.mjs",
         "@servicestack/vue": "/lib/mjs/servicestack-vue.mjs",
-        "app.mjs": "/portal/app.mjs",
-        "dtos.mjs": "/portal/dtos.mjs"
+        "app.mjs": "/creatorkit/app.mjs",
+        "dtos.mjs": "/creatorkit/dtos.mjs"
     }
 }
 </script>
@@ -19,7 +19,7 @@
 <div id="app" v-cloak>
     <sidebar-layout ref="sidebar">
         <div class="flex h-16 shrink-0 items-center">
-            <a href="/portal/">
+            <a href="/creatorkit/">
                 <svg class="h-8 w-auto text-indigo-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M13 23V13h10v10H13Zm1.5-1.5h7v-.8q-.625-.775-1.525-1.238T18 19q-1.075 0-1.975.463T14.5 20.7v.8ZM18 18q.625 0 1.063-.438T19.5 16.5q0-.625-.438-1.063T18 15q-.625 0-1.063.438T16.5 16.5q0 .625.438 1.063T18 18Zm-8.75 4l-.4-3.2q-.325-.125-.613-.3t-.562-.375L4.7 19.375l-2.75-4.75l2.575-1.95Q4.5 12.5 4.5 12.337v-.674q0-.163.025-.338L1.95 9.375l2.75-4.75l2.975 1.25q.275-.2.575-.375t.6-.3l.4-3.2h5.5l.4 3.2q.325.125.613.3t.562.375l2.975-1.25l2.75 4.75L19.925 11H15.4q-.35-1.075-1.25-1.788t-2.1-.712q-1.45 0-2.475 1.025T8.55 12q0 1.2.675 2.1T11 15.35V22H9.25Z"/></svg>
             </a>
         </div>
@@ -38,7 +38,7 @@
                 </li>
                 <li class="-mx-6 mt-auto">
                     <div v-if="showUserMenu" class="font-normal absolute z-10 -mt-10 left-6 w-60 origin-top-right rounded-md bg-white dark:bg-black py-1 shadow-lg ring-1 ring-black dark:ring-gray-600 ring-opacity-5 focus:outline-none right-2" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
-                        <a href="/auth/logout?continue=/portal/" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800" role="menuitem" tabindex="-1">Logout</a>
+                        <a href="/auth/logout?continue=/creatorkit/" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800" role="menuitem" tabindex="-1">Logout</a>
                     </div>
                     <span v-if="user" @click="showUserMenu=!showUserMenu" class="flex cursor-pointer bg-gray-50 items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50">
                         <img class="h-8 w-8 rounded-full bg-gray-50" :src="user.profileUrl" alt="">
@@ -63,7 +63,7 @@
             <div v-else-if="!isAdmin" class="mt-20">
                 <div>
                     <alert class="mb-3">Admin Role Required</alert>
-                    <secondary-button href="/auth/logout?continue=/portal/">Sign Out</secondary-button>
+                    <secondary-button href="/auth/logout?continue=/creatorkit/">Sign Out</secondary-button>
                 </div>
             </div>
             <div v-else>
