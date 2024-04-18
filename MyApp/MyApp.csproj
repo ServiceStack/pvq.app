@@ -47,6 +47,7 @@
         <Content Include="_pages\**" CopyToPublishDirectory="PreserveNewest"/>
         <Content Include="_posts\*.md" CopyToPublishDirectory="PreserveNewest"/>
         <Content Include="_videos\**" CopyToPublishDirectory="PreserveNewest"/>
+        <Content Include="emails\**" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>
