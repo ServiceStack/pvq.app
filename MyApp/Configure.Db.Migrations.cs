@@ -236,6 +236,16 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "gpt3.5-turbo",
+            Email = "servicestack.mail+gpt3.5-turbo@gmail.com",
+            DisplayName = "GPT-3.5 Turbo",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/gp/gpt3.5-turbo/gpt3.5-turbo.svg",
+            Model = "gpt-3.5-turbo",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "claude3-haiku",
             Email = "servicestack.mail+claude3-haiku@gmail.com",
             DisplayName = "Claude 3 Haiku",
