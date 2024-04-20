@@ -88,6 +88,19 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions {
 
 app.UseHttpsRedirection();
 
+//TODO: Remove after bing search no longer includes these links
+string[] redirectPosts = [
+    "net8-blazor-template",
+    "net8-identity-auth",
+    "net8-docker-containers",
+    "system-text-json-apis",
+    "openapi-v3",
+];
+foreach (var slug in redirectPosts)
+{
+    app.MapGet($"/posts/{slug}", async ctx => ctx.Response.Redirect($"https://servicestack.net/posts/{slug}", permanent:true));
+}
+
 app.UseStaticFiles();
 app.UseAntiforgery();
 
