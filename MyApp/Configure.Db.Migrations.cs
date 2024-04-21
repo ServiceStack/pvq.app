@@ -171,7 +171,7 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "Llama 3 8B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ll/llama3-8b/llama3-8b.svg",
-            Model = "llama3-8b", //8B
+            Model = "llama3:8b", //8B
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -181,7 +181,7 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "Llama 3 70B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ll/llama3-70b/llama3-70b.svg",
-            Model = "llama3-70b", //70B
+            Model = "llama3:70b", //70B
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
