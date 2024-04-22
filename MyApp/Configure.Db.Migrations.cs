@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using MyApp.Data;
 using MyApp.Migrations;
 using MyApp.ServiceModel;
-using ServiceStack;
 using ServiceStack.Data;
 using ServiceStack.OrmLite;
 
@@ -312,6 +311,16 @@ public class ConfigureDbMigrations : IHostingStartup
             EmailConfirmed = true,
             ProfilePath = "/profiles/co/command-r-plus/command-r-plus.svg",
             Model = "command-r-plus",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "wizardlm",
+            Email = "servicestack.mail+command-r@gmail.com",
+            DisplayName = "WizardLM 8x22B",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/wi/wizardlm/wizardlm.png",
+            Model = "wizardlm2:8x22b",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser

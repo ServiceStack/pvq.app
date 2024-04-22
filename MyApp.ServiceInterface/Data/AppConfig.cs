@@ -24,39 +24,25 @@ public class AppConfig
 
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
-#if DEBUG
-        ("phi", 0),
-        ("gemma:2b", 0),
-        ("gemma", 3),
-        ("mixtral", 5),
-        ("gemini-pro", 10),
-        ("claude-3-haiku", 25),
-        //("deepseek-coder:33b", 50),
-        ("claude-3-sonnet", 75),
-        ("gpt-4-turbo", 100),
-        ("claude-3-opus", 200),
-#else
-        ("phi", 0),                 // demis,macbook
-        ("gemma:2b", 0),            // demis,macbook
-        ("qwen:4b", 0),             // demis,darren
+        ("mistral", 0),             // demis,macbook
+        ("gemma", 0),               // demis,macbook
+        ("gemini-pro", 0),          // demis,darren
         ("codellama", 0),           // demis,darren
-        ("deepseek-coder:6.7b", 0), // demis
-        ("mistral", 0),             // demis
-        ("gemma", 3),               // demis
-        ("mixtral", 5),             // darren
-        ("gemini-pro", 10),         // hetzner,macbook
-        ("claude-3-haiku", 25),     // hetzner,macbook
-        //("deepseek-coder:33b", 50),
-        ("claude-3-sonnet", 75),    // hetzner,macbook
-        ("gpt-4-turbo", 100),       // hetzner,macbook
-        ("claude-3-opus", 200),     // hetzner,macbook
+        ("mixtral", 3),             // demis,darren
+        ("gpt3.5-turbo", 5),        // hetzner,macbook
+        ("haiku", 10),              // hetzner,macbook
+        ("command-r", 25),          // hetzner,macbook
+        ("wizardlm", 50),           // hetzner,macbook
+        ("claude3-sonnet", 75),     // hetzner,macbook
+        ("command-r-plus", 100),    // hetzner,macbook
+        ("gpt4-turbo", 150),        // hetzner,macbook
+        ("claude3-opus", 200),      // hetzner,macbook
         
         //hetzner: model-worker.mjs gemini-pro,claude-3-haiku,claude-3-sonnet,gpt-4-turbo,claude-3-opus 
         //macbook: model-worker.mjs phi,gemma:2b,gemini-pro,claude-3-haiku,claude-3-sonnet,gpt-4-turbo,claude-3-opus
         //demis:   model-worker.mjs phi,gemma:2b,qwen:4b,codellama,deepseek-coder:6.7b,mistral,gemma
         //darren1: model-worker.mjs qwen:4b,codellama
         //darren2: model-worker.mjs mixtral
-#endif
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
