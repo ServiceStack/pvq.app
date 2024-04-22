@@ -18,7 +18,7 @@ public class ApiServices(IDbConnectionFactory DbFactory) : Service
         {
             q.WhereContainsTag(search.TrimStart('[').TrimEnd(']'));
         }
-        else
+        else if (!string.IsNullOrEmpty(search))
         {
             var searchPhrase = string.Join(" AND ", search.Split(' ').Select(x => '"' + x.Trim().StripQuotes() + '"'));
             q.Where("Body match {0}", searchPhrase);
