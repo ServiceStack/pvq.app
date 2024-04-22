@@ -24,6 +24,7 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
 
             services.AddSingleton<ImageCreator>();
             
+            var r2Bucket = context.Configuration.GetValue("R2Bucket", "pvq-dev");
             var r2AccountId = context.Configuration.GetValue("R2AccountId", Environment.GetEnvironmentVariable("R2_ACCOUNT_ID"));
             var r2AccessId = context.Configuration.GetValue("R2AccessKeyId", Environment.GetEnvironmentVariable("R2_ACCESS_KEY_ID"));
             var r2AccessKey = context.Configuration.GetValue("R2SecretAccessKey", Environment.GetEnvironmentVariable("R2_SECRET_ACCESS_KEY"));
@@ -32,7 +33,7 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
                 ServiceURL = $"https://{r2AccountId}.r2.cloudflarestorage.com"
             });
             services.AddSingleton(s3Client);
-            var appFs = new R2VirtualFiles(s3Client, "stackoverflow-shootout");
+            var appFs = new R2VirtualFiles(s3Client, r2Bucket);
             services.AddSingleton(appFs);
             
             var questionsDir = context.HostingEnvironment.ContentRootPath.CombineWith("App_Data/questions");
