@@ -473,6 +473,21 @@ public class GetUserReputationsResponse
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
+[Route("/search")]
+public class SearchPosts : IGet, IReturn<SearchPostsResponse>
+{
+    public string? Q { get; set; }
+    public string? View { get; set; }
+    public int? Skip { get; set; }
+    public int? Take { get; set; }
+}
+public class SearchPostsResponse
+{
+    public long Total { get; set; }
+    public List<Post> Results { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
 [EnumAsInt]
 public enum NotificationType
 {
