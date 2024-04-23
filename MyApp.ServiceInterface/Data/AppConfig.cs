@@ -30,7 +30,7 @@ public class AppConfig
         ("codellama", 0),           // demis,darren
         ("mixtral", 3),             // demis,darren
         ("gpt3.5-turbo", 5),        // hetzner,macbook
-        ("haiku", 10),              // hetzner,macbook
+        ("claude3-haiku", 10),      // hetzner,macbook
         ("command-r", 25),          // hetzner,macbook
         ("wizardlm", 50),           // hetzner,macbook
         ("claude3-sonnet", 75),     // hetzner,macbook
