@@ -557,6 +557,11 @@ const Comments = {
         }
         
         function startEditing() {
+            if (!user.value?.userName) {
+                location.href = signInUrl()
+                return
+            }
+
             editing.value = true
             nextTick(() => input.value.focus())
         }
@@ -625,6 +630,11 @@ const ContentFeatures = {
         }
         
         function flag() {
+            if (!user.value?.userName) {
+                location.href = signInUrl()
+                return
+            }
+
             show.value = ''
             pageBus.publish('showReportDialog', props.id)
         }
