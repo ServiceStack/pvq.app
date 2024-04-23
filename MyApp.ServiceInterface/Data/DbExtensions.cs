@@ -2,7 +2,6 @@
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.OrmLite;
-using ServiceStack.Text;
 
 namespace MyApp.Data;
 
@@ -22,7 +21,7 @@ public static class DbExtensions
     {
         if (tag != null)
         {
-            tag = tag.UrlDecode().Replace("'","").Replace("\\","").SqlVerifyFragment();
+            tag = tag.UrlDecode().Replace("'","").Replace("\\","");
             q.UnsafeWhere($"Tags match '\"{tag}\"'");
         }
         return q;
