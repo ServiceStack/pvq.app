@@ -2,7 +2,7 @@
     <div class="sm:hidden">
         <label for="tabs" class="sr-only">Select a tab</label>
         <select id="tabs" name="tabs" class="block sm:w-full rounded-md border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500" 
-                onchange="location.href='@Path?tab=' + this.value">
+                onchange="location.href='@Path.LeftPart('?')?tab=' + this.value">
             @foreach (var tab in Tabs)
             {
                 if (tab == Active)
