@@ -316,7 +316,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "wizardlm",
-            Email = "servicestack.mail+command-r@gmail.com",
+            Email = "servicestack.mail+wizardlm@gmail.com",
             DisplayName = "WizardLM 8x22B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/wi/wizardlm/wizardlm.png",
