@@ -87,7 +87,6 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });  
 
-
 //TODO: Remove after bing search no longer includes these links
 string[] redirectPosts = [
     "net8-blazor-template",
