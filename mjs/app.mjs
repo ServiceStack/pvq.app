@@ -168,7 +168,7 @@ export function mountAll(opt) {
 /** @param {any} [exports] */
 export function init(opt) {
     if (AppData.init) return
-    client = new JsonServiceClient()
+    client = new JsonServiceClient(globalThis.BaseUrl)
     AppData = reactive(AppData)
     AppData.init = true
     mountAll(opt)
