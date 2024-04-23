@@ -11,7 +11,8 @@ public class ConfigureCors : IHostingStartup
                 options.AddDefaultPolicy(policy => {
                     policy.WithOrigins([
                         "http://localhost:5000", "https://localhost:5001", 
-                        "http://127.0.0.1:8787", "https://locode.dev",
+                        "http://127.0.0.1:8787", "https://mythz.pvq.app", 
+                        "https://locode.dev", "https://www.locode.dev", "https://pvq.locode.dev"
                     ])
                     .AllowCredentials()
                     .WithHeaders(["Content-Type", "Allow", "Authorization"])
