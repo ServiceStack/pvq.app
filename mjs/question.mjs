@@ -755,6 +755,7 @@ const EditQuestion = {
         }, 100)
 
         watchEffect(async () => {
+            if (!editing.value) return
             debounceApi(request.value.body)
         })
 
@@ -767,6 +768,15 @@ const EditQuestion = {
                 props.bus.publish('editDone', request.value)
             }
         }
+        
+        async function loadQuestion() {
+            const api = await client.api(new GetQuestionFile({ id: props.id }))
+            if (api.succeeded) {
+                original = JSON.parse(api.response)
+                Object.assign(request.value, original)
+            }
+            nextTick(applyGlobalChanges)
+        }
 
         onMounted(async () => {
             const footer = $1('.question-footer')
@@ -775,17 +785,13 @@ const EditQuestion = {
                 footer.innerHTML = ''
             }
 
-            props.bus.subscribe('toggleEdit', () => {
+            props.bus.subscribe('toggleEdit', async () => {
                 editing.value = !editing.value
+                if (!lastBody || request.value.body !== lastBody) {
+                    await loadQuestion()
+                    debounceApi(request.value.body)
+                }
             })
-
-            const api = await client.api(new GetQuestionFile({ id: props.id }))
-            if (api.succeeded) {
-                original = JSON.parse(api.response)
-                Object.assign(request.value, original)
-            }
-
-            nextTick(applyGlobalChanges)
         })
 
         function close() {
@@ -942,6 +948,7 @@ const EditAnswer = {
         }, 100)
 
         watchEffect(async () => {
+            if (!editing.value) return
             debounceApi(request.value.body)
         })
 
@@ -953,18 +960,24 @@ const EditAnswer = {
                 close()
             }
         }
-
-        onMounted(async () => {
-            props.bus.subscribe('toggleEdit', () => {
-                editing.value = !editing.value
-            })
-
+        
+        async function loadAnswer() {
             const api = await client.api(new GetAnswer({ id: props.id }))
             if (api.succeeded) {
                 answer.value = api.response?.result
                 request.value.body = answer.value.body || ''
                 nextTick(highlightAll)
             }
+        }
+
+        onMounted(async () => {
+            props.bus.subscribe('toggleEdit', async () => {
+                editing.value = !editing.value
+                if (!answer.value) {
+                    await loadAnswer()
+                    debounceApi(request.value.body)
+                }
+            })
         })
 
         function close() {
