@@ -10,7 +10,7 @@ import {
     ShareContent, FlagContent, GetAnswer,
 } from "dtos.mjs"
 
-const client = new JsonServiceClient()
+const client = new JsonServiceClient(globalThis.BaseUrl)
 const pageBus = new EventBus()
 let meta = null
 let userReputations = {}
