@@ -148,7 +148,7 @@
         <div>
             @foreach (var answer in Question.Answers)
             {
-                var userName = AppConfig.GetUserName(answer.Model);
+                var userName = answer.CreatedBy;
 
                 <article data-answer=@answer.Id data-createdby=@userName class="py-8 border-b border-gray-200 dark:border-gray-700">
                     <div id=@answer.Id class="flex">
@@ -157,7 +157,7 @@
                                 <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                     <title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/>
                                 </svg>
-                                <b class="score text-xl" data-score=@Question.GetAnswerScore(answer.Id)>@Question.GetAnswerScore(answer.Id).ToHumanReadable()</b>
+                                <b class="score text-xl" data-score=@Question.GetAnswerScore(answer.GetRefId())>@Question.GetAnswerScore(answer.GetRefId()).ToHumanReadable()</b>
                                 <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                     <title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/>
                                 </svg>
@@ -174,8 +174,8 @@
                             </div>
                         </div>
                         <div>
-                            @if (Question.Meta?.ModelVotes?.TryGetValue(answer.Model, out var votes) == true &&
-                                Question.Meta?.ModelReasons?.TryGetValue(answer.Model, out var reason) == true)
+                            @if (Question.Meta?.ModelVotes?.TryGetValue(answer.CreatedBy!, out var votes) == true &&
+                                Question.Meta?.ModelReasons?.TryGetValue(answer.CreatedBy!, out var reason) == true)
                             {
                                 var grade = ImageCreator.GradeLetter(votes);
                                 <div class="relative -mt-6 lg:-mr-12 ml-4 mb-4 float-right w-10 h-10">
@@ -199,7 +199,7 @@
                             }
 
                             <div id=@($"preview-{answer.Id}") class="preview xl:flex-grow prose">
-                                @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Choices.FirstOrDefault()?.Message.Content))
+                                @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Body))
                             </div>
                             <div id=@($"edit-{answer.Id}") class="edit w-full pl-2 hidden"></div>
 
@@ -210,7 +210,7 @@
                                             <div class="flex">
                                                 <span>answered</span>
                                                 <dd class="ml-1 text-gray-600 dark:text-gray-300">
-                                                    <time class="ml-1" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
+                                                    <time class="ml-1" datetime="@Markdown.GetDateTimestamp(answer.CreationDate)">@Markdown.GetDateLabel(answer.CreationDate)</time>
                                                 </dd>
                                             </div>
                                         </div>
@@ -227,7 +227,7 @@
                                     </div>
                                 }
 
-                                <PostComments RefId=@answer.Id Comments=@Question.GetAnswerComments(answer.Id)/>
+                                <PostComments RefId=@answer.RefId Comments=@Question.GetAnswerComments(answer.GetRefId())/>
                             </div>
                         </div>
                     </div>

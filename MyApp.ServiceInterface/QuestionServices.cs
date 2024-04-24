@@ -30,13 +30,14 @@ public class QuestionServices(AppConfig appConfig,
     public async Task<object> Get(GetAllAnswerModels request)
     {
         var question = await questions.GetQuestionAsync(request.Id);
-        var modelNames = question.Question?.Answers.Where(x => !string.IsNullOrEmpty(x.Model)).Select(x => x.Model).ToList();
-        var humanAnswers = question.Question?.Answers.Where(x => string.IsNullOrEmpty(x.Model)).Select(x => x.Id.LeftPart("-")).ToList();
-        modelNames?.AddRange(humanAnswers ?? []);
+        var modelNames = question.Question?.Answers
+            .Where(x => x.CreatedBy != null && !appConfig.IsHuman(x.CreatedBy))
+            .Select(x => x.CreatedBy!)
+            .ToList() ?? [];
 
         return new GetAllAnswerModelsResponse
         {
-            Results = modelNames ?? new List<string>()
+            Results = modelNames
         };
     }
     

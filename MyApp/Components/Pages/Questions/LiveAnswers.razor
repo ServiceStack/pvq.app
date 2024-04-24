@@ -91,7 +91,7 @@
                                 <div class="flex">
                                     <div class="md:w-32 pr-2">
                                         @{
-                                            var userName = AppConfig.GetUserName(answer.Model);
+                                            var userName = answer.CreatedBy;
                                         }
                                         <div class="flex flex-col items-center">
                                             <img class="w-10 h-10 xl:w-20 xl:h-20 bg-cover inline-block" src="@userName.GetAvatarUrl()">
@@ -99,11 +99,11 @@
                                         </div>
                                     </div>
                                     <div class="xl:flex-grow prose">
-                                        @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Choices.FirstOrDefault()?.Message.Content))
+                                        @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Body))
                                     </div>
                                 </div>
                                 <div class="mt-4 flex justify-end text-gray-700 dark:text-gray-200 text-sm">
-                                    answered <time class="ml-2" datetime="@Markdown.GetDateTimestamp(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)">@Markdown.GetDateLabel(DateTimeOffset.FromUnixTimeSeconds(answer.Created).DateTime)</time>
+                                    answered <time class="ml-2" datetime="@Markdown.GetDateTimestamp(answer.CreationDate)">@Markdown.GetDateLabel(answer.CreationDate)</time>
                                 </div>
                             </div>
                             <script>window.hljs?.highlightAll()</script>
