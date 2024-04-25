@@ -101,51 +101,6 @@ By using Anthropic's Claude models for voting, this also enabled us to better ev
 | Command-R (By Cohere) | 997    |
 | Llama 3 70B           | 522    |
 
-## Extracting the Votes
-
-While this was fairly consistent, one of the main challenges of utilising LLMs and other probabilistic systems is that you need to always expect to get strange results sometimes. This leads to the problem of not wanting to waste tokens, but also being strict with what output should be expected. By only expecting a JSON output in a code fence, you would need to throw away minor variations in this that still contain a valid voting result.
-
-Instead, to reduce wasted generations, we need to employ several attempts to extract that JSON, while testing it is indeed what we need for the rest of our system to function. During testing we found output from various models would differ, causing a strict extraction via a single regex would be insufficient. Since the output was inconsistent, our solution also lacked consistency. The result was a somewhat hacky approach to cover multiple irregular outputs with as few methods as possible.
-
-```js 
-if (responseContent.trim().startsWith('{')) {
-    // Try to extract the JSON from the response, if it's already JSON
-    finalJson = responseContent.trim()
-} else if (responseContent.trim().startsWith('"reason')) {
-    // Try to extract the JSON from the response, if it looks like broken json
-    responseContent = `{\n${responseContent.trim()}`
-    finalJson = responseContent
-} else {
-    structuredReasons = responseContent.match(/(?<=```json\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
-
-    if (structuredReasons == null || structuredReasons.length === 0) {
-        // Try without `json` after triple backticks
-        structuredReasons = responseContent.match(/(?<=```\n)\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/);
-    }
-
-    if (structuredReasons == null || structuredReasons.length === 0) {
-        console.error(`No structured reasons found in response: ${responseContent}`);
-        return null
-    }
-
-    // Take first structured reason that contains the string 'score' and 'reason'
-    structuredReasons = structuredReasons.filter(x => x.includes('score') && x.includes('reason'))
-
-    if (structuredReasons.length === 0) {
-        console.error(`No valid structured reasons found in response: ${responseContent}`);
-        return null
-    }
-
-    const isValid = structuredReasons[0].includes('score') && structuredReasons[0].includes('reason')
-    if (!isValid) {
-        console.error(`Invalid structured reasons found in response: ${responseContent}`);
-        return null
-    }
-}
-```
-
-Above is just a few methods we used, none pretty, but got the job done. Even more complex regular expressions were also tested to try and capture as many possible types of outputs in a unified way, but this ended up being brittle when the LLM decided to include code example to improve the answer with more and more combinations of issues. While I'm sure there are better solutions, this is something we will explore further time permitting, but since we are integrating with both open weight and proprietary models all via HTTP APIs, approaches seem limited, and we want to avoid throwing away generated tokens if possible. If we only used open weight models, there are tricks like limiting the model vocabulary during output generation to ensure valid JSON which provides certain guarantees for consistent generation, and an option like this added to tools like llama.cpp or Ollama would a great addition.
-
 ## Performance Group vs Individual Voting
 
 After collecting the votes, we can then look at how the same model was ranked and given votes by different reviewer models, including Mixtral in both individual and group voting approaches. Looking first at a smaller model, the change can be more easily seen.
@@ -213,6 +168,14 @@ While Mixtral did provide decent answers on the whole, it was not without its fa
 So while there is some signal to votes from Gemini Pro 1.0, it is much harder to see, and seems more likely that the length, formatting and other metrics influenced the voting more so than the other models giving votes.
 
 The same prompt was used for all voting, so it is also possible that with different prompting, Gemini-Pro 1.0 might be more useful at this kind of task.
+
+## Extracting the Votes
+
+Another challenge of utilising LLMs and other probabilistic systems is that you need to always expect to get strange results sometimes. This leads to the problem of not wanting to waste tokens, but also being strict with what output should be expected. By only expecting a JSON output in a code fence, you would need to throw away minor variations in this that still contain a valid voting result.
+
+Instead, to reduce wasted generations, we need to employ several attempts to extract that JSON, while testing it is indeed what we need for the rest of our system to function. During testing we found output from various models would differ, causing a strict extraction via a single regex would be insufficient. Since the output was inconsistent, our solution also lacked consistency. The result was a somewhat hacky approach to cover multiple irregular outputs with as few methods as possible.
+
+If we only used open weight models, there are tricks like limiting the model vocabulary during output generation to ensure valid JSON which provides certain guarantees for consistent generation, and an option like this added to tools like llama.cpp or Ollama would a great addition.
 
 ## Error Rates and Closing Thoughts
 
