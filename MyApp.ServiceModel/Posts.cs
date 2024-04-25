@@ -60,6 +60,8 @@ public class Post
     public DateTime? LockedDate { get; set; }
 
     public string? LockedReason { get; set; }
+
+    public string GetRefId() => RefId ?? $"{Id}-{CreatedBy}";
 }
 
 public static class PostUtils
@@ -197,7 +199,7 @@ public class QuestionAndAnswers
     public int Id => Post.Id;
     public Post Post { get; set; }
     public Meta? Meta { get; set; }
-    public List<Answer> Answers { get; set; } = [];
+    public List<Post> Answers { get; set; } = [];
 
     public int ViewCount => Post.ViewCount + Meta?.StatTotals.Find(x => x.Id == $"{Id}")?.ViewCount ?? 0;
     

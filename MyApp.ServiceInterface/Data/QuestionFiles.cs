@@ -70,9 +70,9 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         
         Question.Answers.Sort((a, b) =>
         {
-            var aScore = postStats.FirstOrDefault(x => x.Id == a.Id)?.GetScore()
+            var aScore = postStats.FirstOrDefault(x => x.Id == a.RefId)?.GetScore()
                          ?? 0;
-            var bScore = postStats.FirstOrDefault(x => x.Id == b.Id)?.GetScore()
+            var bScore = postStats.FirstOrDefault(x => x.Id == b.RefId)?.GetScore()
                          ?? 0;
             return bScore - aScore;
         });
@@ -114,30 +114,10 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
                 to.Meta.StatTotals ??= new();
                 to.Meta.ModelVotes ??= new();
             }
-            else if (fileName.StartsWith(FileId + ".a."))
-            {
-                var answer = entry.Value.FromJson<Answer>();
-                answer.Id = GetAnswerId(fileName);
-                to.Answers.Add(answer);
-            }
             else if (fileName.StartsWith(FileId + ".h."))
             {
                 var post = entry.Value.FromJson<Post>();
-                var userName = fileName.Substring((FileId + ".h.").Length).LeftPart('.');
-                var answer = new Answer
-                {
-                    Id = $"{Id}-{userName}",
-                    Model = userName,
-                    Created = (post.LastEditDate ?? post.CreationDate).ToUnixTime(),
-                    Choices = [
-                        new()
-                        {
-                            Index = 1,
-                            Message = new() { Role = userName, Content = post.Body ?? "" }
-                        }
-                    ]
-                };
-                to.Answers.Add(answer);
+                to.Answers.Add(post);
             }
         }
 

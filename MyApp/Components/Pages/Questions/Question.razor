@@ -28,7 +28,7 @@
         else if (question?.Post?.Title != null)
         {
             <QuestionPost Question="question"/>
-            @if (question.Answers.All(x => x.Model != HttpContext.GetUserName()))
+            @if (question.Answers.All(x => x.CreatedBy != HttpContext.GetUserName()))
             {
                 <div class="mb-20" data-component="pages/Questions/Answer.mjs" data-props="{id:@question.Id}"></div>
             }
