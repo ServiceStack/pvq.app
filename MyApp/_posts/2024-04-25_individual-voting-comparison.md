@@ -4,7 +4,6 @@ summary: Analyzing the performance of different models for voting on individual 
 author: Darren Reid
 tags: [ai, llm, moderation]
 image: https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?crop=entropy&fit=crop&h=1000&w=2000
-draft: true
 ---
 
 During the development of PvQ, we have generated over 1 million answers from a variety of models to get a base line of performance per model by sampling, and ranking those answers as described in a previous blog post. While the technique of ranking via votes was imperfect, we found that on average it provided a reasonably representative sample to compare the general performance of each model relative to the others. Since that initial run, we improved the process to let a relatively larger model, Mixtral 8x7B, to give a vote out of 10 for each answer individually.
@@ -20,7 +19,7 @@ With this updated approach, we were duplicating the question tokens for each mod
 - Sometimes the JSON with the score would be given first, negating any advantage in using a CoT approach since the additional tokens generated up front had no impact on the score. 
 - The reason was somewhat duplicated.
 
-Each token can significantly impact compute cost. Therefore, we wanted to reduce the token usage while still maintaining decent performance. When the instruction was given to output a specific JSON format, I noticed that the order of the properties in the flat output was consistently followed, eg:
+Each token can significantly impact compute cost. Therefore, we wanted to reduce the token usage while still maintaining decent performance. When the instruction was given to output a specific JSON format, we noticed that the order of the properties in the flat output was consistently followed, eg:
 
 ```json
 {
@@ -47,6 +46,8 @@ ${JSON.stringify(expectedReasonsSchema, null, 4)}
 Use code fences, aka triple backticks, to encapsulate your JSON object.
 `
 ```
+
+This increased our throughput by 2-3x, with the same reduction in token usage without any noticeable impact on the quality of the votes.
 
 ## Testing Various Models for Voting
 
