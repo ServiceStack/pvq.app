@@ -196,17 +196,19 @@ The contrast is still not as clear as others, but for simple questions, Gemma-2B
 
 ## Gemini Pro 1.0 Speed vs Performance
 
-One of the models that did a lot of the heavy lifting when processing all these voting tasks was Google's Gemini-Pro 1.0. Their API was highly reliable, and surprisingly quick with responses usually between 1-3 seconds. However, Gemini-Pro 1.0 tended to be very generous with its scoring. Even when ranking Microsoft's Phi 2 which was consistently produced low quality answers leading us to remove it from the models providing answers, lots of high votes were given by Gemini Pro 1.0.
+One of the models that did a lot of the heavy lifting when processing all these voting tasks was Google's Gemini-Pro 1.0. Their API was highly reliable, and surprisingly quick with responses usually between 1-3 seconds. However, Gemini-Pro 1.0 tended to be very generous with its scoring. Even when ranking Microsoft's Phi 2 which consistently produced low quality answers leading us to remove it from the models providing answers. Despite these low quality answers, lots of high votes were given to Phi 2 answers by Gemini Pro 1.0.
 
 ![graph](/img/posts/individual-voting-comparison/gemini-phi-votes.png)
 
-And according to Gemini-Pro 1.0, Mixtral was almost incapable of making a mistake.
+And according to Gemini-Pro 1.0, Mixtral was almost incapable of making a mistake. 
 
 ![graph](/img/posts/individual-voting-comparison/gemini-mixtral-votes.png)
 
 And even Gemma-2B wasn't far off for Gemini-Pro 1.0.
 
 ![graph](/img/posts/individual-voting-comparison/gemini-gemma-2b-votes.png)
+
+While Mixtral did provide decent answers on the whole, it was not without its faults and issues, as seen above from the more representative votes from GPT 3.5 Turbo for Mixtral answers.
 
 So while there is some signal to votes from Gemini Pro 1.0, it is much harder to see, and seems more likely that the length, formatting and other metrics influenced the voting more so than the other models giving votes.
 
