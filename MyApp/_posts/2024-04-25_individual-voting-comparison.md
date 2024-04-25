@@ -6,24 +6,31 @@ tags: [ai, llm, moderation]
 image: https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?crop=entropy&fit=crop&h=1000&w=2000
 ---
 
-During the development of PvQ, we have generated over 1 million answers from a variety of models to get a base line of performance per model by sampling, and ranking those answers as described in a previous blog post. While the technique of ranking via votes was imperfect, we found that on average it provided a reasonably representative sample to compare the general performance of each model relative to the others. Since that initial run, we improved the process to let a relatively larger model, Mixtral 8x7B, to give a vote out of 10 for each answer individually.
+During the development of PvQ, we have generated over **1 million** answers from a variety of models to get a base line of 
+performance per model by sampling, and ranking those answers as described in a previous blog post. While the technique 
+of ranking via votes was imperfect, we found that on average it provided a reasonably representative sample to compare 
+the general performance of each model relative to the others. Since that initial run, we improved the process to let a 
+relatively larger model, [Mixtral 8x7B](https://mistral.ai/news/mixtral-of-experts/), to give a **vote out of 10** for each answer individually.
 
-## What we found
+### Summary
 
-By analysing and voting on answer individually, we traded off an increased cost, we an increased accuracy of the voting. Voting as a group of answers was more efficient by tokens, but as we added more models, the voting became less consistent which we think highlighted the model struggling with the larger context window of input. By voting of answers individually, the input size remains steady since it only consistent of the question, the answer being voted on, and instructions for the vote. 
-
-### Results Overview
-
-- Grouped voting was more efficient by tokens, but less consistent, especially as more models were added.
-- Individual voting was more consistent, and gave a better representation of the model's performance, and insights into the model voting.
-- Smaller answer models like Qwen 4B were more accurately ranked by higher performing models like GPT 3.5 Turbo, and Claude 3 Sonnet.
-- Smaller ranking models like Claude 3 Haiku usually agreed with larger models, but likely through proxies like length, formatting, etc.
-- Gemma-2B was a stand out for its size, consistently producing well formatted answers, and so far never producing invalid or bad output.
-- Gemini Pro 1.0 is fast, but too generous with votes, and likely influenced by length, formatting, etc, or needs to be prompted very differently.
+- **Grouped voting** was more efficient by tokens, but less consistent, especially as more models were added.
+- **Individual voting** was more consistent, and gave a better representation of the model's performance, and insights into the model voting.
+- **Smaller answer models** like [Qwen 4B](https://ollama.com/library/qwen:4b) were more accurately ranked by higher performing models like [GPT 3.5 Turbo](https://platform.openai.com/docs/models/gpt-3-5-turbo), and [Claude 3 Sonnet](https://www.anthropic.com/news/claude-3-family).
+- **Smaller ranking models** like [Claude 3 Haiku](https://www.anthropic.com/news/claude-3-family) usually agreed with larger models, but likely through proxies like length, formatting, etc.
+- [Gemma 2B](https://blog.google/technology/developers/gemma-open-models/) was a stand out for its size, consistently producing well formatted answers, and so far never producing invalid or bad output.
+- [Gemini Pro 1.0](https://blog.google/technology/ai/google-gemini-ai/) is fast, but too generous with votes, and likely influenced by length, formatting, etc, or needs to be prompted very differently.
 - Some models would get into loops and output repeating tokens or phrases causing wasted API calls or GPU time.
 - We are working on a classifier to detect these issues, and removing them automatically in an efficient way.
 
 See below for a more detailed breakdown of the results.
+
+## What we found
+
+By analysing and voting on answer individually, we traded off an increased cost, we an increased accuracy of the voting.
+Voting as a group of answers was more efficient by tokens, but as we added more models, the voting became less consistent
+which we think highlighted the model struggling with the larger context window of input. By voting of answers individually,
+the input size remains steady since it only consistent of the question, the answer being voted on, and instructions for the vote.
 
 ## Optimising Output
 
@@ -80,14 +87,12 @@ To get more evidence for this, and to speed up the re-processing of missed votin
 - Claude Haiku
 - Gemini Pro 1.0
 - Llama 3 8B
-- Command-R (997)
-- Llama 3 70b (552)
+- Command-R
+- Llama 3 70b
 
 By using Anthropic's Claude models for voting, this also enabled us to better evaluate their performance, along with GPT 3.5 Turbo as a well known performer, the new comer of Llama 3 8B, and Gemini Pro 1.0 for good measure. Something worth noting was while Gemini Pro 1.0 might not have been the best model for accurate voting, the speed of response was quite impressive, coming out as the fastest way to process answers out of this selection of models.
 
 ![graph](/img/posts/individual-voting-comparison/overall-votes-given.png)
-
-
 
 | GradedBy              | Count  |
 | --------------------- | ------ |
