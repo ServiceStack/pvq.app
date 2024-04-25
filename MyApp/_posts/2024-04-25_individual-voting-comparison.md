@@ -1,5 +1,5 @@
 ---
-title: Analyzing Voting Methods for Answer Quality
+title: Analyzing Voting Methods
 summary: Analyzing the performance of different models for voting on individual answer vs on a group of answers.
 author: Darren Reid
 tags: [ai, llm, moderation]
@@ -11,6 +11,19 @@ During the development of PvQ, we have generated over 1 million answers from a v
 ## What we found
 
 By analysing and voting on answer individually, we traded off an increased cost, we an increased accuracy of the voting. Voting as a group of answers was more efficient by tokens, but as we added more models, the voting became less consistent which we think highlighted the model struggling with the larger context window of input. By voting of answers individually, the input size remains steady since it only consistent of the question, the answer being voted on, and instructions for the vote. 
+
+### Results Overview
+
+- Grouped voting was more efficient by tokens, but less consistent, especially as more models were added.
+- Individual voting was more consistent, and gave a better representation of the model's performance, and insights into the model voting.
+- Smaller answer models like Qwen 4B were more accurately ranked by higher performing models like GPT 3.5 Turbo, and Claude 3 Sonnet.
+- Smaller ranking models like Claude 3 Haiku usually agreed with larger models, but likely through proxies like length, formatting, etc.
+- Gemma-2B was a stand out for its size, consistently producing well formatted answers, and so far never producing invalid or bad output.
+- Gemini Pro 1.0 is fast, but too generous with votes, and likely influenced by length, formatting, etc, or needs to be prompted very differently.
+- Some models would get into loops and output repeating tokens or phrases causing wasted API calls or GPU time.
+- We are working on a classifier to detect these issues, and removing them automatically in an efficient way.
+
+See below for a more detailed breakdown of the results.
 
 ## Optimising Output
 
@@ -217,7 +230,7 @@ Making it worse, these outputs tended to happen when the model was unable to out
 
 Just like extracting JSON, detecting and filtering this was quite cumbersome, and using another LLM to detect these issues doesn't reduce our compute usage by much. To get a better picture of the data in the generated answers, we build a script to extract metadata of the generated text like `Length`,`MaxCharCount`,`MaxWordCount`, and others. And patterns started to stick out enough to filter most of these data out, but it still was time intensive to find practical thresholds to detect bad data while keeping all the answers that were at least somewhat coherent. After doing this mostly manually to start, we realized that pattern recognition is exactly what simple neural nets or 'Narrow AI' is good at, and we have training data to build a small efficient classifier that only looks at the metadata of the answer to match patterns.
 
-We've spiked our first implementation of such a model, and while initial results are promising, more testing still needs to be done to ensure it will be useful enough to further reduce the amount of compute required to avoid invalid answer generation from reaching the site. Currently the model is just 23MB in size and is showing more than 99.9% accuracy with a realistic mixture of valid and invalid data, and 91% when given all bad data, both evaluations used excluded from the training set. 
+We've spiked our first implementation of such a model, and while initial results are promising, more testing still needs to be done to ensure it will be useful enough to further reduce the amount of compute required to avoid invalid answer generation from reaching the site. Currently the model is just 23MB in size and is showing more than 99.9% accuracy with a realistic mixture of valid and invalid data, and 91% when given all bad data, both evaluations used data excluded from the original training set. 
 
 ## Feedback ❤️
 
