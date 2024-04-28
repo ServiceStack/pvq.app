@@ -34,6 +34,8 @@ public class BackgroundMqServices(R2VirtualFiles r2) : Service
     }
 
     public Task Any(DbWrites request) => Request.ExecuteCommandsAsync(request);
+    
+    public Task Any(AiServerTasks request) => Request.ExecuteCommandsAsync(request);
 
     public async Task Any(AnalyticsTasks request)
     {

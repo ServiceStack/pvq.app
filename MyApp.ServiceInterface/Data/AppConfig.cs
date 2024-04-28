@@ -11,6 +11,16 @@ public class AppConfig
     public static AppConfig Instance { get; } = new();
     public string LocalBaseUrl { get; set; }
     public string PublicBaseUrl { get; set; }
+    public string BaseUrl =>
+#if DEBUG
+        LocalBaseUrl;
+#else
+        PublicBaseUrl;
+#endif
+
+    public string AiServerBaseUrl { get; set; }
+    public string AiServerApiKey { get; set; }
+    
     public string CacheDir { get; set; }
     public string ProfilesDir { get; set; }
     public string NotificationsEmail { get; set; } = "notifications@pvq.app";
@@ -24,6 +34,7 @@ public class AppConfig
 
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
+        ("phi", 0),                 // demis,macbook
         ("mistral", 0),             // demis,macbook
         ("gemma", 0),               // demis,macbook
         ("gemini-pro", 0),          // demis,darren
@@ -70,7 +81,8 @@ public class AppConfig
     {
         ["deepseek-coder-6.7b"] = "deepseek-coder",
     };
-    
+
+    public ApplicationUser? GetModelUserById(string id) => ModelUsers.Find(x => x.Id == id);
     public ApplicationUser? GetModelUser(string model)
     {
         ModelAliases.TryGetValue(model, out var alias);

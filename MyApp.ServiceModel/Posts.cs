@@ -161,30 +161,6 @@ public class PostFts
     public DateTime ModifiedDate { get; set; }
 }
 
-public class Choice
-{
-    public int Index { get; set; }
-    public ChoiceMessage Message { get; set; }
-}
-
-public class ChoiceMessage
-{
-    public string Role { get; set; }
-    public string Content { get; set; }
-}
-
-public class Answer
-{
-    public string Id { get; set; }
-    public string Object { get; set; }
-    public long Created { get; set; }
-    public string Model { get; set; }
-    public List<Choice> Choices { get; set; }
-    public Dictionary<string, int> Usage { get; set; }
-    public decimal Temperature { get; set; }
-    public List<Comment> Comments { get; set; } = [];
-}
-
 public class Comment
 {
     public string Body { get; set; }
@@ -296,6 +272,12 @@ public class GetQuestionResponse
 {
     public required Post Result { get; set; }
     public ResponseStatus? ResponseStatus { get; set; }
+}
+
+[ValidateIsAuthenticated]
+public class GetQuestionBody : IGet, IReturn<string>
+{
+    public int Id { get; set; }
 }
 
 public class GetQuestionFile : IGet, IReturn<string>

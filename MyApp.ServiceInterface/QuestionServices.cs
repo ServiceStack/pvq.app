@@ -253,14 +253,27 @@ public class QuestionServices(AppConfig appConfig,
         };
     }
 
+    private async Task<IVirtualFile?> AssetQuestionFile(int id)
+    {
+        var questionFile = await questions.GetQuestionFileAsync(id);
+        if (questionFile == null)
+            throw HttpError.NotFound($"Question {id} not found");
+        return questionFile;
+    }
+
     public async Task<object> Any(GetQuestionFile request)
     {
-        var questionFile = await questions.GetQuestionFileAsync(request.Id);
-        if (questionFile == null)
-            throw HttpError.NotFound($"Question {request.Id} not found");
-        
+        var questionFile = await AssetQuestionFile(request.Id);
         var json = await questionFile.ReadAllTextAsync();
         return new HttpResult(json, MimeTypes.Json);
+    }
+
+    public async Task<object> Any(GetQuestionBody request)
+    {
+        var questionFile = await AssetQuestionFile(request.Id);
+        var json = await questionFile.ReadAllTextAsync();
+        var post = json.FromJson<Post>();
+        return post.Body;
     }
     
     public async Task<object> Get(GetAnswerFile request)

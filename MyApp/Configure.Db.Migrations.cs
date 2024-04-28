@@ -130,7 +130,7 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "Phi-2 2.7B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ph/phi/phi.svg",
-            Model = "phi", //3B
+            Model = "phi3", //3B
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser

@@ -1,4 +1,5 @@
 ﻿using MyApp.ServiceInterface;
+using MyApp.ServiceInterface.AiServer;
 using MyApp.ServiceInterface.App;
 using MyApp.ServiceModel;
 using ServiceStack;
@@ -148,6 +149,12 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     
     [Command<TagSubscriptionsCommand>]
     public TagSubscriptions? TagSubscriptions { get; set; }
+}
+
+public class AiServerTasks
+{
+    [Command<CreateRankAnswerTaskCommand>]
+    public CreateRankAnswerTask? CreateRankAnswerTask { get; set; } 
 }
 
 public class RenderHome

@@ -8,13 +8,19 @@ public class ModelWorkerQueue
     Dictionary<string, BlockingCollection<PostJob>> queues = new()
     {
         ["phi"] = new(),
-        ["gemma:2b"] = new(),
-        ["qwen:4b"] = new(),
-        ["codellama"] = new(),
-        ["gemma"] = new(),
-        ["deepseek-coder:6.7b"] = new(),
         ["mistral"] = new(),
+        ["gemma"] = new(),
+        ["gemini-pro"] = new(),
+        ["codellama"] = new(),
         ["mixtral"] = new(),
+        ["gpt3.5-turbo"] = new(),
+        ["claude3-haiku"] = new(),
+        ["command-r"] = new(),
+        ["wizardlm"] = new(),
+        ["claude3-sonnet"] = new(),
+        ["command-r-plus"] = new(),
+        ["gpt4-turbo"] = new(),
+        ["claude3-opus"] = new(),
         ["rank"] = new(),
     };
 

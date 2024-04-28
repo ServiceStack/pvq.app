@@ -6,11 +6,11 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class ApiServices(IDbConnectionFactory DbFactory) : Service
+public class ApiServices(IDbConnectionFactory dbFactory) : Service
 {
     public async Task<object> Any(SearchPosts request)
     {
-        using var dbSearch = await DbFactory.OpenAsync(Databases.Search);
+        using var dbSearch = await dbFactory.OpenAsync(Databases.Search);
 
         var skip = request.Skip;
         var take = Math.Min(request.Take ?? 25, 200);
@@ -37,7 +37,7 @@ public class ApiServices(IDbConnectionFactory DbFactory) : Service
                 .Take(take));
             var total = dbSearch.Count(q);
 
-            using var db = await DbFactory.OpenAsync();
+            using var db = await dbFactory.OpenAsync();
             var posts = await db.PopulatePostsAsync(postsFts);
 
             return new SearchPostsResponse
@@ -48,7 +48,7 @@ public class ApiServices(IDbConnectionFactory DbFactory) : Service
         }
         else
         {
-            using var db = await DbFactory.OpenAsync();
+            using var db = await dbFactory.OpenAsync();
             var q = db.From<Post>();
             
             var posts = await db.SelectAsync(q
