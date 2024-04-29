@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using AiServer.ServiceModel;
+using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceInterface.AiServer;
 using MyApp.ServiceModel;
@@ -8,7 +9,8 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class AiServerServices(AppConfig appConfig, 
+public class AiServerServices(ILogger<AiServerServices> log,
+    AppConfig appConfig, 
     QuestionsProvider questions, 
     RendererCache rendererCache, 
     WorkerAnswerNotifier answerNotifier,
@@ -59,14 +61,78 @@ public class AiServerServices(AppConfig appConfig,
         MessageProducer.Publish(new AiServerTasks
         {
             CreateRankAnswerTask = new CreateRankAnswerTask {
-                AnswerId = answer.RefId!
+                AnswerId = answer.RefId!,
+                UserId = request.UserId,
             } 
         });
     }
     
     public async Task Any(RankAnswerCallback request)
     {
+        if (request.PostId == 0)
+            request.PostId = int.TryParse(Request!.QueryString[nameof(request.PostId)], out var postId)
+                ? postId
+                : throw new ArgumentNullException(nameof(request.PostId));
+        if (string.IsNullOrEmpty(request.UserId))
+            request.UserId = Request!.QueryString[nameof(request.UserId)] ?? throw new ArgumentNullException(nameof(request.UserId));
+
+        if (string.IsNullOrEmpty(request.Grader))
+            request.Grader = Request!.QueryString[nameof(request.Grader)] ?? throw new ArgumentNullException(nameof(request.Grader));
         
+        var modelUser = appConfig.GetModelUserById(request.UserId);
+        if (modelUser?.UserName == null)
+            throw HttpError.Forbidden("Invalid Model User Id");
+
+        var graderUser = appConfig.GetModelUser(request.Grader);
+        if (graderUser?.UserName == null)
+            throw HttpError.Forbidden("Invalid Model Grader " + request.Model);
+
+        var body = request.GetBody()?.Trim();
+        if (string.IsNullOrEmpty(body))
+        {
+            log.LogError("Invalid RankAnswerCallback: {PostId}-{Model} for {UserId}", 
+                request.PostId, request.Model, request.UserId);
+            return;
+        }
+
+        var json = body.Contains("```json")
+            ? body.RightPart("```json").LastLeftPart("```")
+            : body.StartsWith("{")
+                ? body
+                : null;
+
+        if (!string.IsNullOrEmpty(json))
+        {
+            try
+            {
+                var obj = (Dictionary<string,object>)JSON.parse(json);
+                var reason = obj.TryGetValue("reason", out var oReason)
+                    ? (string)oReason
+                    : null;
+                // When score is invalid (e.g. N/A), default to 0
+                var score = obj.TryGetValue("score", out var oScore)
+                    ? oScore.ConvertTo<int>()
+                    : 0;
+
+                var meta = await questions.GetMetaAsync(request.PostId);
+                
+                meta.GradedBy ??= new();
+                meta.GradedBy[modelUser.UserName] = graderUser.UserName;
+                
+                meta.ModelReasons ??= new();
+                meta.ModelReasons[modelUser.UserName] = reason ?? "";
+                
+                meta.ModelVotes ??= new();
+                meta.ModelVotes[modelUser.UserName] = score;
+
+                await questions.SaveMetaAsync(request.PostId, meta);
+            }
+            catch (Exception e)
+            {
+                log.LogError("Invalid JSON RankAnswerCallback: {PostId}-{Model} for {UserId}: {Json}", 
+                    request.PostId, request.Model, request.UserId, json);
+            }
+        }
     }
 }
 

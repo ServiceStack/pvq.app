@@ -8,8 +8,8 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
 {
     public async Task ExecuteAsync(CreateRankAnswerTask request)
     {
-        var questionId = request.AnswerId.LeftPart('-').ToInt();
-        var question = await questions.GetLocalQuestionFiles(questionId).GetQuestionAsync();
+        var postId = request.AnswerId.LeftPart('-').ToInt();
+        var question = await questions.GetLocalQuestionFiles(postId).GetQuestionAsync();
         if (question == null)
             throw HttpError.NotFound("Question not found");
         var answerBody = await questions.GetAnswerBodyAsync(request.AnswerId);
@@ -66,7 +66,11 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
             RefId = Guid.NewGuid().ToString("N"),
             Provider = null,
             Model = "mixtral",
-            ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(RankAnswerCallback)),
+            ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(RankAnswerCallback).AddQueryParams(new() {
+                [nameof(RankAnswerCallback.PostId)] = postId,
+                [nameof(RankAnswerCallback.UserId)] = request.UserId,
+                [nameof(RankAnswerCallback.Grader)] = "mixtral",
+            })),
             Request = new()
             {
                 Model = "mixtral",

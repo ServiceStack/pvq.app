@@ -11,13 +11,20 @@ public class CreateAnswerCallback : OpenAiChatResponse, IPost, IReturnVoid
     public string UserId { get; set; }
 }
 
+[SystemJson(UseSystemJson.Never)]
 public class RankAnswerCallback : OpenAiChatResponse, IPost, IReturnVoid
 {
+    public int PostId { get; set; }
+    
+    public string UserId { get; set; } // Use User GUID to prevent tampering
+    
+    public string Grader { get; set; }
 }
 
 public class CreateRankAnswerTask
 {
     public string AnswerId { get; set; }
+    public string UserId { get; set; }
 }
 
 public class CreateOpenAiChat : IReturn<CreateOpenAiChatResponse>
