@@ -21,6 +21,23 @@ public class RankAnswerCallback : OpenAiChatResponse, IPost, IReturnVoid
     public string Grader { get; set; }
 }
 
+public class GradeResult
+{
+    public string Reason { get; set; }
+    public int Score { get; set; }
+    public void Deconstruct(out string reason, out int score)
+    {
+        reason = Reason;
+        score = Score;
+    }
+}
+
+public class CreateAnswerTasks
+{
+    public Post Post { get; set; }
+    public List<string> ModelUsers { get; set; } = new();
+}
+
 public class CreateRankAnswerTask
 {
     public string AnswerId { get; set; }
@@ -30,8 +47,6 @@ public class CreateRankAnswerTask
 public class CreateOpenAiChat : IReturn<CreateOpenAiChatResponse>
 {
     public string? RefId { get; set; }
-    [ValidateNotEmpty]
-    public string Model { get; set; }
     public string? Provider { get; set; }
     public string? ReplyTo { get; set; }
     public OpenAiChat Request { get; set; }

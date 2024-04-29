@@ -24,6 +24,7 @@ public class DiskTasks : IReturnVoid
 {
     public SaveFile? SaveFile { get; set; }
     public List<string>? CdnDeleteFiles { get; set; }
+    public Post? SaveQuestion { get; set; }
 }
 public class SaveFile
 {
@@ -102,6 +103,7 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     [Command<DeletePostCommand>]
     public DeletePost? DeletePost { get; set; }
     
+    [Obsolete("Replaced with AI Server")]
     [Command<CreatePostJobsCommand>]
     public CreatePostJobs? CreatePostJobs { get; set; }
     
@@ -149,10 +151,16 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     
     [Command<TagSubscriptionsCommand>]
     public TagSubscriptions? TagSubscriptions { get; set; }
+    
+    [Command<SaveGradeResultCommand>]
+    public StatTotals? SaveStartingUpVotes { get; set; }
 }
 
 public class AiServerTasks
 {
+    [Command<CreateAnswerTasksCommand>]
+    public CreateAnswerTasks? CreateAnswerTasks { get; set; } 
+
     [Command<CreateRankAnswerTaskCommand>]
     public CreateRankAnswerTask? CreateRankAnswerTask { get; set; } 
 }

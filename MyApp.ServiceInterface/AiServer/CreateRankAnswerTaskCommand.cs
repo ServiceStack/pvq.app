@@ -16,7 +16,7 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
 
         var content = $$"""
                       Below I have a user question and an answer to the user question. I want you to give a score out of 10 based on the quality in relation to the original user question. 
-                          
+                      
                       ## Original User Question
                       
                       Title: {{question.Post.Title}}
@@ -59,13 +59,10 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
                       Use code fences, aka triple backticks, to encapsulate your JSON object.
                       """;
 
-        var client = new JsonApiClient(appConfig.AiServerBaseUrl) {
-            BearerToken = appConfig.AiServerApiKey, 
-        };
+        var client = appConfig.CreateAiServerClient();
         var api = await client.ApiAsync(new CreateOpenAiChat {
             RefId = Guid.NewGuid().ToString("N"),
             Provider = null,
-            Model = "mixtral",
             ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(RankAnswerCallback).AddQueryParams(new() {
                 [nameof(RankAnswerCallback.PostId)] = postId,
                 [nameof(RankAnswerCallback.UserId)] = request.UserId,

@@ -153,6 +153,11 @@ public class RegenerateMetaCommand(
         meta.ModifiedDate = now;
 
         var dbPost = await db.SingleByIdAsync<Post>(id);
+        if (dbPost == null)
+        {
+            log.LogWarning("Post {Id} not found", id);
+            return;
+        }
         if (dbPost.AnswerCount != answerFiles.Count)
         {
             await db.UpdateOnlyAsync(() => new Post { AnswerCount = answerFiles.Count }, x => x.Id == id);

@@ -2,7 +2,6 @@
 using AiServer.ServiceModel;
 using Microsoft.Extensions.Logging;
 using MyApp.Data;
-using MyApp.ServiceInterface.AiServer;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.OrmLite;
@@ -34,8 +33,17 @@ public class AiServerServices(ILogger<AiServerServices> log,
         var answer = request.ToAnswer(request.PostId, modelUser.UserName);
         
         await questions.SaveHumanAnswerAsync(answer);
-        
-        answerNotifier.NotifyNewAnswer(request.PostId, modelUser.UserName);
+            
+        MessageProducer.Publish(new DbWrites
+        {
+            SaveStartingUpVotes = new()
+            {
+                Id = answer.RefId!,
+                PostId = request.PostId,
+                StartingUpVotes = 0,
+                CreatedBy = modelUser.UserName,
+            }
+        });
 
         // Only add notifications for answers older than 1hr
         var post = await Db.SingleByIdAsync<Post>(request.PostId);
@@ -65,6 +73,8 @@ public class AiServerServices(ILogger<AiServerServices> log,
                 UserId = request.UserId,
             } 
         });
+        
+        MessageProducer.Publish(new SearchTasks { AddPostToIndex = request.PostId });
     }
     
     public async Task Any(RankAnswerCallback request)
@@ -95,43 +105,51 @@ public class AiServerServices(ILogger<AiServerServices> log,
             return;
         }
 
-        var json = body.Contains("```json")
-            ? body.RightPart("```json").LastLeftPart("```")
-            : body.StartsWith("{")
-                ? body
-                : null;
-
-        if (!string.IsNullOrEmpty(json))
+        try
         {
-            try
+            var rankResponse = body.ParseRankResponse();
+            if (rankResponse == null)
             {
-                var obj = (Dictionary<string,object>)JSON.parse(json);
-                var reason = obj.TryGetValue("reason", out var oReason)
-                    ? (string)oReason
-                    : null;
-                // When score is invalid (e.g. N/A), default to 0
-                var score = obj.TryGetValue("score", out var oScore)
-                    ? oScore.ConvertTo<int>()
-                    : 0;
-
-                var meta = await questions.GetMetaAsync(request.PostId);
-                
-                meta.GradedBy ??= new();
-                meta.GradedBy[modelUser.UserName] = graderUser.UserName;
-                
-                meta.ModelReasons ??= new();
-                meta.ModelReasons[modelUser.UserName] = reason ?? "";
-                
-                meta.ModelVotes ??= new();
-                meta.ModelVotes[modelUser.UserName] = score;
-
-                await questions.SaveMetaAsync(request.PostId, meta);
+                log.LogError("Invalid RankAnswerCallback: {PostId}-{Model} for {UserId}: {Body}", 
+                    request.PostId, request.Model, request.UserId, body);
+                return;
             }
-            catch (Exception e)
+
+            var (reason, score) = rankResponse;
+            var meta = await questions.GetMetaAsync(request.PostId);
+                
+            meta.GradedBy ??= new();
+            meta.GradedBy[modelUser.UserName] = graderUser.UserName;
+                
+            meta.ModelReasons ??= new();
+            meta.ModelReasons[modelUser.UserName] = reason ?? "";
+                
+            meta.ModelVotes ??= new();
+            meta.ModelVotes[modelUser.UserName] = score;
+
+            var statTotals = new StatTotals
             {
-                log.LogError("Invalid JSON RankAnswerCallback: {PostId}-{Model} for {UserId}: {Json}", 
-                    request.PostId, request.Model, request.UserId, json);
-            }
+                Id = $"{request.PostId}-{modelUser.UserName}",
+                PostId = request.PostId,
+                StartingUpVotes = score,
+                CreatedBy = modelUser.UserName,
+            };
+
+            meta.StatTotals ??= new();
+            meta.StatTotals.RemoveAll(x => x.Id == statTotals.Id);
+            meta.StatTotals.Add(statTotals);
+
+            await questions.SaveMetaAsync(request.PostId, meta);
+            
+            MessageProducer.Publish(new DbWrites
+            {
+                SaveStartingUpVotes = statTotals 
+            });
+        }
+        catch (Exception e)
+        {
+            log.LogError(e, "Invalid JSON RankAnswerCallback: {PostId}-{Model} for {UserId}: {Json}", 
+                request.PostId, request.Model, request.UserId, body);
         }
     }
 }
@@ -176,5 +194,44 @@ public static class AiServerExtensions
             RefId = $"{postId}-{userName}"
         };
         return to;
+    }
+
+    public static GradeResult? ParseRankResponse(this string body)
+    {
+        var json = body.Contains("```json")
+            ? body.RightPart("```json").LastLeftPart("```")
+            : body.StartsWith("{")
+                ? body
+                : null;
+        
+        if (json == null)
+        {
+            var reasonPos = body.IndexOf("\"reason\"", StringComparison.Ordinal);
+            if (reasonPos >= 0)
+            {
+                var lastPos = body.LastIndexOf('}');
+                if (lastPos >= 0)
+                {
+                    json = string.Concat("{", body.AsSpan(reasonPos, lastPos - reasonPos + 1));
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(json))
+        {
+            var obj = (Dictionary<string,object>)JSON.parse(json);
+            var reason = obj.TryGetValue("reason", out var oReason)
+                ? (string)oReason
+                : null;
+            if (reason == null)
+                return null;
+            // When score is invalid (e.g. N/A), default to 0
+            var score = obj.TryGetValue("score", out var oScore)
+                ? oScore.ConvertTo<int>()
+                : 0;
+
+            return new() { Reason = reason, Score = score };
+        }
+        return null;
     }
 }

@@ -6,7 +6,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class BackgroundMqServices(R2VirtualFiles r2) : Service
+public class BackgroundMqServices(R2VirtualFiles r2, QuestionsProvider questions) : Service
 {
     public async Task Any(DiskTasks request)
     {
@@ -30,6 +30,12 @@ public class BackgroundMqServices(R2VirtualFiles r2) : Service
         if (request.CdnDeleteFiles != null)
         {
             r2.DeleteFiles(request.CdnDeleteFiles);
+        }
+        
+        if (request.SaveQuestion != null)
+        {
+            await ExecUtils.RetryOnExceptionAsync(async () => 
+                    await questions.SaveQuestionAsync(request.SaveQuestion), 5);
         }
     }
 

@@ -14,6 +14,7 @@ public class DeletePostCommand(AppConfig appConfig, IDbConnection db) : IAsyncCo
             await db.DeleteAsync<PostJob>(x => x.PostId == postId);
             await db.DeleteAsync<Vote>(x => x.PostId == postId);
             await db.DeleteByIdAsync<Post>(postId);
+            await db.DeleteAsync<StatTotals>(x => x.PostId == postId);
             appConfig.ResetInitialPostId(db);
         }
     }

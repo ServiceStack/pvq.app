@@ -20,6 +20,7 @@ public class AppConfig
 
     public string AiServerBaseUrl { get; set; }
     public string AiServerApiKey { get; set; }
+    public JsonApiClient CreateAiServerClient() => new(AiServerBaseUrl) { BearerToken = AiServerApiKey };
     
     public string CacheDir { get; set; }
     public string ProfilesDir { get; set; }
@@ -37,8 +38,9 @@ public class AppConfig
         ("phi", 0),                 // demis,macbook
         ("mistral", 0),             // demis,macbook
         ("gemma", 0),               // demis,macbook
-        ("gemini-pro", 0),          // demis,darren
         ("codellama", 0),           // demis,darren
+        ("gemini-pro", 0),          // demis,darren
+        ("llama3-8b", 0),           // demis,darren
         ("mixtral", 3),             // demis,darren
         ("gpt3.5-turbo", 5),        // hetzner,macbook
         ("claude3-haiku", 10),      // hetzner,macbook
@@ -48,12 +50,6 @@ public class AppConfig
         ("command-r-plus", 100),    // hetzner,macbook
         ("gpt4-turbo", 150),        // hetzner,macbook
         ("claude3-opus", 200),      // hetzner,macbook
-        
-        //hetzner: model-worker.mjs gemini-pro,claude-3-haiku,claude-3-sonnet,gpt-4-turbo,claude-3-opus 
-        //macbook: model-worker.mjs phi,gemma:2b,gemini-pro,claude-3-haiku,claude-3-sonnet,gpt-4-turbo,claude-3-opus
-        //demis:   model-worker.mjs phi,gemma:2b,qwen:4b,codellama,deepseek-coder:6.7b,mistral,gemma
-        //darren1: model-worker.mjs qwen:4b,codellama
-        //darren2: model-worker.mjs mixtral
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
@@ -108,7 +104,7 @@ public class AppConfig
     public int GetQuestionCount(string? userName) => 
         userName == null || !UsersQuestions.TryGetValue(userName, out var count) 
             ? 0 
-            : count;
+            : count + (Stats.IsAdminOrModerator(userName) ? 10 : 0);
 
     public void Init(IDbConnection db)
     {
@@ -197,7 +193,7 @@ public class AppConfig
             new UserInfo { QuestionsCount = questionsCount }, x => x.UserName == userName);
     }
     
-    public List<string> GetAnswerModelsFor(string? userName)
+    public List<string> GetAnswerModelUsersFor(string? userName)
     {
         var questionsCount = GetQuestionCount(userName);
         var models = ModelsForQuestions.Where(x => x.Questions <= questionsCount)
@@ -212,6 +208,12 @@ public class AppConfig
         if (models.Contains("claude-3-sonnet"))
             models.RemoveAll(x => x is "claude-3-haiku");
         return models;
+    }
+
+    public List<string> GetAnswerModelsFor(string? userName)
+    {
+        return GetAnswerModelUsersFor(userName)
+            .Map(x => GetModelUser(x)?.Model ?? throw HttpError.NotFound("Model User not found: " + x));
     }
 
     public void IncrUnreadNotificationsFor(string userName)

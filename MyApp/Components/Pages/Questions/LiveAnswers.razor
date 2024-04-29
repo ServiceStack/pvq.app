@@ -173,32 +173,36 @@
         var startedAt = DateTime.UtcNow;
         using var db = HostContext.AppHost.GetDbConnection();
 
-        var pendingJobs = await GetPendingJobs(db);
-
+        var userName = HttpContext!.User.GetUserName();
+        var actualAnswers = (await db.SelectAsync<StatTotals>(x => x.PostId == Id)).Where(x => x.Id.Contains('-')).ToList();
+        var expectedAnswers = AppConfig.GetAnswerModelUsersFor(userName);
+        
         var questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
         question = questionFiles.Question;
         StateHasChanged();
 
-        if (pendingJobs.Count > 0)
+        var pendingCount = expectedAnswers.Count - actualAnswers.Count;
+        if (pendingCount > 0)
         {
-            var lastCount = pendingJobs.Count;
-            Progress = $"Waiting on {pendingJobs.Count} remaining answer{Plural(pendingJobs.Count)}...";
+            var lastCount = actualAnswers.Count;
+            Progress = $"Waiting on {pendingCount} remaining answer{Plural(pendingCount)}...";
             StateHasChanged();
             var timeOut = TimeSpan.FromMinutes(5);
             while (DateTime.UtcNow - startedAt < timeOut)
             {
                 await AnswerNotifier.ListenForNewAnswersAsync(Id, TimeSpan.FromSeconds(5));
 
-                pendingJobs = await GetPendingJobs(db);
-                if (pendingJobs.Count == 0)
+                actualAnswers = (await db.SelectAsync<StatTotals>(x => x.PostId == Id)).Where(x => x.Id.Contains('-')).ToList();
+                pendingCount = expectedAnswers.Count - actualAnswers.Count;
+                if (pendingCount <= 0)
                     break;
 
-                if (pendingJobs.Count != lastCount)
+                if (pendingCount != lastCount)
                 {
                     questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
                     question = questionFiles.Question;
-                    Progress = $"Waiting on {pendingJobs.Count} remaining answer{Plural(pendingJobs.Count)}...";
-                    lastCount = pendingJobs.Count;
+                    Progress = $"Waiting on {pendingCount} remaining answer{Plural(pendingCount)}...";
+                    lastCount = pendingCount;
                     StateHasChanged();
                 }
             }
@@ -208,9 +212,6 @@
             StateHasChanged();
         }
     }
-
-    private async Task<List<PostJob>> GetPendingJobs(IDbConnection db) =>
-        await db.SelectAsync<PostJob>(x => x.PostId == Id && x.CompletedDate == null && x.Model != "rank");
 
     protected override Task OnInitializedAsync() => load();
 }

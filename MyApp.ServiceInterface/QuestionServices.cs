@@ -102,21 +102,20 @@ public class QuestionServices(AppConfig appConfig,
         MessageProducer.Publish(new DbWrites
         {
             CreatePost = dbPost,
-            CreatePostJobs = new()
-            {
-                PostJobs = appConfig.GetAnswerModelsFor(userName)
-                    .Select(model => new PostJob
-                    {
-                        PostId = post.Id,
-                        Model = model,
-                        Title = request.Title,
-                        CreatedBy = userName,
-                        CreatedDate = now,
-                    }).ToList()
-            },
+        });
+        
+        MessageProducer.Publish(new AiServerTasks
+        {
+            CreateAnswerTasks = new() {
+                Post = post,
+                ModelUsers = appConfig.GetAnswerModelUsersFor(userName),
+            }
         });
 
-        await questions.SaveQuestionAsync(post);
+        MessageProducer.Publish(new DiskTasks
+        {
+            SaveQuestion = post,
+        });
        
         return new AskQuestionResponse
         {

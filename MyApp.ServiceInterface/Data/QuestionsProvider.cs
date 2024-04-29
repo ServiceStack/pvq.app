@@ -206,6 +206,17 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         return file;
     }
 
+    public async Task<Post> GetQuestionFilePostAsync(int id)
+    {
+        var (dir1, dir2, fileId) = id.ToFileParts();
+        var questionPath = $"{dir1}/{dir2}/{fileId}.json";
+        var file = fs.GetFile(questionPath)
+                   ?? await r2.GetFileAsync(questionPath);
+        var json = await file.ReadAllTextAsync();
+        var post = json.FromJson<Post>();
+        return post;
+    }
+
     public async Task<IVirtualFile?> GetMetaFileAsync(int id)
     {
         var (dir1, dir2, fileId) = id.ToFileParts();
