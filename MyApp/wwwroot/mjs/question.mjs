@@ -1005,6 +1005,7 @@ async function loadEditAnswers(ctx) {
     
     $$(sel).forEach(el => {
         const id = el.dataset.answer
+        if (!id || id === "0") return
         const answer = el,
             edit = el.querySelector('.edit'),
             preview = el.querySelector('.preview'),
