@@ -61,7 +61,7 @@ public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserM
         // Get common password from environment variable
         var commonPassword = AppConfig.Instance.MasterPassword;
         if (string.IsNullOrEmpty(commonPassword))
-            throw new ArgumentNullException("MASTER_PASSWORD");
+            throw new ArgumentNullException("MasterPassword");
 
         var updatedUsers = new List<string>();
         
