@@ -6,9 +6,7 @@ namespace MyApp.ServiceModel;
 
 [Tag(Tag.User)]
 [ValidateIsAuthenticated]
-public class UpdateUserProfile : IPost, IReturn<UpdateUserProfileResponse>
-{
-}
+public class UpdateUserProfile : IPost, IReturn<UpdateUserProfileResponse> {}
 
 public class UpdateUserProfileResponse
 {
