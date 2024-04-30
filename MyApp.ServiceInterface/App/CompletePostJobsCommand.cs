@@ -1,8 +1,9 @@
 ﻿using System.Data;
-using MyApp.Data;
-using MyApp.ServiceModel;
+using ServiceStack;
 using ServiceStack.Messaging;
 using ServiceStack.OrmLite;
+using MyApp.Data;
+using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 

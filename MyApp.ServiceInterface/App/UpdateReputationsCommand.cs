@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using ServiceStack;
 using MyApp.Data;
 
 namespace MyApp.ServiceInterface.App;

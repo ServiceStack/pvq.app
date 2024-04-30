@@ -1,6 +1,7 @@
 ﻿using System.Data;
-using MyApp.Data;
+using ServiceStack;
 using ServiceStack.OrmLite;
+using MyApp.Data;
 
 namespace MyApp.ServiceInterface.App;
 

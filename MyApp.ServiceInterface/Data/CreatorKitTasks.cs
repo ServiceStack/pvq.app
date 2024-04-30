@@ -1,6 +1,6 @@
 ﻿using CreatorKit.ServiceInterface;
 using CreatorKit.ServiceModel.Types;
-using MyApp.ServiceInterface;
+using ServiceStack;
 
 namespace MyApp.Data;
 
