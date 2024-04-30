@@ -146,3 +146,14 @@ public class Flag
     public string? RemoteIp { get; set; }
     public DateTime CreatedDate { get; set; }
 }
+
+[ValidateIsAuthenticated]
+[ValidateHasRole(Roles.Admin)]
+public class AdminResetCommonPassword
+{
+}
+
+public class AdminResetCommonPasswordResponse
+{
+    public List<string> UpdatedUsers { get; set; }
+}

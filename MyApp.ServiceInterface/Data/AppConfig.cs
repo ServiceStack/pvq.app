@@ -30,6 +30,8 @@ public class AppConfig
     public ConcurrentDictionary<string,int> UsersQuestions { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersUnreadAchievements { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersUnreadNotifications { get; set; } = new();
+    
+    public string MasterPassword { get; set; }
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
