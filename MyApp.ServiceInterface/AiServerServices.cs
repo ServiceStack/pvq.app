@@ -183,7 +183,7 @@ public static class AiServerExtensions
     
     public static Post ToAnswer(this OpenAiChatResponse request, int postId, string userName)
     {
-        var body = request.GetBody();
+        var body = SanitizeBody(request.GetBody());
         var to = new Post
         {
             ParentId = postId,
@@ -195,6 +195,26 @@ public static class AiServerExtensions
             RefId = $"{postId}-{userName}"
         };
         return to;
+    }
+
+    public static Dictionary<string, string> ReplaceBodyTokens = new()
+    {
+        ["```C#"] = "```csharp",
+    };
+
+    public static string SanitizeBody(string? body)
+    {
+        if (string.IsNullOrEmpty(body))
+            return string.Empty;
+        
+        foreach (var (from, to) in ReplaceBodyTokens)
+        {
+            if (body.IndexOf(from, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                body = body.Replace(from, to);
+            }
+        }
+        return body;
     }
 
     public static GradeResult? ParseRankResponse(this string body)
