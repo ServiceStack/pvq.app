@@ -28,7 +28,7 @@ public class EmailTemplateServices(AppConfig appConfig, QuestionsProvider questi
             throw HttpError.NotFound("Answer not found");
 
         var answer = await questions.GetAnswerAsPostAsync(answerFile);
-        var postId = answer.Id;
+        var postId = answer.ParentId;
         var post = await Db.SingleByIdAsync<Post>(postId);
 
         var user = await Db.SingleAsync(Db.From<ApplicationUser>().Where(x => x.UserName == request.UserName));

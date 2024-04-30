@@ -150,10 +150,10 @@
             {
                 var userName = answer.CreatedBy;
 
-                <article data-answer=@answer.Id data-createdby=@userName class="py-8 border-b border-gray-200 dark:border-gray-700">
-                    <div id=@answer.Id class="flex">
+                <article data-answer=@answer.RefId data-createdby=@userName class="py-8 border-b border-gray-200 dark:border-gray-700">
+                    <div id=@answer.RefId class="flex">
                         <div class="md:w-32 pr-2">
-                            <div data-refid=@answer.Id class="voting flex flex-col items-center">
+                            <div data-refid=@answer.RefId class="voting flex flex-col items-center">
                                 <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                     <title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/>
                                 </svg>
@@ -198,10 +198,10 @@
                                 </div>
                             }
 
-                            <div id=@($"preview-{answer.Id}") class="preview xl:flex-grow prose">
+                            <div id=@($"preview-{answer.RefId}") class="preview xl:flex-grow prose">
                                 @BlazorHtml.Raw(Markdown.GenerateHtml(answer.Body))
                             </div>
-                            <div id=@($"edit-{answer.Id}") class="edit w-full pl-2 hidden"></div>
+                            <div id=@($"edit-{answer.RefId}") class="edit w-full pl-2 hidden"></div>
 
                             <div class="answer-footer">
                                 <div class="pt-6 flex flex-1 items-end">
@@ -219,7 +219,7 @@
 
                                 @if (Question.Post.LockedDate == null)
                                 {
-                                    <div data-answer=@answer.Id class="relative mt-4 text-sm">
+                                    <div data-answer=@answer.RefId class="relative mt-4 text-sm">
                                         <div class="share-dialog absolute"></div>
                                         <span class="share-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Share this Answer">share</span>
                                         <span class="edit-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Answer">edit</span>
