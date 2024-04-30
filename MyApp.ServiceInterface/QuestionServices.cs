@@ -72,7 +72,6 @@ public class QuestionServices(AppConfig appConfig,
 
         var userName = GetUserName();
         var now = DateTime.UtcNow;
-        var postId = (int)appConfig.GetNextPostId();
         var title = request.Title.Trim();
         var body = request.Body.Trim();
         var slug = request.Title.GenerateSlug(200);
@@ -81,7 +80,14 @@ public class QuestionServices(AppConfig appConfig,
         var existingPost = await Db.SingleAsync(Db.From<Post>().Where(x => x.Title == title));
         if (existingPost != null)
             throw new ArgumentException($"Question with title '{title}' already used in question {existingPost.Id}", nameof(Post.Title));
-        
+
+        var refId = request.RefId;
+        var postId = refId != null && refId.StartsWith("stackoverflow.com:")
+               && int.TryParse(refId.LastRightPart(':'), out var stackoverflowPostId)
+               && !await Db.ExistsAsync<Post>(x => x.Id == stackoverflowPostId)
+            ? stackoverflowPostId
+            :  (int)appConfig.GetNextPostId();
+            
         Post createPost() => new()
         {
             Id = postId,
@@ -94,7 +100,7 @@ public class QuestionServices(AppConfig appConfig,
             CreatedBy = userName,
             LastActivityDate = now,
             Body = body,
-            RefId = request.RefId,
+            RefId = refId,
         };
 
         var post = createPost();

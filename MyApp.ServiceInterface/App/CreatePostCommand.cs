@@ -14,11 +14,8 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
         var body = post.Body;
         post.Body = null;
         
-        if (post.RefId != null && post.RefId.StartsWith("stackoverflow.com:") 
-                               && int.TryParse(post.RefId.LastRightPart(':'), out var stackoverflowPostId)
-                               && !await db.ExistsAsync<Post>(x => x.Id == stackoverflowPostId))
+        if (post.Id < 100_000_000)
         {
-            post.Id = stackoverflowPostId;
             await db.InsertAsync(post);
         }
         else
