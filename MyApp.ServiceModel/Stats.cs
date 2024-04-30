@@ -45,6 +45,8 @@ public class StatTotals
     
     // post.Score || Meta.ModelVotes[PostId] (Model Ranking Score)
     public int StartingUpVotes { get; set; }
+    
+    public DateTime? LastUpdated { get; set; }
 
     public int GetScore() => StartingUpVotes + UpVotes - DownVotes;
 

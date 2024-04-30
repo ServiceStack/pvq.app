@@ -133,6 +133,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
                 PostId = request.PostId,
                 StartingUpVotes = score,
                 CreatedBy = modelUser.UserName,
+                LastUpdated = DateTime.UtcNow,
             };
 
             meta.StatTotals ??= new();
