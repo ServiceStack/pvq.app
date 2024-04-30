@@ -14,7 +14,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
         var body = post.Body;
         post.Body = null;
         
-        if (post.Id < 100_000_000)
+        if (post.Id > 0)
         {
             await db.InsertAsync(post);
         }
