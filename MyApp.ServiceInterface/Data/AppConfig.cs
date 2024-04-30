@@ -38,9 +38,9 @@ public class AppConfig
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
         ("phi", 0),
+        ("codellama", 0),
         ("mistral", 0),
         ("gemma", 0),
-        ("codellama", 0),
         ("llama3-8b", 0),
         ("gemini-pro", 3),
         ("mixtral", 5),
