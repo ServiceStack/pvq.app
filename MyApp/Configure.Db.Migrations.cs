@@ -127,7 +127,7 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "phi",
             Email = "servicestack.mail+phi@gmail.com",
-            DisplayName = "Phi-2 2.7B",
+            DisplayName = "Phi 3 4B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ph/phi/phi.svg",
             Model = "phi3", //3B
