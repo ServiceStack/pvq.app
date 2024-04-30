@@ -208,6 +208,8 @@
             }
             Progress = null;
             questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
+            
+            questionFiles.Question?.Answers.Sort((x, y) => y.CreationDate.CompareTo(x.CreationDate));
             question = questionFiles.Question;
             StateHasChanged();
         }
