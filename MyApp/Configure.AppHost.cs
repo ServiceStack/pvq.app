@@ -20,7 +20,6 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         .ConfigureServices((context,services) => {
             // Configure ASP.NET Core IOC Dependencies
             context.Configuration.GetSection(nameof(AppConfig)).Bind(AppConfig.Instance);
-            AppConfig.Instance.AiServerApiKey = Environment.GetEnvironmentVariable("AISERVER_API_KEY") ?? "";
             services.AddSingleton(AppConfig.Instance);
 
             services.AddSingleton<ImageCreator>();
