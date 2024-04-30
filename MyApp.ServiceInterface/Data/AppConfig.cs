@@ -37,21 +37,21 @@ public class AppConfig
 
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
-        ("phi", 0),                 // demis,macbook
-        ("mistral", 0),             // demis,macbook
-        ("gemma", 0),               // demis,macbook
-        ("codellama", 0),           // demis,darren
-        ("gemini-pro", 0),          // demis,darren
-        ("llama3-8b", 0),           // demis,darren
-        ("mixtral", 3),             // demis,darren
-        ("gpt3.5-turbo", 5),        // hetzner,macbook
-        ("claude3-haiku", 10),      // hetzner,macbook
-        ("command-r", 25),          // hetzner,macbook
-        ("wizardlm", 50),           // hetzner,macbook
-        ("claude3-sonnet", 75),     // hetzner,macbook
-        ("command-r-plus", 100),    // hetzner,macbook
-        ("gpt4-turbo", 150),        // hetzner,macbook
-        ("claude3-opus", 200),      // hetzner,macbook
+        ("phi", 0),
+        ("mistral", 0),
+        ("gemma", 0),
+        ("codellama", 0),
+        ("llama3-8b", 0),
+        ("gemini-pro", 3),
+        ("mixtral", 5),
+        ("gpt3.5-turbo", 10),
+        ("claude3-haiku", 25),
+        ("command-r", 50),
+        ("wizardlm", 75),
+        ("claude3-sonnet", 100),
+        ("command-r-plus", 150),
+        ("gpt4-turbo", 200),
+        ("claude3-opus", 300),
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
