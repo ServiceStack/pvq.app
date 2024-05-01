@@ -13,11 +13,23 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
 
     public async Task ExecuteAsync(CreateAnswerTasks request)
     {
-        var client = appConfig.CreateAiServerClient();
-
         var question = request.Post;
-        if (question?.Body == null)
+        if (question == null)
             throw new ArgumentNullException(nameof(request.Post));
+        
+        if (request.ModelUsers == null || request.ModelUsers.Count == 0)
+        {
+            log.LogError("Missing ModelUsers for question {Id}", question.Id);
+            throw new ArgumentNullException(nameof(request.ModelUsers));
+        }
+        
+        if (question.Body == null)
+        {
+            log.LogError("Missing Post Body for question {Id}", question.Id);
+            throw new ArgumentNullException(nameof(request.Post));
+        }
+
+        var client = appConfig.CreateAiServerClient();
 
         foreach (var userName in request.ModelUsers)
         {
@@ -31,6 +43,7 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
                     continue;
                 }
             
+                log.LogInformation("Creating Question {Id} OpenAiChat Model for {UserName} to AI Server", question.Id, userName);
                 var response = await client.PostAsync(new CreateOpenAiChat
                 {
                     ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(CreateAnswerCallback).AddQueryParams(new() {
@@ -51,7 +64,7 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
             }
             catch (Exception e)
             {
-                log.LogError(e, "Failed to CreateOpenAiChat Model for {UserName}: {Message}", userName, e.Message);
+                log.LogError(e, "Failed to Creating Question {Id} OpenAiChat Model for {UserName}", question.Id, userName);
             }
         }
     }
