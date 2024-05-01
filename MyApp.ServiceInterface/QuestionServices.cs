@@ -81,9 +81,9 @@ public class QuestionServices(AppConfig appConfig,
         if (existingPost != null)
             throw new ArgumentException($"Question with title '{title}' already used in question {existingPost.Id}", nameof(Post.Title));
 
-        var refId = request.RefId;
-        var postId = refId != null && refId.StartsWith("stackoverflow.com:")
-               && int.TryParse(refId.LastRightPart(':'), out var stackoverflowPostId)
+        var refUrn = request.RefUrn;
+        var postId = refUrn != null && refUrn.StartsWith("stackoverflow.com:")
+               && int.TryParse(refUrn.LastRightPart(':'), out var stackoverflowPostId)
                && !await Db.ExistsAsync<Post>(x => x.Id == stackoverflowPostId)
             ? stackoverflowPostId
             :  (int)appConfig.GetNextPostId();
@@ -100,7 +100,8 @@ public class QuestionServices(AppConfig appConfig,
             CreatedBy = userName,
             LastActivityDate = now,
             Body = body,
-            RefId = refId,
+            RefId = $"{postId}",
+            RefUrn = refUrn,
         };
 
         var post = createPost();

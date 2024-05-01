@@ -71,7 +71,7 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
                 Title = (string)obj["title"],
                 Body = body.Trim(),
                 Tags = ExtractTags(body),
-                RefId = postId > 0 ? $"{uri.Host}:{postId}" : null,
+                RefUrn = postId > 0 ? $"{uri.Host}:{postId}" : null,
             };
         }
         else if (request.Site == ImportSite.StackOverflow)
@@ -125,7 +125,7 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
                 
                 if (Result != null)
                 {
-                    Result.RefId = $"{uri.Host}:{postId}";
+                    Result.RefUrn = $"{uri.Host}:{postId}";
                 }
             }
         }
@@ -162,7 +162,7 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
                 Title = title.Trim(),
                 Body = body.HtmlDecode().Trim(),
                 Tags = tags,
-                RefId = $"reddit.{subreddit}:{id}",
+                RefUrn = $"reddit.{subreddit}:{id}",
             };
         }
         else throw new NotSupportedException("Unsupported Site");
