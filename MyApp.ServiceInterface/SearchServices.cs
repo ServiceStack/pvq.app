@@ -74,7 +74,7 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                             {nameof(PostFts.Body)},
                             {nameof(PostFts.ModifiedDate)}
                         ) VALUES (
-                            {post.Id},
+                            {nextId++},
                             {QuotedValue(refId)},
                             {QuotedValue(userName)},
                             {QuotedValue(post.Body)},
