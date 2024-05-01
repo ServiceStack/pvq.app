@@ -6,6 +6,8 @@ namespace MyApp.ServiceInterface;
 
 public class LeaderboardServices : Service
 {
+    
+    private const int minimumQuestions = 50;
     /// <summary>
     /// Leader board stats
     /// - Most liked models by human votes
@@ -35,6 +37,15 @@ public class LeaderboardServices : Service
         }).ToList();
         
         var leaderBoard = CalculateLeaderboardResponse(statsByUser, answers);
+
+        leaderBoard.AnswererWinRate = leaderBoard.AnswererWinRate
+            .Where(x => x.NumberOfQuestions > minimumQuestions).ToList();
+        leaderBoard.ModelWinRate = leaderBoard.ModelWinRate
+            .Where(x => x.NumberOfQuestions > minimumQuestions).ToList();
+        leaderBoard.ModelTotalScore = leaderBoard.ModelTotalScore
+            .Where(x => x.TotalScore > 500).ToList();
+        leaderBoard.MostLikedModelsByLlm = leaderBoard.MostLikedModelsByLlm
+            .Where(x => x.StartingUpVotes > 500).ToList();
         
         // Serialize the response to a leaderboard json file
         var json = leaderBoard.ToJson();

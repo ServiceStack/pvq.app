@@ -12,9 +12,13 @@
 
     @if (TotalVotes.Count > 0 && WinRates.Count > 0)
     {
-        <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
-            <LeaderboardStats Title="Total Votes" Results=@TotalVotes />
-            <LeaderboardStats Title="Win Rates" Results=@WinRates />
+        <div class="mt-8 max-w-screen-md mx-auto">
+            <div class="mx-auto">
+                <LeaderboardStats Title="Total Votes" Results=@TotalVotes />
+            </div>
+            <p class="text-center py-4">
+                Based on total number of total votes received by each model by a ranking model measuring how well they answer the question asked.
+            </p>
         </div>
         
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes</h3>
@@ -68,9 +72,9 @@
                 Rank = index + 1,
                 DisplayName = AppConfig.GetApplicationUser(x.Id).DisplayName!,
                 AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
-                Stat = $"{x.StartingUpVotes.ToHumanReadable()} votes",
+                Stat = $"{x.StartingUpVotes.ToHumanReadable()}",
                 Value = x.StartingUpVotes,
-            }).ToList();
+            }).Take(10).ToList();
 
         WinRates = data.ModelWinRate.OrderByDescending(x => x.WinRate).Select((x, index) =>
             new LeaderboardStat
@@ -80,6 +84,6 @@
                 AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
                 Stat = $"{Math.Round(x.WinRate, 2)}% ({x.NumberOfQuestions.ToHumanReadable()})",
                 Value = Math.Round(x.WinRate, 2),
-            }).ToList();
+            }).Take(10).ToList();
     }
 }
