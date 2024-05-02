@@ -9,7 +9,7 @@ namespace MyApp.ServiceModel;
 [Icon(Svg = Icons.Post)]
 [Description("StackOverflow Question")]
 [Notes("A StackOverflow Question Post")]
-public class Post
+public class Post : IMeta
 {
     public int Id { get; set; }
 
@@ -51,8 +51,6 @@ public class Post
     
     public string? ModifiedBy { get; set; }
     
-    public string? RefId { get; set; }
-
     public string? Body { get; set; }
 
     public string? ModifiedReason { get; set; }
@@ -60,6 +58,12 @@ public class Post
     public DateTime? LockedDate { get; set; }
 
     public string? LockedReason { get; set; }
+    
+    public string? RefId { get; set; }
+
+    public string? RefUrn { get; set; }
+
+    public Dictionary<string, string>? Meta { get; set; }
 
     public string GetRefId() => RefId ?? $"{Id}-{CreatedBy}";
 }
@@ -314,6 +318,9 @@ public class AskQuestion : IPost, IReturn<AskQuestionResponse>
     
     [Input(Type="hidden")]
     public string? RefId { get; set; }
+    
+    [Input(Type="hidden")]
+    public string? RefUrn { get; set; }
 }
 public class AskQuestionResponse
 {

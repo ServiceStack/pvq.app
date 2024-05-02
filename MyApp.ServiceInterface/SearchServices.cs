@@ -22,7 +22,7 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
             using var db = HostContext.AppHost.GetDbConnection(Databases.Search);
             var nextId = await db.ScalarAsync<int>("SELECT MAX(rowid) FROM PostFts");
             nextId += 1;
-            var existingIds = new HashSet<int>();
+            var existingIds = new HashSet<string>();
             var minDate = new DateTime(2008,08,1);
 
             string QuotedValue(string? value) => db.GetDialectProvider().GetQuotedValue(value);
@@ -38,7 +38,9 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                         var post = await ToPostAsync(file);
                         if (post.Id == default)
                             throw new ArgumentNullException(nameof(post.Id));
-                        if (!existingIds.Add(post.Id)) continue;
+                        var refId = post.RefId ?? $"{post.Id}";
+                        if (!existingIds.Add(refId)) 
+                            continue;
                         log.LogDebug("Adding Question {FilePath}", file.VirtualPath);
                         var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
                         await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} WHERE rowid = {post.Id}");
@@ -51,7 +53,7 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                             {nameof(PostFts.ModifiedDate)}
                         ) VALUES (
                             {post.Id},
-                            '{post.Id}',
+                            '{refId}',
                             'stackoverflow',
                             {QuotedValue(post.Title + "\n\n" + post.Body)},
                             {QuotedValue(string.Join(',',post.Tags))},
@@ -61,11 +63,13 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                     else if (fileType.StartsWith("h."))
                     {
                         var post = await ToPostAsync(file);
-                        if (!existingIds.Add(post.Id)) continue;
-                        var userName = fileType.Substring(2); 
+                        post.CreatedBy ??= fileType.Substring(2); 
+                        var refId = post.RefId ?? post.GetRefId();
+                        if (!existingIds.Add(refId))
+                            continue;
+
                         log.LogDebug("Adding Human Answer {FilePath}", file.VirtualPath);
                         var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
-                        var refId = $"{id}-{userName}";
                         await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} where {nameof(PostFts.RefId)} = {QuotedValue(refId)}");
                         await db.ExecuteNonQueryAsync($@"INSERT INTO {nameof(PostFts)} (
                             rowid,
@@ -74,39 +78,10 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
                             {nameof(PostFts.Body)},
                             {nameof(PostFts.ModifiedDate)}
                         ) VALUES (
-                            {post.Id},
-                            {QuotedValue(refId)},
-                            {QuotedValue(userName)},
-                            {QuotedValue(post.Body)},
-                            {QuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
-                        )");
-                    }
-                    else if (fileType.StartsWith("a."))
-                    {
-                        var json = await file.ReadAllTextAsync();
-                        var obj = (Dictionary<string,object>)JSON.parse(json);
-                        var choices = (List<object>) obj["choices"];
-                        var choice = (Dictionary<string,object>)choices[0];
-                        var message = (Dictionary<string,object>)choice["message"];
-                        var body = (string)message["content"];
-                        var userName = fileType.Substring(2); 
-                        var modifiedDate = obj.TryGetValue("created", out var oCreated) && oCreated is int created
-                            ? DateTimeOffset.FromUnixTimeSeconds(created).DateTime
-                            : file.LastModified;
-                        log.LogDebug("Adding Model Answer {FilePath} {UserName}", file.VirtualPath, userName);
-                        var refId = $"{id}-{userName}";
-                        await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} where {nameof(PostFts.RefId)} = {QuotedValue(refId)}");
-                        db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
-                            rowid,
-                            {nameof(PostFts.RefId)},
-                            {nameof(PostFts.UserName)},
-                            {nameof(PostFts.Body)},
-                            {nameof(PostFts.ModifiedDate)}
-                        ) VALUES (
                             {nextId++},
                             {QuotedValue(refId)},
-                            {QuotedValue(userName)},
-                            {QuotedValue(body)},
+                            {QuotedValue(post.CreatedBy)},
+                            {QuotedValue(post.Body)},
                             {QuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
                         )");
                     }
