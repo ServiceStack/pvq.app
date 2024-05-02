@@ -65,7 +65,7 @@ public class Post : IMeta
 
     public Dictionary<string, string>? Meta { get; set; }
 
-    public string GetRefId() => RefId ?? $"{Id}-{CreatedBy}";
+    public string GetRefId() => RefId ?? (PostTypeId == 1 ? $"{Id}" : $"{Id}-{CreatedBy}");
 }
 
 public static class PostUtils

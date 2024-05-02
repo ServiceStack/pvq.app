@@ -108,6 +108,17 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         await SaveFileAsync(GetMetaPath(meta.Id), ToJson(meta));
     }
 
+    public async Task<Post?> GetQuestionFileAsPostAsync(int id)
+    {
+        var file = await GetQuestionFileAsync(id);
+        if (file == null)
+            return null;
+        
+        var json = await file.ReadAllTextAsync();
+        var post = json.FromJson<Post>();
+        return post;
+    }
+
     public async Task<QuestionFiles> GetQuestionFilesAsync(int id)
     {
         var localFiles = GetLocalQuestionFiles(id);
@@ -151,16 +162,15 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
             : GetHumanAnswerPath(postId, userName);
 
         var file = fs.GetFile(answerPath)
-                ?? r2.GetFile(answerPath);
+                ?? await r2.GetFileAsync(answerPath);
 
         if (file == null)
         {
             // After first edit AI Model is converted to h. (Post) answer
             var modelAnswerPath = GetHumanAnswerPath(postId, userName);
             file = fs.GetFile(modelAnswerPath)
-                   ?? r2.GetFile(modelAnswerPath);
+                   ?? await r2.GetFileAsync(modelAnswerPath);
         }
-        
         return file;
     }
 
@@ -199,8 +209,7 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
     
     public async Task<IVirtualFile?> GetQuestionFileAsync(int id)
     {
-        var (dir1, dir2, fileId) = id.ToFileParts();
-        var questionPath = $"{dir1}/{dir2}/{fileId}.json";
+        var questionPath = GetQuestionPath(id);
         var file = fs.GetFile(questionPath)
                    ?? await r2.GetFileAsync(questionPath);
         return file;
@@ -273,6 +282,15 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         await Task.WhenAll(tasks);
     }
 
+    public async Task<Post?> GetAnswerAsPostAsync(string answerId)
+    {
+        var answerFile = await GetAnswerFileAsync(answerId);
+        if (answerFile == null)
+            return null;
+        
+        return await GetAnswerAsPostAsync(answerFile);
+    }
+    
     public async Task<Post> GetAnswerAsPostAsync(IVirtualFile existingAnswer)
     {
         var existingAnswerJson = await existingAnswer.ReadAllTextAsync();

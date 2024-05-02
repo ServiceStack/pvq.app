@@ -74,7 +74,9 @@ public class AiServerServices(ILogger<AiServerServices> log,
             } 
         });
         
-        MessageProducer.Publish(new SearchTasks { AddPostToIndex = request.PostId });
+        MessageProducer.Publish(new SearchTasks {
+            AddAnswerToIndex = answer.RefId
+        });
     }
     
     public async Task Any(RankAnswerCallback request)

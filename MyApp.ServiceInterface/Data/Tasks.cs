@@ -191,5 +191,6 @@ public class RenderComponent : IReturnVoid
 public class SearchTasks
 {
     public int? AddPostToIndex { get; set; }
+    public string? AddAnswerToIndex { get; set; }
     public int? DeletePost { get; set; }
 }
