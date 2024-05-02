@@ -56,6 +56,43 @@ public class LeaderboardServices : Service
         return leaderBoard;
     }
 
+    public async Task<object> Any(CalculateTop1kLeaderboard request)
+    {
+        // Do the same for top 1000 questions
+        var topQuestions = await Db.SelectAsync(Db.From<Post>().OrderByDescending(x => x.Score).Limit(1000));
+        var postIds = topQuestions.Select(x => x.Id).ToList();
+        
+        var topAnswers = await Db.SelectAsync<StatTotals>(Db.From<StatTotals>()
+            .Where(x => Sql.In(x.PostId,postIds)));
+        
+        var topStatsByUser = topAnswers.GroupBy(x => x.Id.RightPart('-')).Select(x => new StatTotals
+        {
+            Id = x.Key,
+            UpVotes = x.Sum(y => y.UpVotes),
+            DownVotes = x.Sum(y => y.DownVotes),
+            StartingUpVotes = x.Sum(y => y.StartingUpVotes),
+            FavoriteCount = x.Sum(y => y.FavoriteCount)
+        }).ToList();
+        
+        var topLeaderBoard = CalculateLeaderboardResponse(topStatsByUser, topAnswers);
+        
+        topLeaderBoard.AnswererWinRate = topLeaderBoard.AnswererWinRate
+            .Where(x => x.NumberOfQuestions > minimumQuestions).ToList();
+        topLeaderBoard.ModelWinRate = topLeaderBoard.ModelWinRate
+            .Where(x => x.NumberOfQuestions > minimumQuestions).ToList();
+        topLeaderBoard.ModelTotalScore = topLeaderBoard.ModelTotalScore
+            .Where(x => x.TotalScore > 500).ToList();
+        topLeaderBoard.MostLikedModelsByLlm = topLeaderBoard.MostLikedModelsByLlm
+            .Where(x => x.StartingUpVotes > 500).ToList();
+        
+        var topJson = topLeaderBoard.ToJson();
+        var modelsToExcludeSlug = request.ModelsToExclude?.GenerateSlug();
+        var combinedSuffix = modelsToExcludeSlug.IsNullOrEmpty() ? "" : $"-{modelsToExcludeSlug}";
+        await File.WriteAllTextAsync($"App_Data/leaderboard-top1000{combinedSuffix}.json", topJson);
+
+        return topLeaderBoard;
+    }
+
     private static bool FilterSpecificModels(StatTotals x,List<string> modelsToExclude)
     {
         return x.Id.Contains('-') 
@@ -208,6 +245,11 @@ WHERE st.PostId in (select Id from post p where p.Tags LIKE @TagMiddle OR p.Tags
     }
 }
 
+public class CalculateTop1kLeaderboard
+{
+    public string? ModelsToExclude { get; set; }
+}
+
 public class GetLeaderboardStatsHuman
 {
 }
@@ -279,5 +321,6 @@ public record LeaderboardStat
 
 public class CalculateLeaderBoard : IReturn<CalculateLeaderboardResponse>, IGet
 {
+    public bool? TopQuestions { get; set; }
     public string? ModelsToExclude { get; set; }
 }
