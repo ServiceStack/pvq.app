@@ -46,6 +46,7 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
                 log.LogInformation("Creating Question {Id} OpenAiChat Model for {UserName} to AI Server", question.Id, userName);
                 var response = await client.PostAsync(new CreateOpenAiChat
                 {
+                    Tag = "pvq",
                     ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(CreateAnswerCallback).AddQueryParams(new() {
                         [nameof(CreateAnswerCallback.PostId)] = question.Id,
                         [nameof(CreateAnswerCallback.UserId)] = modelUser.Id,

@@ -49,6 +49,7 @@ public class CreateOpenAiChat : IReturn<CreateOpenAiChatResponse>
     public string? RefId { get; set; }
     public string? Provider { get; set; }
     public string? ReplyTo { get; set; }
+    public string? Tag { get; set; }
     public OpenAiChat Request { get; set; }
 }
 

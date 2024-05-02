@@ -62,6 +62,7 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
         var client = appConfig.CreateAiServerClient();
         var api = await client.ApiAsync(new CreateOpenAiChat {
             RefId = Guid.NewGuid().ToString("N"),
+            Tag = "pvq",
             Provider = null,
             ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(RankAnswerCallback).AddQueryParams(new() {
                 [nameof(RankAnswerCallback.PostId)] = postId,
