@@ -109,4 +109,26 @@ public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserM
         appConfig.ResetInitialPostId(Db);
         return post;
     }
+
+    public async Task<object> Any(RankAnswer request)
+    {
+        var answer = await questions.GetAnswerAsPostAsync(request.Id);
+        if (answer == null)
+            throw HttpError.NotFound("Answer not found");
+        
+        var answerCreator = !string.IsNullOrEmpty(answer.CreatedBy)
+            ? await Db.ScalarAsync<string>(Db.From<ApplicationUser>().Where(x => x.UserName == answer.CreatedBy).Select(x => x.Id))
+            : null;
+        
+        if (answerCreator == null)
+            throw HttpError.NotFound($"Answer Creator '{answer.CreatedBy}' not found");
+        
+        MessageProducer.Publish(new AiServerTasks
+        {
+            CreateRankAnswerTask = new CreateRankAnswerTask {
+                AnswerId = answer.RefId!,
+                UserId = answerCreator,
+            } 
+        });
+    }
 }

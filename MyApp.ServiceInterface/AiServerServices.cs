@@ -72,13 +72,14 @@ public class AiServerServices(ILogger<AiServerServices> log,
         if (string.IsNullOrEmpty(request.Grader))
             request.Grader = Request!.QueryString[nameof(request.Grader)] ?? throw new ArgumentNullException(nameof(request.Grader));
         
-        var modelUser = appConfig.GetModelUserById(request.UserId);
-        if (modelUser?.UserName == null)
-            throw HttpError.Forbidden("Invalid Model User Id");
+        var answerCreator = appConfig.GetModelUserById(request.UserId)?.UserName
+            ?? await Db.ScalarAsync<string>(Db.From<ApplicationUser>().Where(x => x.Id == request.UserId).Select(x => x.UserName));
+        if (answerCreator == null)
+            throw HttpError.Forbidden("Invalid User Id: " + request.UserId);
 
         var graderUser = appConfig.GetModelUser(request.Grader);
         if (graderUser?.UserName == null)
-            throw HttpError.Forbidden("Invalid Model Grader " + request.Model);
+            throw HttpError.Forbidden("Invalid Model Grader: " + request.Model);
 
         var body = request.GetBody()?.Trim();
         if (string.IsNullOrEmpty(body))
@@ -102,20 +103,20 @@ public class AiServerServices(ILogger<AiServerServices> log,
             var meta = await questions.GetMetaAsync(request.PostId);
                 
             meta.GradedBy ??= new();
-            meta.GradedBy[modelUser.UserName] = graderUser.UserName;
+            meta.GradedBy[answerCreator] = graderUser.UserName;
                 
             meta.ModelReasons ??= new();
-            meta.ModelReasons[modelUser.UserName] = reason ?? "";
+            meta.ModelReasons[answerCreator] = reason ?? "";
                 
             meta.ModelVotes ??= new();
-            meta.ModelVotes[modelUser.UserName] = score;
+            meta.ModelVotes[answerCreator] = score;
 
             var statTotals = new StatTotals
             {
-                Id = $"{request.PostId}-{modelUser.UserName}",
+                Id = $"{request.PostId}-{answerCreator}",
                 PostId = request.PostId,
                 StartingUpVotes = score,
-                CreatedBy = modelUser.UserName,
+                CreatedBy = answerCreator,
                 LastUpdated = DateTime.UtcNow,
             };
 
