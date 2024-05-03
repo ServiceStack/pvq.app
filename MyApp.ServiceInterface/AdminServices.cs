@@ -106,6 +106,7 @@ public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserM
                 CreatedBy = post.CreatedBy,
             });
         }
+        appConfig.ResetInitialPostId(Db);
         return post;
     }
 }
