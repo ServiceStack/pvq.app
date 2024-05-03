@@ -132,13 +132,7 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
         else if (request.Site == ImportSite.Reddit)
         {
             var url = request.Url.Trim('/') + ".json";
-            var json = await url.GetJsonFromUrlAsync(requestFilter: c =>
-            {
-                c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
-                c.AddHeader(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-                c.AddHeader(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9");
-                c.AddHeader(HttpHeaders.CacheControl, "max-age=0");
-            });
+            var json = await GetJsonFromRedditAsync(url);
             var objs = (List<object>)JSON.parse(json);
             var obj = (Dictionary<string, object>)objs[0];
             var data = (Dictionary<string, object>)obj["data"];
@@ -170,7 +164,43 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
         if (Result == null)
             throw new Exception("Import failed");
     }
-    
+
+    private static async Task<string> GetJsonFromRedditAsync(string url)
+    {
+        // C# HttpClient requests are getting blocked
+        // var json = await url.GetJsonFromUrlAsync(requestFilter: c =>
+        // {
+        //     c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
+        //     c.AddHeader(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+        //     c.AddHeader(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9");
+        //     c.AddHeader(HttpHeaders.CacheControl, "max-age=0");
+        // });
+        // return json;
+
+        // Using curl Instead:
+        var args = new[]
+        {
+            $"curl -s '{url}'",
+            "-H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'",
+            "-H 'accept-language: en-US,en;q=0.9'",
+            "-H 'cache-control: max-age=0'",
+            "-H 'dnt: 1'",
+            "-H 'priority: u=0, i'",
+            "-H 'upgrade-insecure-requests: 1'",
+            "-H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'"
+        }.ToList();
+        if (Env.IsWindows)
+        {
+            args = args.Map(x => x.Replace('\'', '"'));
+        }
+        
+        var argsString = string.Join(" ", args);
+        var sb = StringBuilderCache.Allocate();
+        await ProcessUtils.RunShellAsync(argsString, onOut:line => sb.AppendLine(line));
+        var json = StringBuilderCache.ReturnAndFree(sb);
+        return json;
+    }
+
     public static AskQuestion? CreateFromStackOverflowInlineEdit(string html)
     {
         var span = html.AsSpan();
