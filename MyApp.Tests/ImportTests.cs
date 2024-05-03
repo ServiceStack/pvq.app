@@ -3,6 +3,7 @@ using MyApp.Data;
 using MyApp.ServiceInterface.App;
 using MyApp.ServiceModel;
 using NUnit.Framework;
+using ServiceStack;
 using ServiceStack.Text;
 
 namespace MyApp.Tests;
@@ -154,21 +155,71 @@ public class ImportTests
         Assert.That(result.RefId, Is.EqualTo("askubuntu.com:1509058"));
     }
 
+    record RedditTest(string Url, string Title, string BodyPrefix, string[] Tags, string RefUrn);
+    RedditTest[] RedditTests =
+    [
+        new RedditTest(
+            "https://www.reddit.com/r/dotnet/comments/1byolum/all_the_net_tech_i_use_what_else_is_out_there/",
+            "All the .NET tech I use. What else is out there that is a must-have?",
+            "Sitting here tonight writing down everything in my technical stack",
+            [".net", "stack", "bit", "dump", "oop"],
+            "reddit.dotnet:1byolum"
+        ),
+        new RedditTest(
+            "https://www.reddit.com/r/dotnet/comments/1cfr36q/rpc_calls_state_of_the_art/",
+            "RPC calls - state of the art",
+            "Hi",
+            [".net", "database", "client", ".net", "odbc"],
+            "reddit.dotnet:1cfr36q"
+        )
+    ];
+
     [Test]
     public async Task Can_import_from_reddit()
     {
         var command = CreateCommand();
-
-        await command.ExecuteAsync(new ImportQuestion
+        
+        foreach (var reddit in RedditTests)
         {
-            Site = ImportSite.Reddit,
-            Url = "https://www.reddit.com/r/dotnet/comments/1byolum/all_the_net_tech_i_use_what_else_is_out_there/",
-        });
+            await command.ExecuteAsync(new ImportQuestion
+            {
+                Site = ImportSite.Reddit,
+                Url = reddit.Url,
+            });
 
-        var result = command.Result!;
-        Assert.That(result.Title, Is.EqualTo("All the .NET tech I use. What else is out there that is a must-have?"));
-        Assert.That(result.Body, Does.StartWith("Sitting here tonight writing down everything in my technical stack"));
-        Assert.That(result.Tags, Is.EquivalentTo(new[]{ "bit", "dump", "oop", "solid", "stack" }));
-        Assert.That(result.RefId, Is.EqualTo("reddit.dotnet:1byolum"));
+            var result = command.Result!;
+            Assert.That(result.Title, Is.EqualTo(reddit.Title));
+            Assert.That(result.Body, Does.StartWith(reddit.BodyPrefix));
+            Assert.That(result.Tags, Is.EquivalentTo(reddit.Tags));
+            Assert.That(result.RefUrn, Is.EqualTo(reddit.RefUrn));
+        }
+    }
+
+    [Explicit("Requires curl")]
+    [Test]
+    public async Task Can_call_curl_to_get_url()
+    {
+        var url = "https://www.reddit.com/r/dotnet/comments/1byolum/all_the_net_tech_i_use_what_else_is_out_there.json";
+        var args = new[]
+        {
+            $"curl -s '{url}'",
+            "-H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'",
+            "-H 'accept-language: en-US,en;q=0.9'",
+            "-H 'cache-control: max-age=0'",
+            "-H 'dnt: 1'",
+            "-H 'priority: u=0, i'",
+            "-H 'upgrade-insecure-requests: 1'",
+            "-H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'"
+        }.ToList();
+        if (Env.IsWindows)
+        {
+            args = args.Map(x => x.Replace('\'', '"'));
+        }
+        
+        var argsString = string.Join(" ", args);
+        var sb = StringBuilderCache.Allocate();
+        await ProcessUtils.RunShellAsync(argsString, onOut:line => sb.AppendLine(line));
+        var result = StringBuilderCache.ReturnAndFree(sb);
+        Assert.That(result.Trim(), Does.StartWith("[{"));
     }
 }
