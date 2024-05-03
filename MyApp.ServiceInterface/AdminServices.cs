@@ -130,5 +130,7 @@ public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserM
                 UserId = answerCreator,
             } 
         });
+
+        return answer;
     }
 }
