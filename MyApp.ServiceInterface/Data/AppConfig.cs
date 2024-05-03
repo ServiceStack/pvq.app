@@ -198,8 +198,12 @@ public class AppConfig
     public List<string> GetAnswerModelUsersFor(string? userName)
     {
         var questionsCount = GetQuestionCount(userName);
-        if (userName is "stackoverflow" or "mythz" or "pvq")
+        if (userName is "stackoverflow" or "reddit" or "discourse")
             questionsCount = 5;
+        if (userName is "pvq")
+            questionsCount = 25;
+        if (userName is "mythz")
+            questionsCount = 100;
         
         var models = ModelsForQuestions.Where(x => x.Questions <= questionsCount)
             .Select(x => x.Model)
