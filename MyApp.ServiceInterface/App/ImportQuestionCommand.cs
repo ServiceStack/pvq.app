@@ -165,40 +165,50 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
             throw new Exception("Import failed");
     }
 
-    private static async Task<string> GetJsonFromRedditAsync(string url)
+    private async Task<string> GetJsonFromRedditAsync(string url)
     {
-        // C# HttpClient requests are getting blocked
-        // var json = await url.GetJsonFromUrlAsync(requestFilter: c =>
-        // {
-        //     c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
-        //     c.AddHeader(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-        //     c.AddHeader(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9");
-        //     c.AddHeader(HttpHeaders.CacheControl, "max-age=0");
-        // });
-        // return json;
-
-        // Using curl Instead:
-        var args = new[]
+        url = url.Replace("www.reddit.com", "oauth.reddit.com");
+        if (appConfig.RedditAccessToken != null)
         {
-            $"curl -s '{url}'",
-            "-H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'",
-            "-H 'accept-language: en-US,en;q=0.9'",
-            "-H 'cache-control: max-age=0'",
-            "-H 'dnt: 1'",
-            "-H 'priority: u=0, i'",
-            "-H 'upgrade-insecure-requests: 1'",
-            "-H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'"
-        }.ToList();
-        if (Env.IsWindows)
-        {
-            args = args.Map(x => x.Replace('\'', '"'));
+            try
+            {
+                return await url.GetJsonFromUrlAsync(requestFilter: req => {
+                    req.AddBearerToken(appConfig.RedditAccessToken);
+                    req.AddHeader("User-Agent", "pvq.app");
+                });
+            }
+            catch (Exception e)
+            {
+                log.LogWarning("Failed to fetch Reddit API: {Message}\nRetrieving new access_token...", e.Message);
+                appConfig.RedditAccessToken = null;
+            }
         }
+
+        appConfig.RedditAccessToken = await FetchNewRedditAccessTokenAsync();
         
-        var argsString = string.Join(" ", args);
-        var sb = StringBuilderCache.Allocate();
-        await ProcessUtils.RunShellAsync(argsString, onOut:line => sb.AppendLine(line));
-        var json = StringBuilderCache.ReturnAndFree(sb);
+        var json = await url.GetJsonFromUrlAsync(requestFilter: req => {
+            req.AddBearerToken(appConfig.RedditAccessToken);
+            req.AddHeader("User-Agent", "pvq.app");
+        });
         return json;
+    }
+
+    private async Task<string> FetchNewRedditAccessTokenAsync()
+    {
+        Dictionary<string, object> postData = new()
+        {
+            ["grant_type"] = "client_credentials",
+            ["device_id"] = Guid.NewGuid().ToString("N"),
+        };
+        var response = await "https://www.reddit.com/api/v1/access_token".PostToUrlAsync(postData, requestFilter: req =>
+        {
+            req.AddBasicAuth(
+                appConfig.RedditClient ?? throw new ArgumentNullException(nameof(appConfig.RedditClient)), 
+                appConfig.RedditSecret ?? throw new ArgumentNullException(nameof(appConfig.RedditSecret))); 
+            req.AddHeader("User-Agent", "pvq.app");
+        });
+        var obj = (Dictionary<string,object>)JSON.parse(response);
+        return (string)obj["access_token"];
     }
 
     public static AskQuestion? CreateFromStackOverflowInlineEdit(string html)

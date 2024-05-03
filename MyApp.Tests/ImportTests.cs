@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using MyApp.Data;
 using MyApp.ServiceInterface.App;
 using MyApp.ServiceModel;
@@ -17,7 +18,11 @@ public class ImportTests
         var hostDir = TestUtils.GetHostDir();
         var allTagsFile = new FileInfo(Path.GetFullPath(Path.Combine(hostDir, "wwwroot", "data", "tags.txt")));
         
-        var to = new AppConfig();
+        var to = new AppConfig
+        {
+            RedditClient = Environment.GetEnvironmentVariable("REDDIT_CLIENT"),
+            RedditSecret = Environment.GetEnvironmentVariable("REDDIT_SECRET")
+        };
         to.LoadTags(allTagsFile);
         return to;
     }
@@ -27,13 +32,7 @@ public class ImportTests
         appConfig = CreateAppConfig();
     }
 
-    class MockLogger<T> : ILogger<T>
-    {
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-        public bool IsEnabled(LogLevel logLevel) => false;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {}
-    }
-    private ImportQuestionCommand CreateCommand() => new (new MockLogger<ImportQuestionCommand>(), appConfig);
+    private ImportQuestionCommand CreateCommand() => new(new NullLogger<ImportQuestionCommand>(), appConfig);
 
     [Test]
     public async Task Can_import_from_discourse_url()
@@ -174,6 +173,7 @@ public class ImportTests
         )
     ];
 
+    [Explicit("Requires REDDIT_CLIENT and REDDIT_SECRET env vars")]
     [Test]
     public async Task Can_import_from_reddit()
     {
@@ -193,6 +193,36 @@ public class ImportTests
             Assert.That(result.Tags, Is.EquivalentTo(reddit.Tags));
             Assert.That(result.RefUrn, Is.EqualTo(reddit.RefUrn));
         }
+    }
+
+    [Explicit("Requires REDDIT_CLIENT and REDDIT_SECRET env vars")]
+    [Test]
+    public async Task Can_request_using_OAuth()
+    {
+        var redditOAuthUrl = "https://www.reddit.com/api/v1/access_token";
+        var uuid = Guid.NewGuid().ToString("N");
+        Dictionary<string, object> postData = new()
+        {
+            ["grant_type"] = "client_credentials",
+            ["device_id"] = uuid,
+        };
+        var response = await redditOAuthUrl.PostToUrlAsync(postData, requestFilter: req =>
+        {
+            req.AddBasicAuth(Environment.GetEnvironmentVariable("REDDIT_CLIENT")!, Environment.GetEnvironmentVariable("REDDIT_SECRET")!); 
+            req.AddHeader("User-Agent", "pvq.app");
+        });
+
+        var obj = (Dictionary<string,object>)JSON.parse(response);
+        obj.PrintDump();
+        var accessToken = (string)obj["access_token"];
+        var json = await "https://oauth.reddit.com/r/dotnet/comments/1byolum/all_the_net_tech_i_use_what_else_is_out_there.json"
+            .GetJsonFromUrlAsync(requestFilter: req =>
+            {
+                req.AddBearerToken(accessToken);
+                req.AddHeader("User-Agent", "pvq.app");
+            });
+
+        json.Print();
     }
 
     [Explicit("Requires curl")]

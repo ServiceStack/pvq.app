@@ -20,6 +20,9 @@ public class AppConfig
 
     public string AiServerBaseUrl { get; set; }
     public string AiServerApiKey { get; set; }
+    public string? RedditClient { get; set; }
+    public string? RedditSecret { get; set; }
+    public string? RedditAccessToken { get; set; }
     public JsonApiClient CreateAiServerClient() => new(AiServerBaseUrl) { BearerToken = AiServerApiKey };
     
     public string CacheDir { get; set; }
