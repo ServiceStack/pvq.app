@@ -162,7 +162,7 @@ public class AppConfig
     public void ResetInitialPostId(IDbConnection db)
     {
         var maxPostId = db.Scalar<int>("SELECT MAX(Id) FROM Post");
-        SetInitialPostId(Math.Max(100_000_000, maxPostId));
+        SetInitialPostId(Math.Max(100_000_000, maxPostId + 1));
     }
 
     public void ResetUsersReputation(IDbConnection db)
