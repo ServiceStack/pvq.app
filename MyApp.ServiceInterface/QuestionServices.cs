@@ -155,26 +155,52 @@ public class QuestionServices(AppConfig appConfig,
     {
         var userName = GetUserName();
         var now = DateTime.UtcNow;
-        var post = new Post
+        var answer = new Post
         {
             ParentId = request.PostId,
-            Summary = request.Body.StripHtml().SubstringWithEllipsis(0,200),
+            Summary = request.Body.GenerateSummary(),
             CreationDate = now,
             CreatedBy = userName,
             LastActivityDate = now,
             Body = request.Body,
-            RefId = request.RefId, // Optional External Ref Id, not '{PostId}-{UserName}'
+            RefUrn = request.RefUrn,
+            RefId = $"{request.PostId}-{userName}"
         };
         
         MessageProducer.Publish(new DbWrites {
-            CreateAnswer = post,
+            CreateAnswer = answer,
             AnswerAddedToPost = new() { Id = request.PostId},
         });
         
-        await questions.SaveHumanAnswerAsync(post);
-        rendererCache.DeleteCachedQuestionPostHtml(post.Id);
+        rendererCache.DeleteCachedQuestionPostHtml(answer.Id);
+
+        await questions.SaveHumanAnswerAsync(answer);
+
+        MessageProducer.Publish(new DbWrites
+        {
+            SaveStartingUpVotes = new()
+            {
+                Id = answer.RefId!,
+                PostId = request.PostId,
+                StartingUpVotes = 0,
+                CreatedBy = userName,
+            }
+        });
         
-        answerNotifier.NotifyNewAnswer(request.PostId, post.CreatedBy);
+        answerNotifier.NotifyNewAnswer(request.PostId, answer.CreatedBy);
+
+        var userId = Request.GetClaimsPrincipal().GetUserId();
+        MessageProducer.Publish(new AiServerTasks
+        {
+            CreateRankAnswerTask = new CreateRankAnswerTask {
+                AnswerId = answer.RefId!,
+                UserId = userId!,
+            } 
+        });
+        
+        MessageProducer.Publish(new SearchTasks {
+            AddAnswerToIndex = answer.RefId
+        });
 
         return new AnswerQuestionResponse();
     }

@@ -45,26 +45,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
             }
         });
 
-        // Only add notifications for answers older than 1hr
-        var post = await Db.SingleByIdAsync<Post>(request.PostId);
-        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
-        {
-            if (!string.IsNullOrEmpty(answer.Summary))
-            {
-                MessageProducer.Publish(new DbWrites {
-                    CreateNotification = new()
-                    {
-                        UserName = post.CreatedBy,
-                        PostId = post.Id,
-                        Type = NotificationType.NewAnswer,
-                        CreatedDate = DateTime.UtcNow,
-                        RefId = answer.RefId!,
-                        Summary = answer.Summary,
-                        RefUserName = answer.CreatedBy,
-                    },
-                });
-            }
-        }
+        await Db.NotifyQuestionAuthorIfRequiredAsync(MessageProducer, answer);
         
         MessageProducer.Publish(new AiServerTasks
         {

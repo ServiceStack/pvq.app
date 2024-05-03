@@ -373,6 +373,9 @@ public class AnswerQuestion : IPost, IReturn<AnswerQuestionResponse>
     
     [Input(Type="hidden")]
     public string? RefId { get; set; }
+    
+    [Input(Type="hidden")]
+    public string? RefUrn { get; set; }
 }
 public class AnswerQuestionResponse
 {
