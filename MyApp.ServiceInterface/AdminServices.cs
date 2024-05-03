@@ -3,10 +3,12 @@ using MyApp.Data;
 using MyApp.ServiceInterface.Renderers;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserManager<ApplicationUser> userManager)
+public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserManager<ApplicationUser> userManager,
+    QuestionsProvider questions)
     : Service
 {
     private static readonly List<string> initUserNames = new()
@@ -79,5 +81,31 @@ public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserM
         }
         
         return new AdminResetCommonPasswordResponse { UpdatedUsers = updatedUsers };
+    }
+    
+    public async Task<object?> Any(ResaveQuestionFromFile request)
+    {
+        var post = await questions.GetQuestionFileAsPostAsync(request.Id);
+        if (post == null)
+            throw HttpError.NotFound("Post not found");
+
+        var refId = $"{request.Id}";
+        await Db.SaveAsync(post);
+        var statTotal = await Db.SingleAsync(Db.From<StatTotals>().Where(x => x.Id == refId));
+        if (statTotal != null)
+        {
+            await Db.InsertAsync(new StatTotals
+            {
+                Id = refId,
+                PostId = post.Id,
+                ViewCount = 0,
+                FavoriteCount = 0,
+                UpVotes = 0,
+                DownVotes = 0,
+                StartingUpVotes = 0,
+                CreatedBy = post.CreatedBy,
+            });
+        }
+        return post;
     }
 }
