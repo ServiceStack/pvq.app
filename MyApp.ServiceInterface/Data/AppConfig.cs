@@ -103,10 +103,15 @@ public class AppConfig
             ? 1 
             : reputation;
 
-    public int GetQuestionCount(string? userName) => 
-        userName == null || !UsersQuestions.TryGetValue(userName, out var count) 
-            ? 0 
-            : count + (Stats.IsAdminOrModerator(userName) ? 10 : 0);
+    public int GetQuestionCount(string? userName) => userName switch
+    {
+        "stackoverflow" or "reddit" or "discourse" => 5,
+        "pvq" => 25,
+        "mythz" => 100,
+        _ => userName == null || !UsersQuestions.TryGetValue(userName, out var count)
+            ? 0
+            : count + (Stats.IsAdminOrModerator(userName) ? 10 : 0)
+    };
 
     public void Init(IDbConnection db)
     {
@@ -198,12 +203,6 @@ public class AppConfig
     public List<string> GetAnswerModelUsersFor(string? userName)
     {
         var questionsCount = GetQuestionCount(userName);
-        if (userName is "stackoverflow" or "reddit" or "discourse")
-            questionsCount = 5;
-        if (userName is "pvq")
-            questionsCount = 25;
-        if (userName is "mythz")
-            questionsCount = 100;
         
         var models = ModelsForQuestions.Where(x => x.Questions <= questionsCount)
             .Select(x => x.Model)
