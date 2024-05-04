@@ -45,7 +45,7 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsync
                     RefId = refId,
                     PostId = postId,
                     CreatedDate = answer.CreationDate,
-                    Summary = answer.Summary.SubstringWithEllipsis(0, 100),
+                    Summary = answer.Summary,
                     RefUserName = answer.CreatedBy,
                 });
                 appConfig.IncrUnreadNotificationsFor(post.CreatedBy);
@@ -77,7 +77,7 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsync
                                 RefId = $"{postId}",
                                 PostId = postId,
                                 CreatedDate = answer.CreationDate,
-                                Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
+                                Summary = cleanBody.GenerateNotificationSummary(startPos),
                                 RefUserName = answer.CreatedBy,
                             });
                             appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);

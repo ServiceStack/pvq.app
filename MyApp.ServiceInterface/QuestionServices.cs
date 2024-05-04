@@ -75,7 +75,7 @@ public class QuestionServices(AppConfig appConfig,
         var title = request.Title.Trim();
         var body = request.Body.Trim();
         var slug = request.Title.GenerateSlug(200);
-        var summary = request.Body.StripHtml().SubstringWithEllipsis(0, 200);
+        var summary = request.Body.GenerateSummary();
 
         var existingPost = await Db.SingleAsync(Db.From<Post>().Where(x => x.Title == title));
         if (existingPost != null)
@@ -229,7 +229,7 @@ public class QuestionServices(AppConfig appConfig,
         question.Title = request.Title;
         question.Tags = ValidateQuestionTags(request.Tags);
         question.Slug = request.Title.GenerateSlug(200);
-        question.Summary = request.Body.StripHtml().SubstringWithEllipsis(0, 200);
+        question.Summary = request.Body.GenerateSummary();
         question.Body = request.Body;
         question.ModifiedBy = userName;
         question.LastActivityDate = DateTime.UtcNow;
@@ -416,7 +416,7 @@ public class QuestionServices(AppConfig appConfig,
                         Type = NotificationType.NewAnswer,
                         CreatedDate = DateTime.UtcNow,
                         RefId = $"{post.Id}-{userName}",
-                        Summary = cleanBody.SubstringWithEllipsis(0,100),
+                        Summary = cleanBody.GenerateNotificationSummary(),
                         RefUserName = userName,
                     },
                 });

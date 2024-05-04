@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using MyApp.ServiceInterface;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.Messaging;
@@ -64,7 +65,7 @@ public static class DbExtensions
     {
         Id = x.RefId.LeftPart('-').ToInt(),
         PostTypeId = x.RefId.Contains('-') ? 2 : 1,
-        Summary = x.Body.StripHtml().SubstringWithEllipsis(0, 200),
+        Summary = x.Body.GenerateSummary(),
         CreationDate = x.ModifiedDate,
         LastEditDate = x.ModifiedDate,
     };

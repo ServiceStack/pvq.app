@@ -146,6 +146,11 @@ public static class AiServerExtensions
     static readonly Regex CollapseNewLines = new(@"[\r\n]+", RegexOptions.Compiled | RegexOptions.Multiline);
     static readonly Regex CollapseSpaces = new(@"\s+", RegexOptions.Compiled | RegexOptions.Multiline);
 
+    public static string GenerateNotificationTitle(this string title) => title.SubstringWithEllipsis(0, 100);
+
+    public static string GenerateNotificationSummary(this string summary, int startPos=0) => 
+        summary.SubstringWithEllipsis(startPos, 100);
+    
     public static string GenerateSummary(this string body)
     {
         string withoutHtml = StripHtmlRegEx.Replace(body, string.Empty); // naive html stripping

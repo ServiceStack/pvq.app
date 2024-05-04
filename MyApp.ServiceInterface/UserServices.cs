@@ -186,7 +186,7 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
 
         Notification Merge(Notification notification, Post post)
         {
-            notification.Title ??= post.Title.SubstringWithEllipsis(0,100);
+            notification.Title ??= post.Title.GenerateNotificationTitle();
             notification.Href ??= $"/questions/{notification.PostId}/{post.Slug}#{notification.RefId}";
             return notification;
         }
@@ -227,7 +227,7 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
             Id = ++i,
             PostId = x.PostId,
             RefId = x.RefId,
-            Title = x.Title.SubstringWithEllipsis(0,100),
+            Title = x.Title.GenerateNotificationTitle(),
             Score = x.Score,
             CreatedDate = x.CreatedDate,
             Href = $"/questions/{x.PostId}/{x.Slug}",

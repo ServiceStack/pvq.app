@@ -34,7 +34,7 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCo
                     RefId = commentRefId,
                     PostId = postId,
                     CreatedDate = createdDate,
-                    Summary = cleanBody.SubstringWithEllipsis(0, 100),
+                    Summary = cleanBody.GenerateNotificationSummary(),
                     RefUserName = comment.CreatedBy,
                 });
                 appConfig.IncrUnreadNotificationsFor(createdBy);
@@ -63,7 +63,7 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCo
                             RefId = commentRefId,
                             PostId = postId,
                             CreatedDate = createdDate,
-                            Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
+                            Summary = cleanBody.GenerateNotificationSummary(startPos),
                             RefUserName = comment.CreatedBy,
                         });
                         appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
