@@ -6,18 +6,23 @@ namespace MyApp.ServiceModel;
 [SystemJson(UseSystemJson.Never)]
 public class CreateAnswerCallback : OpenAiChatResponse, IPost, IReturnVoid 
 {
+    [ValidateGreaterThan(9)]
     public int PostId { get; set; }
-    
+
+    [ValidateNotEmpty]
     public string UserId { get; set; }
 }
 
 [SystemJson(UseSystemJson.Never)]
 public class RankAnswerCallback : OpenAiChatResponse, IPost, IReturnVoid
 {
+    [ValidateGreaterThan(9)]
     public int PostId { get; set; }
     
+    [ValidateNotEmpty]
     public string UserId { get; set; } // Use User GUID to prevent tampering
     
+    [ValidateNotEmpty]
     public string Grader { get; set; }
 }
 

@@ -17,13 +17,6 @@ public class AiServerServices(ILogger<AiServerServices> log,
 {
     public async Task Any(CreateAnswerCallback request)
     {
-        if (request.PostId == 0)
-            request.PostId = int.TryParse(Request!.QueryString[nameof(request.PostId)], out var postId)
-                ? postId
-                : throw new ArgumentNullException(nameof(request.PostId));
-        if (string.IsNullOrEmpty(request.UserId))
-            request.UserId = Request!.QueryString[nameof(request.UserId)] ?? throw new ArgumentNullException(nameof(request.UserId));
-        
         var modelUser = appConfig.GetModelUserById(request.UserId);
         if (modelUser?.UserName == null)
             throw HttpError.Forbidden("Invalid Model User Id");
@@ -62,16 +55,6 @@ public class AiServerServices(ILogger<AiServerServices> log,
     
     public async Task Any(RankAnswerCallback request)
     {
-        if (request.PostId == 0)
-            request.PostId = int.TryParse(Request!.QueryString[nameof(request.PostId)], out var postId)
-                ? postId
-                : throw new ArgumentNullException(nameof(request.PostId));
-        if (string.IsNullOrEmpty(request.UserId))
-            request.UserId = Request!.QueryString[nameof(request.UserId)] ?? throw new ArgumentNullException(nameof(request.UserId));
-
-        if (string.IsNullOrEmpty(request.Grader))
-            request.Grader = Request!.QueryString[nameof(request.Grader)] ?? throw new ArgumentNullException(nameof(request.Grader));
-        
         var answerCreator = appConfig.GetModelUserById(request.UserId)?.UserName
             ?? await Db.ScalarAsync<string>(Db.From<ApplicationUser>().Where(x => x.Id == request.UserId).Select(x => x.UserName));
         if (answerCreator == null)

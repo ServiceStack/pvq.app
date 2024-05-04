@@ -155,24 +155,26 @@ public class QuestionServices(AppConfig appConfig,
     {
         var userName = GetUserName();
         var now = DateTime.UtcNow;
+        var postId = request.PostId;
+        var answerId = $"{postId}-{userName}";
         var answer = new Post
         {
-            ParentId = request.PostId,
+            ParentId = postId,
             Summary = request.Body.GenerateSummary(),
             CreationDate = now,
             CreatedBy = userName,
             LastActivityDate = now,
             Body = request.Body,
             RefUrn = request.RefUrn,
-            RefId = $"{request.PostId}-{userName}"
+            RefId = answerId
         };
         
         MessageProducer.Publish(new DbWrites {
             CreateAnswer = answer,
-            AnswerAddedToPost = new() { Id = request.PostId},
+            AnswerAddedToPost = new() { Id = postId },
         });
         
-        rendererCache.DeleteCachedQuestionPostHtml(answer.Id);
+        rendererCache.DeleteCachedQuestionPostHtml(postId);
 
         await questions.SaveHumanAnswerAsync(answer);
 
@@ -180,26 +182,26 @@ public class QuestionServices(AppConfig appConfig,
         {
             SaveStartingUpVotes = new()
             {
-                Id = answer.RefId!,
-                PostId = request.PostId,
+                Id = answerId,
+                PostId = postId,
                 StartingUpVotes = 0,
                 CreatedBy = userName,
             }
         });
         
-        answerNotifier.NotifyNewAnswer(request.PostId, answer.CreatedBy);
+        answerNotifier.NotifyNewAnswer(postId, answer.CreatedBy);
 
         var userId = Request.GetClaimsPrincipal().GetUserId();
         MessageProducer.Publish(new AiServerTasks
         {
             CreateRankAnswerTask = new CreateRankAnswerTask {
-                AnswerId = answer.RefId!,
+                AnswerId = answerId,
                 UserId = userId!,
             } 
         });
         
         MessageProducer.Publish(new SearchTasks {
-            AddAnswerToIndex = answer.RefId
+            AddAnswerToIndex = answerId
         });
 
         return new AnswerQuestionResponse();
