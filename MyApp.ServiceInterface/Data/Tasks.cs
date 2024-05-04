@@ -162,7 +162,10 @@ public class AiServerTasks
     public CreateAnswerTasks? CreateAnswerTasks { get; set; } 
 
     [Command<CreateRankAnswerTaskCommand>]
-    public CreateRankAnswerTask? CreateRankAnswerTask { get; set; } 
+    public CreateRankAnswerTask? CreateRankAnswerTask { get; set; }
+    
+    [Command<CreateAnswerCommentTaskCommand>]
+    public CreateAnswerCommentTask? CreateAnswerCommentTask { get; set; }
 }
 
 public class RenderHome

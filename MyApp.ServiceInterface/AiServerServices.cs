@@ -19,7 +19,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
     {
         var modelUser = appConfig.GetModelUserById(request.UserId);
         if (modelUser?.UserName == null)
-            throw HttpError.Forbidden("Invalid Model User Id");
+            throw HttpError.BadRequest("Invalid Model User Id");
 
         rendererCache.DeleteCachedQuestionPostHtml(request.PostId);
 
@@ -55,14 +55,11 @@ public class AiServerServices(ILogger<AiServerServices> log,
     
     public async Task Any(RankAnswerCallback request)
     {
-        var answerCreator = appConfig.GetModelUserById(request.UserId)?.UserName
-            ?? await Db.ScalarAsync<string>(Db.From<ApplicationUser>().Where(x => x.Id == request.UserId).Select(x => x.UserName));
-        if (answerCreator == null)
-            throw HttpError.Forbidden("Invalid User Id: " + request.UserId);
+        var answerCreator = await AssertUserNameById(request.UserId);
 
         var graderUser = appConfig.GetModelUser(request.Grader);
         if (graderUser?.UserName == null)
-            throw HttpError.Forbidden("Invalid Model Grader: " + request.Model);
+            throw HttpError.BadRequest("Invalid Model Grader: " + request.Model);
 
         var body = request.GetBody()?.Trim();
         if (string.IsNullOrEmpty(body))
@@ -120,6 +117,63 @@ public class AiServerServices(ILogger<AiServerServices> log,
                 request.PostId, request.Model, request.UserId, body);
         }
     }
+
+    public async Task Any(AnswerCommentCallback request)
+    {
+        var commentCreator = await AssertUserNameById(request.UserId);
+        var postId = request.AnswerId.LeftPart('-').ToInt();
+        var modelUserName = request.AnswerId.RightPart('-');
+
+        var modelUser = appConfig.GetModelUser(modelUserName);
+        if (modelUser?.UserName == null)
+            throw HttpError.BadRequest("Invalid Model: " + modelUserName);
+
+        var metaFile = await questions.GetMetaFileAsync(postId);
+        if (metaFile == null)
+            throw HttpError.BadRequest("Invalid Post: " + postId);
+
+        var metaJson = await metaFile.ReadAllTextAsync();
+        var meta = metaJson.FromJson<Meta>();
+
+        var comments = meta.Comments.GetOrAdd(request.AnswerId, key => new());
+
+        var body = request.Choices?.FirstOrDefault()?.Message?.Content.GenerateModelComment();
+        if (string.IsNullOrEmpty(body))
+        {
+            log.LogError("Invalid AnswerCommentCallback: {AnswerId} for {UserId}: body missing", 
+                request.AnswerId, request.UserId);
+            return;
+        }
+
+        var commentBody = $"@{commentCreator} {body}";
+        var newComment = new Comment
+        {
+            Body = commentBody,
+            Created = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            CreatedBy = modelUser.UserName,
+        };
+        comments.Add(newComment);
+
+        MessageProducer.Publish(new DbWrites
+        {
+            NewComment = new()
+            {
+                RefId = request.Id,
+                Comment = newComment,
+            },
+        });
+
+        await questions.SaveMetaAsync(postId, meta);
+    }
+
+    private async Task<string?> AssertUserNameById(string userId)
+    {
+        var userName = appConfig.GetModelUserById(userId)?.UserName
+            ?? await Db.ScalarAsync<string?>(Db.From<ApplicationUser>().Where(x => x.Id == userId).Select(x => x.UserName));
+        if (userName == null)
+            throw HttpError.BadRequest("Invalid User Id: " + userId);
+        return userName;
+    }
 }
 
 public static class AiServerExtensions
@@ -149,6 +203,18 @@ public static class AiServerExtensions
 
         summary = summary.Length > 200 ? summary.Substring(0, 200) + "..." : summary;
         return summary;
+    }
+
+    public static string GenerateComment(this string body)
+    {
+        body = body.Replace("\r\n", " ").Replace('\n', ' ');
+        return body;
+    }
+
+    public static string GenerateModelComment(this string body)
+    {
+        body = body.TrimStart('#').Replace("\r\n", " ").Replace('\n', ' ');
+        return body;
     }
 
     public static string? GetBody(this OpenAiChatResponse request) => request.Choices?.FirstOrDefault()?.Message?.Content;

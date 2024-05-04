@@ -409,7 +409,7 @@ public class CreateComment : IPost, IReturn<CommentsResponse>
     [ValidateNotEmpty]
     public required string Id { get; set; }
 
-    [ValidateNotEmpty, ValidateMinimumLength(15)]
+    [ValidateNotEmpty, ValidateMinimumLength(15), ValidateMaximumLength(600)]
     public required string Body { get; set; }
 }
 

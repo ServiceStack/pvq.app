@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceInterface.App;
 using ServiceStack;
@@ -9,7 +10,8 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class QuestionServices(AppConfig appConfig, 
+public class QuestionServices(ILogger<QuestionServices> log,
+    AppConfig appConfig, 
     QuestionsProvider questions, 
     RendererCache rendererCache, 
     WorkerAnswerNotifier answerNotifier,
@@ -444,12 +446,15 @@ public class QuestionServices(AppConfig appConfig,
         
         meta.Comments ??= new();
         var comments = meta.Comments.GetOrAdd(request.Id, key => new());
-        var body = request.Body.Replace("\r\n", " ").Replace('\n', ' ');
+        var body = request.Body.GenerateComment();
+        
+        var createdBy = GetUserName();
+        
         var newComment = new Comment
         {
             Body = body,
             Created = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            CreatedBy = GetUserName(),
+            CreatedBy = createdBy,
         };
         comments.Add(newComment);
         
@@ -463,6 +468,44 @@ public class QuestionServices(AppConfig appConfig,
         });
 
         await questions.SaveMetaAsync(postId, meta);
+
+        // If the comment is for a model answer, have the model respond to the comment
+        var answerCreator = request.Id.Contains('-')
+            ? request.Id.RightPart('-')
+            : null;
+        var modelCreator = answerCreator != null 
+            ? appConfig.GetModelUser(answerCreator) 
+            : null;
+        if (modelCreator != null)
+        {
+            var answer = await questions.GetAnswerAsPostAsync(request.Id);
+            if (answer != null)
+            {
+                var mention = $"@{createdBy}";
+                var userConversation = comments
+                    .Where(x => x.CreatedBy == createdBy || x.Body.Contains(mention))
+                    .ToList();
+                
+                var createdById = GetUserId();
+                var model = modelCreator.Model ?? throw new ArgumentNullException(nameof(modelCreator.Model));
+                MessageProducer.Publish(new AiServerTasks
+                {
+                    CreateAnswerCommentTask = new()
+                    {
+                        Model = model,
+                        Question = question,
+                        Answer = answer,
+                        UserName = newComment.CreatedBy,
+                        UserId = createdById,
+                        Comments = userConversation,
+                    }
+                });
+            }
+            else
+            {
+                log.LogError("Answer {Id} not found", request.Id);
+            }
+        }
         
         return new CommentsResponse
         {
@@ -475,7 +518,7 @@ public class QuestionServices(AppConfig appConfig,
         var postId = refId.LeftPart('-').ToInt();
         var postType = refId.IndexOf('-') >= 0 ? "Answer" : "Question";
 
-        var question = await Db.SingleByIdAsync<Post>(postId);
+        var question = await questions.GetQuestionFileAsPostAsync(postId);
         if (question == null)
             throw HttpError.NotFound($"{postType} {postId} not found");
 
@@ -534,8 +577,15 @@ public class QuestionServices(AppConfig appConfig,
     private string GetUserName()
     {
         var userName = Request.GetClaimsPrincipal().GetUserName()
-                       ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
+            ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
         return userName;
+    }
+
+    private string GetUserId()
+    {
+        var userId = Request.GetClaimsPrincipal().GetUserId()
+            ?? throw new ArgumentNullException(nameof(ApplicationUser.Id));
+        return userId;
     }
 
     public async Task<object> Any(ImportQuestion request)

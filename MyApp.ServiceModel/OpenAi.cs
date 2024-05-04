@@ -37,6 +37,16 @@ public class GradeResult
     }
 }
 
+[SystemJson(UseSystemJson.Never)]
+public class AnswerCommentCallback : OpenAiChatResponse, IPost, IReturnVoid
+{
+    [ValidateNotEmpty]
+    public string AnswerId { get; set; }
+    
+    [ValidateNotEmpty]
+    public string UserId { get; set; } // Use User GUID to prevent tampering
+}
+
 public class CreateAnswerTasks
 {
     public Post Post { get; set; }
@@ -47,6 +57,16 @@ public class CreateRankAnswerTask
 {
     public string AnswerId { get; set; }
     public string UserId { get; set; }
+}
+
+public class CreateAnswerCommentTask
+{
+    public string Model { get; set; }
+    public Post Question { get; set; }
+    public Post Answer { get; set; }
+    public string UserId { get; set; }
+    public string UserName { get; set; }
+    public List<Comment> Comments { get; set; }
 }
 
 public class CreateOpenAiChat : IReturn<CreateOpenAiChatResponse>
