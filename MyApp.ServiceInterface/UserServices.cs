@@ -106,6 +106,7 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
         var to = new UserPostDataResponse
         {
             Watching = watchingPost,
+            QuestionsAsked = appConfig.GetQuestionCount(userName),
             UpVoteIds = allUserPostVotes.Where(x => x.Score > 0).Select(x => x.RefId).ToSet(),
             DownVoteIds = allUserPostVotes.Where(x => x.Score < 0).Select(x => x.RefId).ToSet(),
         };

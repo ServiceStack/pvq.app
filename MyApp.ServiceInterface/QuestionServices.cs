@@ -350,14 +350,34 @@ public class QuestionServices(ILogger<QuestionServices> log,
         if (question.LockedDate != null)
             throw HttpError.Conflict($"{question.GetPostType()} is locked");
 
+        var createdBy = GetUserName();
+
+        // If the comment is for a model answer, have the model respond to the comment
+        var answerCreator = request.Id.Contains('-')
+            ? request.Id.RightPart('-')
+            : null;
+        var modelCreator = answerCreator != null 
+            ? appConfig.GetModelUser(answerCreator) 
+            : null;
+
+        if (modelCreator?.UserName != null)
+        {
+            var canUseModel = appConfig.CanUseModel(createdBy, modelCreator.UserName);
+            if (!canUseModel)
+            {
+                var userCount = appConfig.GetQuestionCount(createdBy);
+                log.LogWarning("User {UserName} ({UserCount}) attempted to use model {ModelUserName} ({ModelCount})", 
+                    createdBy, userCount, modelCreator.UserName, appConfig.GetModelLevel(modelCreator.UserName));
+                throw HttpError.Forbidden("You have not met the requirements to access this model");
+            }
+        }
+
         var postId = question.Id;
         var meta = await questions.GetMetaAsync(postId);
         
         meta.Comments ??= new();
         var comments = meta.Comments.GetOrAdd(request.Id, key => new());
         var body = request.Body.GenerateComment();
-        
-        var createdBy = GetUserName();
         
         var newComment = new Comment
         {
@@ -378,14 +398,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
 
         await questions.SaveMetaAsync(postId, meta);
 
-        // If the comment is for a model answer, have the model respond to the comment
-        var answerCreator = request.Id.Contains('-')
-            ? request.Id.RightPart('-')
-            : null;
-        var modelCreator = answerCreator != null 
-            ? appConfig.GetModelUser(answerCreator) 
-            : null;
-        if (modelCreator != null)
+        if (modelCreator?.UserName != null)
         {
             var answer = await questions.GetAnswerAsPostAsync(request.Id);
             if (answer != null)

@@ -38,8 +38,18 @@ public class AppConfig
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
+    public static string[] DeprecatedModels = ["deepseek-coder","gemma-2b","qwen-4b","deepseek-coder-33b"];
+
+    public static (string Model, int Questions)[] GetActiveModelsForQuestions(int level) =>
+        ModelsForQuestions.Where(x => x.Questions == level && !DeprecatedModels.Contains(x.Model)).ToArray();
+    
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
+        ("deepseek-coder", 0),
+        ("gemma-2b", 0),
+        ("qwen-4b", 0),
+        ("deepseek-coder-33b", 100),
+        
         ("phi", 0),
         ("codellama", 0),
         ("mistral", 0),
@@ -49,12 +59,13 @@ public class AppConfig
         ("mixtral", 5),
         ("gpt3.5-turbo", 10),
         ("claude3-haiku", 25),
-        ("command-r", 50),
-        ("wizardlm", 100),
-        ("claude3-sonnet", 175),
-        ("command-r-plus", 150),
-        ("gpt4-turbo", 250),
-        ("claude3-opus", 400),
+        ("llama3-70b", 50),
+        ("command-r", 100),
+        ("wizardlm", 175),
+        ("claude3-sonnet", 250),
+        ("command-r-plus", 350),
+        ("gpt4-turbo", 450),
+        ("claude3-opus", 600),
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
@@ -105,6 +116,26 @@ public class AppConfig
         userName == null || !UsersReputation.TryGetValue(userName, out var reputation) 
             ? 1 
             : reputation;
+
+    public bool CanUseModel(string userName, string model)
+    {
+        if (Stats.IsAdminOrModerator(userName))
+            return true;
+        var questionsCount = GetQuestionCount(userName);
+        
+        var modelLevel = GetModelLevel(model);
+        return modelLevel != -1 && questionsCount >= modelLevel;
+    }
+
+    public int GetModelLevel(string model)
+    {
+        foreach (var entry in ModelsForQuestions)
+        {
+            if (entry.Model == model)
+                return entry.Questions;
+        }
+        return -1;
+    }
 
     public int GetQuestionCount(string? userName) => userName switch
     {
@@ -207,13 +238,21 @@ public class AppConfig
     {
         var questionsCount = GetQuestionCount(userName);
         
-        var models = ModelsForQuestions.Where(x => x.Questions <= questionsCount)
+        var models = GetActiveModelsForQuestions(questionsCount)
             .Select(x => x.Model)
             .ToList();
+        
+        // Remove lower quality models
         if (models.Contains("gemma"))
             models.RemoveAll(x => x == "gemma:2b");
+        if (models.Contains("mixtral"))
+            models.RemoveAll(x => x == "mistral");
         if (models.Contains("deepseek-coder:33b"))
             models.RemoveAll(x => x == "deepseek-coder:6.7b");
+        if (models.Contains("gpt-4-turbo"))
+            models.RemoveAll(x => x == "gpt3.5-turbo");
+        if (models.Contains("command-r-plus"))
+            models.RemoveAll(x => x == "command-r");
         if (models.Contains("claude-3-opus"))
             models.RemoveAll(x => x is "claude-3-haiku" or "claude-3-sonnet");
         if (models.Contains("claude-3-sonnet"))
