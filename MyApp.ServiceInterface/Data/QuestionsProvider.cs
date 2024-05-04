@@ -69,14 +69,7 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         return path;
     }
 
-    public static string GetModelAnswerPath(int id, string model)
-    {
-        var (dir1, dir2, fileId) = id.ToFileParts();
-        var path = $"{dir1}/{dir2}/{fileId}.a.{model.Replace(':','-')}.json";
-        return path;
-    }
-
-    public static string GetHumanAnswerPath(int id, string userName)
+    public static string GetAnswerPath(int id, string userName)
     {
         var (dir1, dir2, fileId) = id.ToFileParts();
         var path = $"{dir1}/{dir2}/{fileId}.h.{userName}.json";
@@ -106,17 +99,6 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
     public async Task WriteMetaAsync(Meta meta)
     {
         await SaveFileAsync(GetMetaPath(meta.Id), ToJson(meta));
-    }
-
-    public async Task<Post?> GetQuestionFileAsPostAsync(int id)
-    {
-        var file = await GetQuestionFileAsync(id);
-        if (file == null)
-            return null;
-        
-        var json = await file.ReadAllTextAsync();
-        var post = json.FromJson<Post>();
-        return post;
     }
 
     public async Task<QuestionFiles> GetQuestionFilesAsync(int id)
@@ -157,20 +139,11 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         
         var postId = refId.LeftPart('-').ToInt();
         var userName = refId.RightPart('-');
-        var answerPath = ModelUserNames.Contains(userName)
-            ? GetModelAnswerPath(postId, userName)
-            : GetHumanAnswerPath(postId, userName);
+        var answerPath = GetAnswerPath(postId, userName);
 
         var file = fs.GetFile(answerPath)
                 ?? await r2.GetFileAsync(answerPath);
 
-        if (file == null)
-        {
-            // After first edit AI Model is converted to h. (Post) answer
-            var modelAnswerPath = GetHumanAnswerPath(postId, userName);
-            file = fs.GetFile(modelAnswerPath)
-                   ?? await r2.GetFileAsync(modelAnswerPath);
-        }
         return file;
     }
 
@@ -179,32 +152,17 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         await SaveFileAsync(GetQuestionPath(post.Id), ToJson(post));
     }
 
-    public async Task SaveModelAnswerAsync(int postId, string model, string json)
+    public async Task SaveAnswerAsync(Post post)
     {
-        await SaveFileAsync(GetModelAnswerPath(postId, model), json);
-    }
-
-    public async Task SaveHumanAnswerAsync(Post post)
-    {
-        await SaveFileAsync(GetHumanAnswerPath(
+        await SaveFileAsync(GetAnswerPath(
             post.ParentId ?? throw new ArgumentNullException(nameof(Post.ParentId)), 
             post.CreatedBy ?? throw new ArgumentNullException(nameof(Post.CreatedBy))), 
             ToJson(post));
     }
 
-    public async Task SaveHumanAnswerAsync(int postId, string userName, string json)
-    {
-        await SaveFileAsync(GetHumanAnswerPath(postId, userName), json);
-    }
-
     public async Task SaveLocalFileAsync(string virtualPath, string contents)
     {
         await fs.WriteFileAsync(virtualPath, contents);
-    }
-    
-    public async Task SaveRemoteFileAsync(string virtualPath, string contents)
-    {
-        await r2.WriteFileAsync(virtualPath, contents);
     }
     
     public async Task<IVirtualFile?> GetQuestionFileAsync(int id)
@@ -215,12 +173,12 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         return file;
     }
 
-    public async Task<Post> GetQuestionFilePostAsync(int id)
+    public async Task<Post?> GetQuestionFileAsPostAsync(int id)
     {
-        var (dir1, dir2, fileId) = id.ToFileParts();
-        var questionPath = $"{dir1}/{dir2}/{fileId}.json";
-        var file = fs.GetFile(questionPath)
-                   ?? await r2.GetFileAsync(questionPath);
+        var file = await GetQuestionFileAsync(id);
+        if (file == null)
+            return null;
+        
         var json = await file.ReadAllTextAsync();
         var post = json.FromJson<Post>();
         return post;
@@ -296,21 +254,11 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         var existingAnswerJson = await existingAnswer.ReadAllTextAsync();
         var fileName = existingAnswer.VirtualPath.TrimStart('/').Replace("/", "");
         var postId = fileName.LeftPart('.').ToInt();
-        var newAnswer = new Post
-        {
+        var newAnswer = new Post {
             Id = postId,
         };
         
-        if (fileName.Contains(".a."))
-        {
-            newAnswer.CreatedBy ??= fileName.RightPart(".a.").LastLeftPart('.');
-            var obj = (Dictionary<string,object>)JSON.parse(existingAnswerJson);
-            newAnswer.CreationDate = obj.TryGetValue("created", out var oCreated) && oCreated is int created
-                ? DateTimeOffset.FromUnixTimeSeconds(created).DateTime
-                : existingAnswer.LastModified;
-            newAnswer.Body = GetModelAnswerBody(obj);
-        }
-        else if (fileName.Contains(".h."))
+        if (fileName.Contains(".h."))
         {
             newAnswer = existingAnswerJson.FromJson<Post>();
             newAnswer.CreatedBy ??= fileName.RightPart(".h.").LastLeftPart('.');
@@ -329,25 +277,11 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         var fileName = existingAnswer.VirtualPath.TrimStart('/').Replace("/", "");
         var postId = fileName.LeftPart('.').ToInt();
         string existingAnswerBy = "";
-        var newAnswer = new Post
-        {
-            Id = postId,
+        var newAnswer = new Post {
+            Id = postId
         };
         
-        if (fileName.Contains(".a."))
-        {
-            existingAnswerBy = fileName.RightPart(".a.").LastLeftPart('.');
-            var datePart = DateTime.UtcNow.ToString("yyMMdd-HHmmss");
-            var editFilePath = existingAnswer.VirtualPath.LastLeftPart('/') + "/edit.a." + postId + "-" + userName + "_" + datePart + ".json";
-            tasks.Add(SaveFileAsync(editFilePath, existingAnswerJson));
-            tasks.Add(DeleteFileAsync(existingAnswer.VirtualPath));
-
-            var obj = (Dictionary<string,object>)JSON.parse(existingAnswerJson);
-            newAnswer.CreationDate = obj.TryGetValue("created", out var oCreated) && oCreated is int created
-                ? DateTimeOffset.FromUnixTimeSeconds(created).DateTime
-                : existingAnswer.LastModified;
-        }
-        else if (fileName.Contains(".h."))
+        if (fileName.Contains(".h."))
         {
             existingAnswerBy = fileName.RightPart(".h.").LastLeftPart('.');
             var datePart = DateTime.UtcNow.ToString("yyMMdd-HHmmss");
@@ -380,7 +314,7 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         var localQuestionFiles = GetLocalQuestionFiles(id);
         fs.DeleteFiles(localQuestionFiles.Files.Select(x => x.VirtualPath));
         var remoteQuestionFiles = await GetRemoteQuestionFilesAsync(id);
-        r2.DeleteFiles(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
+        await r2.DeleteFilesAsync(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
     }
 
     public async Task<string?> GetAnswerBodyAsync(string answerId)
@@ -390,31 +324,6 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
             return null;
 
         var json = await answerFile.ReadAllTextAsync();
-        var body = answerFile.Name.Contains(".a.")
-            ? GetModelAnswerBody(json)
-            : GetHumanAnswerBody(json);
-        return body;
-    }
-
-    public string? GetModelAnswerBody(string json)
-    {
-        var obj = (Dictionary<string,object>)JSON.parse(json);
-        return GetModelAnswerBody(obj);
-    }
-
-    public static string? GetModelAnswerBody(Dictionary<string, object> obj)
-    {
-        if (!obj.TryGetValue("choices", out var oChoices) || oChoices is not List<object> choices) 
-            return null;
-        if (choices.Count <= 0 || choices[0] is not Dictionary<string, object> choice) 
-            return null;
-        if (choice["message"] is Dictionary<string, object> message)
-            return message["content"] as string;
-        return null;
-    }
-
-    public string? GetHumanAnswerBody(string json)
-    {
         var answer = json.FromJson<Post>();
         return answer.Body;
     }

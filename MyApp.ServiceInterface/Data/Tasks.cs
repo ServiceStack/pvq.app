@@ -103,10 +103,6 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     [Command<DeletePostCommand>]
     public DeletePost? DeletePost { get; set; }
     
-    [Obsolete("Replaced with AI Server")]
-    [Command<CreatePostJobsCommand>]
-    public CreatePostJobs? CreatePostJobs { get; set; }
-    
     [Command<StartJobCommand>]
     public StartJob? StartJob { get; set; }
     

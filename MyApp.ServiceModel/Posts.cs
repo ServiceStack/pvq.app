@@ -220,6 +220,7 @@ public class UserPostData : IGet, IReturn<UserPostDataResponse>
 public class UserPostDataResponse
 {
     public bool Watching { get; set; }
+    public int QuestionsAsked { get; set; }
     public HashSet<string> UpVoteIds { get; set; } = [];
     public HashSet<string> DownVoteIds { get; set; } = [];
     public ResponseStatus? ResponseStatus { get; set; }
@@ -239,32 +240,6 @@ public class CommentVote : IReturnVoid
     public string RefId { get; set; }
     public bool? Up { get; set; }
     public bool? Down { get; set; }
-}
-
-[ValidateHasRole(Roles.Moderator)]
-public class CreateWorkerAnswer : IPost, IReturn<IdResponse>
-{
-    public int PostId { get; set; }
-    [ValidateNotEmpty]
-    public string Model { get; set; }
-    public string Json { get; set; }
-    public int? PostJobId { get; set; }
-}
-
-[ValidateHasRole(Roles.Moderator)]
-public class RankAnswers : IPost, IReturn<IdResponse>
-{
-    [ValidateGreaterThan(0)]
-    public int PostId { get; set; }
-    
-    /// <summary>
-    /// Model used to rank the answers
-    /// </summary>
-    public string Model { get; set; }
-    
-    public Dictionary<string,int> ModelVotes { get; set; }
-    
-    public int? PostJobId { get; set; }
 }
 
 [ValidateIsAuthenticated]

@@ -178,7 +178,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
         
         rendererCache.DeleteCachedQuestionPostHtml(postId);
 
-        await questions.SaveHumanAnswerAsync(answer);
+        await questions.SaveAnswerAsync(answer);
 
         MessageProducer.Publish(new DbWrites
         {
@@ -252,10 +252,10 @@ public class QuestionServices(ILogger<QuestionServices> log,
     }
 
     /* /100/000
-     *   001.a.model.json <OpenAI>
+     *   001.h.model.json <OpenAI>
      * Edit 1:
      *   001.h.model.json <Post>
-     *   edit.a.100000001-model_20240301-1200.json // original model answer, Modified Date <OpenAI>
+     *   edit.h.100000001-model_20240301-1200.json // original model answer, Modified Date <OpenAI>
      */
     public async Task<object> Any(UpdateAnswer request)
     {
@@ -342,97 +342,6 @@ public class QuestionServices(ILogger<QuestionServices> log,
             throw HttpError.NotFound("Answer does not exist");
 
         return new HttpResult(body, MimeTypes.PlainText);
-    }
-
-    /// <summary>
-    /// DEBUG
-    /// </summary>
-    /// <param name="request"></param>
-    /// <returns></returns>
-    public async Task<object> Any(CreateRankingPostJob request)
-    {
-        MessageProducer.Publish(new DbWrites
-        {
-            CreatePostJobs = new()
-            {
-                PostJobs = [
-                    new PostJob
-                    {
-                        PostId = request.PostId,
-                        Model = "rank",
-                        Title = $"rank-{request.PostId}",
-                        CreatedDate = DateTime.UtcNow,
-                        CreatedBy = nameof(DbWrites),
-                    }
-                ]
-            }
-        });
-        return new EmptyResponse();
-    }
-
-    public async Task<object> Any(CreateWorkerAnswer request)
-    {
-        var json = request.Json;
-        if (string.IsNullOrEmpty(json))
-        {
-            var file = base.Request!.Files.FirstOrDefault();
-            if (file != null)
-            {
-                using var reader = new StreamReader(file.InputStream);
-                json = await reader.ReadToEndAsync();
-            }
-        }
-
-        json = json.Trim();
-        if (string.IsNullOrEmpty(json))
-            throw new ArgumentException("Json is required", nameof(request.Json));
-        if (!json.StartsWith('{'))
-            throw new ArgumentException("Invalid Json", nameof(request.Json));
-        
-        rendererCache.DeleteCachedQuestionPostHtml(request.PostId);
-
-        if (request.PostJobId != null)
-        {
-            MessageProducer.Publish(new DbWrites {
-                AnswerAddedToPost = new() { Id = request.PostId },
-                CompletePostJobs = new() { Ids = [request.PostJobId.Value] }
-            });
-        }
-        
-        await questions.SaveModelAnswerAsync(request.PostId, request.Model, json);
-        
-        answerNotifier.NotifyNewAnswer(request.PostId, request.Model);
-
-        // Only add notifications for answers older than 1hr
-        var post = await Db.SingleByIdAsync<Post>(request.PostId);
-        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
-        {
-            var userName = appConfig.GetUserName(request.Model);
-            var body = questions.GetModelAnswerBody(json);
-            var cleanBody = body.StripHtml()?.Trim();
-            if (!string.IsNullOrEmpty(cleanBody))
-            {
-                MessageProducer.Publish(new DbWrites {
-                    CreateNotification = new()
-                    {
-                        UserName = post.CreatedBy,
-                        PostId = post.Id,
-                        Type = NotificationType.NewAnswer,
-                        CreatedDate = DateTime.UtcNow,
-                        RefId = $"{post.Id}-{userName}",
-                        Summary = cleanBody.GenerateNotificationSummary(),
-                        RefUserName = userName,
-                    },
-                });
-            }
-        }
-        
-        return new IdResponse { Id = $"{request.PostId}" };
-    }
-
-    public async Task<object> Any(RankAnswers request)
-    {
-        return new IdResponse { Id = $"{request.PostId}" };
     }
 
     public async Task<object> Any(CreateComment request)
@@ -598,16 +507,6 @@ public class QuestionServices(ILogger<QuestionServices> log,
                 ?? throw new Exception("Import failed")
         };
     }
-}
-
-
-/// <summary>
-/// DEBUG
-/// </summary>
-[ValidateIsAuthenticated]
-public class CreateRankingPostJob : IReturn<EmptyResponse>
-{
-    public int PostId { get; set; }
 }
 
 [ValidateHasRole(Roles.Moderator)]

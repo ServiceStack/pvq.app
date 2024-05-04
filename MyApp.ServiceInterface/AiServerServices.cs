@@ -25,7 +25,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
 
         var answer = request.ToAnswer(request.PostId, modelUser.UserName);
         
-        await questions.SaveHumanAnswerAsync(answer);
+        await questions.SaveAnswerAsync(answer);
             
         MessageProducer.Publish(new DbWrites
         {
