@@ -19,6 +19,38 @@ export function assetsUrl(path) {
     return globalThis.assetsUrl(path)
 }
 
+// keep in sync with AppConfig
+const m = (model,level) => ({ model, level })
+export const ModelUsers = {
+    // discontinued
+    'deepseek-coder': m('deepseek-coder:6.7b',0),
+    'gemma-2b': m('gemma:2b',0),
+    'qwen-4b': m('qwen:4b',0),
+    'deepseek-coder-33b': m('deepseek-coder:33b',100),
+
+    'phi': m('phi3',0),
+    'codellama': m('codellama',0),
+    'mistral': m('mistral',0),
+    'gemma': m('gemma',0),
+    'llama3-8b': m('llama3:8b',0),
+    'gemini-pro': m('gemini-pro',3),
+    'mixtral': m('mixtral',5),
+    'gpt3.5-turbo': m('gpt-3.5-turbo',10),
+    'claude3-haiku': m('claude-3-haiku',25),
+    'llama3-70b': m('llama3:70b',50),
+    'command-r': m('command-r',100),
+    'wizardlm': m('wizardlm2:8x22b',175),
+    'claude3-sonnet': m('claude-3-sonnet',250),
+    'command-r-plus': m('command-r-plus',350),
+    'gpt4-turbo': m('gpt-4-turbo',450),
+    'claude3-opus': m('claude-3-opus',600),
+}
+Object.keys(ModelUsers).forEach(userName => { ModelUsers[userName].userName = userName })
+export function isModelUser(userName) { return !!ModelUsers[userName] }
+export function modelUser(userName) { return ModelUsers[userName] }
+export function modelUserModel(userName) { return ModelUsers[userName]?.model }
+export function modelUserLevel(userName) { return ModelUsers[userName]?.level }
+
 export const alreadyMounted = el => el.__vue_app__ 
 
 const mockArgs = { attrs:{}, slots:{}, emit:() => {}, expose: () => {} }
