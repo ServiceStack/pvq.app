@@ -19,6 +19,12 @@ public class GetUserAvatar : IGet, IReturn<byte[]>
     public string UserName { get; set; }
 }
 
+[Route("/profiles/{*Path}", "GET")]
+public class GetProfileImage : IGet, IReturn<byte[]>
+{
+    public string Path { get; set; }
+}
+
 public class UserInfo
 {
     [PrimaryKey]

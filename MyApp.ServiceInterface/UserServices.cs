@@ -49,6 +49,30 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
         return new UpdateUserProfileResponse();
     }
 
+    public async Task<HttpResult> GetProfileImageResultAsync(string profilePath)
+    {
+        var localProfilePath = AppData.CombineWith(profilePath);
+        var file = VirtualFiles.GetFile(localProfilePath);
+        if (file != null)
+        {
+            return new HttpResult(file, MimeTypes.GetMimeType(file.Extension));
+        }
+        file = await r2.GetFileAsync(profilePath);
+        var bytes = file != null ? await file.ReadAllBytesAsync() : null;
+        if (bytes is { Length: > 0 })
+        {
+            await VirtualFiles.WriteFileAsync(localProfilePath, bytes);
+            return new HttpResult(bytes, MimeTypes.GetMimeType(file!.Extension));
+        }
+        return new HttpResult(Svg.GetImage(Svg.Icons.Users), MimeTypes.ImageSvg);
+    }
+
+    public async Task<object> Any(GetProfileImage request)
+    {
+        var profilePath = "profiles".CombineWith(request.Path);
+        return await GetProfileImageResultAsync(profilePath);
+    }
+
     public async Task<object> Any(GetUserAvatar request)
     {
         if (!string.IsNullOrEmpty(request.UserName))
@@ -65,19 +89,7 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
                 }
                 if (profilePath.StartsWith('/'))
                 {
-                    var localProfilePath = AppData.CombineWith(profilePath);
-                    var file = VirtualFiles.GetFile(localProfilePath);
-                    if (file != null)
-                    {
-                        return new HttpResult(file, MimeTypes.GetMimeType(file.Extension));
-                    }
-                    file = r2.GetFile(profilePath);
-                    var bytes = file != null ? await file.ReadAllBytesAsync() : null;
-                    if (bytes is { Length: > 0 })
-                    {
-                        await VirtualFiles.WriteFileAsync(localProfilePath, bytes);
-                        return new HttpResult(bytes, MimeTypes.GetMimeType(file!.Extension));
-                    }
+                    return await GetProfileImageResultAsync(profilePath);
                 }
             }
         }
