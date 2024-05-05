@@ -26,7 +26,7 @@
                 </div>
             </div>
         </div>
-        <div>
+        <div class="w-full">
             @if (Question.Meta?.ModelVotes?.TryGetValue(Answer.CreatedBy!, out var votes) == true &&
                  Question.Meta?.ModelReasons?.TryGetValue(Answer.CreatedBy!, out var reason) == true)
             {
