@@ -841,6 +841,14 @@ const EditQuestion = {
                     debounceApi(request.value.body)
                 }
             })
+            
+            const postJson = $1(`#Post`)?.innerHTML
+            if (postJson) {
+                const post = JSON.parse(postJson)
+                request.value.title = post.title
+                request.value.body = post.body
+                request.value.tags = post.tags
+            }
         })
 
         function close() {
