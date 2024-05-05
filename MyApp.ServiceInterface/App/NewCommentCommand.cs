@@ -40,9 +40,11 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCo
                 appConfig.IncrUnreadNotificationsFor(createdBy);
             }
 
+            var lastUpdated = request.LastUpdated;
+            appConfig.SetLastUpdated(request.RefId, lastUpdated);
             await db.UpdateOnlyAsync(() => new StatTotals
             {
-                LastUpdated = DateTime.UtcNow,
+                LastUpdated = lastUpdated,
             }, where: x => x.Id == request.RefId);
 
             var userNameMentions = cleanBody.FindUserNameMentions()

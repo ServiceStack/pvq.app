@@ -45,6 +45,9 @@ public class AnswerCommentCallback : OpenAiChatResponse, IPost, IReturnVoid
     
     [ValidateNotEmpty]
     public string UserId { get; set; } // Use User GUID to prevent tampering
+    
+    [ValidateNotEmpty]
+    public string AiRef { get; set; } // Ref for AI Task that generated the comment
 }
 
 public class CreateAnswerTasks
@@ -61,6 +64,7 @@ public class CreateRankAnswerTask
 
 public class CreateAnswerCommentTask
 {
+    public string? AiRef { get; set; }
     public string Model { get; set; }
     public Post Question { get; set; }
     public Post Answer { get; set; }

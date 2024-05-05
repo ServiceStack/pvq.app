@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-05-04 22:38:15
+Date: 2024-05-05 17:08:25
 Version: 8.23
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -324,7 +324,7 @@ export class CreateRankAnswerTask {
     userId;
 }
 export class Comment {
-    /** @param {{body?:string,created?:number,createdBy?:string,upVotes?:number,reports?:number}} [init] */
+    /** @param {{body?:string,created?:number,createdBy?:string,upVotes?:number,reports?:number,aiRef?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
     /** @type {string} */
     body;
@@ -336,10 +336,14 @@ export class Comment {
     upVotes;
     /** @type {?number} */
     reports;
+    /** @type {?string} */
+    aiRef;
 }
 export class CreateAnswerCommentTask {
-    /** @param {{model?:string,question?:Post,answer?:Post,userId?:string,userName?:string,comments?:Comment[]}} [init] */
+    /** @param {{aiRef?:string,model?:string,question?:Post,answer?:Post,userId?:string,userName?:string,comments?:Comment[]}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {?string} */
+    aiRef;
     /** @type {string} */
     model;
     /** @type {Post} */
@@ -937,8 +941,12 @@ export class GetAnswerResponse {
     result;
 }
 export class CommentsResponse {
-    /** @param {{comments?:Comment[],responseStatus?:ResponseStatus}} [init] */
+    /** @param {{aiRef?:string,lastUpdated?:number,comments?:Comment[],responseStatus?:ResponseStatus}} [init] */
     constructor(init) { Object.assign(this, init) }
+    /** @type {?string} */
+    aiRef;
+    /** @type {number} */
+    lastUpdated;
     /** @type {Comment[]} */
     comments;
     /** @type {ResponseStatus} */
@@ -976,6 +984,12 @@ export class ImportQuestionResponse {
     result;
     /** @type {?ResponseStatus} */
     responseStatus;
+}
+export class GetLastUpdatedResponse {
+    /** @param {{result?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?number} */
+    result;
 }
 export class UpdateUserProfileResponse {
     /** @param {{responseStatus?:ResponseStatus}} [init] */
@@ -1398,12 +1412,14 @@ export class RankAnswerCallback extends OpenAiChatResponse {
     createResponse() { }
 }
 export class AnswerCommentCallback extends OpenAiChatResponse {
-    /** @param {{answerId?:string,userId?:string,id?:string,choices?:Choice[],created?:number,model?:string,system_fingerprint?:string,object?:string,usage?:OpenAiUsage}} [init] */
+    /** @param {{answerId?:string,userId?:string,aiRef?:string,id?:string,choices?:Choice[],created?:number,model?:string,system_fingerprint?:string,object?:string,usage?:OpenAiUsage}} [init] */
     constructor(init) { super(init); Object.assign(this, init) }
     /** @type {string} */
     answerId;
     /** @type {string} */
     userId;
+    /** @type {string} */
+    aiRef;
     getTypeName() { return 'AnswerCommentCallback' }
     getMethod() { return 'POST' }
     createResponse() { }
@@ -1718,6 +1734,28 @@ export class ImportQuestion {
     getTypeName() { return 'ImportQuestion' }
     getMethod() { return 'GET' }
     createResponse() { return new ImportQuestionResponse() }
+}
+export class GetLastUpdated {
+    /** @param {{id?:string,postId?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?string} */
+    id;
+    /** @type {?number} */
+    postId;
+    getTypeName() { return 'GetLastUpdated' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetLastUpdatedResponse() }
+}
+export class WaitForUpdate {
+    /** @param {{id?:string,updatedAfter?:number}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    /** @type {?number} */
+    updatedAfter;
+    getTypeName() { return 'WaitForUpdate' }
+    getMethod() { return 'GET' }
+    createResponse() { return new GetLastUpdatedResponse() }
 }
 export class UpdateUserProfile {
     constructor(init) { Object.assign(this, init) }

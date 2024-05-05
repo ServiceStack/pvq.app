@@ -7,6 +7,7 @@ using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.IO;
 using ServiceStack.OrmLite;
+using ServiceStack.Text;
 
 namespace MyApp.ServiceInterface;
 
@@ -387,18 +388,21 @@ public class QuestionServices(ILogger<QuestionServices> log,
             CreatedBy = createdBy,
         };
         comments.Add(newComment);
-        
+
+        var lastUpdated = DateTime.UtcNow;
         MessageProducer.Publish(new DbWrites
         {
             NewComment = new()
             {
                 RefId = request.Id,
                 Comment = newComment,
+                LastUpdated = lastUpdated,
             },
         });
 
         await questions.SaveMetaAsync(postId, meta);
 
+        string? aiRef = null;
         if (modelCreator?.UserName != null)
         {
             var answer = await questions.GetAnswerAsPostAsync(request.Id);
@@ -408,13 +412,15 @@ public class QuestionServices(ILogger<QuestionServices> log,
                 var userConversation = comments
                     .Where(x => x.CreatedBy == createdBy || x.Body.Contains(mention))
                     .ToList();
-                
+
+                aiRef = Guid.NewGuid().ToString("N");
                 var createdById = GetUserId();
                 var model = modelCreator.Model ?? throw new ArgumentNullException(nameof(modelCreator.Model));
                 MessageProducer.Publish(new AiServerTasks
                 {
                     CreateAnswerCommentTask = new()
                     {
+                        AiRef = aiRef, 
                         Model = model,
                         Question = question,
                         Answer = answer,
@@ -432,6 +438,8 @@ public class QuestionServices(ILogger<QuestionServices> log,
         
         return new CommentsResponse
         {
+            AiRef = aiRef,
+            LastUpdated = lastUpdated.ToUnixTimeMs(),
             Comments = comments
         };
     }
@@ -524,48 +532,40 @@ public class QuestionServices(ILogger<QuestionServices> log,
 
     public async Task<object> Any(GetLastUpdated request)
     {
-        var lastUpdated = request.Id != null
-            ? await Db.ScalarAsync<DateTime?>(Db.From<StatTotals>().Where(x => x.Id == request.Id)
-                .Select(x => x.LastUpdated))
-            : request.PostId != null
-                ? await Db.ScalarAsync<DateTime?>(Db.From<StatTotals>().Where(x => x.PostId == request.PostId)
-                    .Select(x => Sql.Max(x.LastUpdated)))
-                : null;
+        if (request.Id == null && request.PostId == null)
+            throw new ArgumentNullException(nameof(request.Id));
+        
+        var lastUpdated = request.PostId != null
+            ? await Db.ScalarAsync<DateTime?>(Db.From<StatTotals>().Where(x => x.PostId == request.PostId)
+                .Select(x => Sql.Max(x.LastUpdated)))
+            : null;
 
-        return new GetLastUpdatedResponse
-        {
-            Result = lastUpdated
+        if (lastUpdated != null)
+            return new GetLastUpdatedResponse { Result = lastUpdated.Value.ToUnixTimeMs() };
+        
+        if (request.Id != null)
+            return new GetLastUpdatedResponse { Result = appConfig.GetLastUpdated(Db, request.Id) };
+
+        return new GetLastUpdatedResponse {
+            Result = DateTimeExtensions.UnixEpoch
         };
+    }
+
+    public async Task<object> Any(WaitForUpdate request)
+    {
+        var afterDate = request.UpdatedAfter ?? DateTimeExtensions.UnixEpoch;
+        var lastUpdated = appConfig.GetLastUpdated(Db, request.Id);
+
+        var startedAt = DateTime.UtcNow;
+        while (DateTime.UtcNow - startedAt < TimeSpan.FromSeconds(120))
+        {
+            lastUpdated = appConfig.GetLastUpdated(Db, request.Id);
+            if (lastUpdated > afterDate)
+                return new GetLastUpdatedResponse { Result = lastUpdated };
+            await Task.Delay(500);
+        }
+        
+        return new GetLastUpdatedResponse { Result = lastUpdated };
     }
 }
 
-[ValidateHasRole(Roles.Moderator)]
-public class GetAnswerFile : IGet, IReturn<string>
-{
-    /// <summary>
-    /// Format is {PostId}-{UserName}
-    /// </summary>
-    public string Id { get; set; }
-}
-public class GetAllAnswerModelsResponse
-{
-    public List<string> Results { get; set; }
-}
-
-public class GetAnswer : IGet, IReturn<GetAnswerResponse>
-{
-    /// <summary>
-    /// Format is {PostId}-{UserName}
-    /// </summary>
-    public string Id { get; set; }
-}
-public class GetAnswerResponse
-{
-    public Post Result { get; set; }
-}
-
-[ValidateIsAuthenticated]
-public class GetAllAnswerModels : IReturn<GetAllAnswerModelsResponse>, IGet
-{
-    public int Id { get; set; }
-}

@@ -20,6 +20,8 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand
     public async Task ExecuteAsync(CreateAnswerCommentTask request)
     {
         var question = request.Question;
+
+        request.AiRef ??= Guid.NewGuid().ToString("N");
         
         var answerPrompt = 
             $$"""
@@ -61,12 +63,13 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand
         var client = appConfig.CreateAiServerClient();
         
         var api = await client.ApiAsync(new CreateOpenAiChat {
-            RefId = Guid.NewGuid().ToString("N"),
+            RefId = request.AiRef,
             Tag = "pvq",
             Provider = null,
             ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(AnswerCommentCallback).AddQueryParams(new() {
                 [nameof(AnswerCommentCallback.AnswerId)] = request.Answer.RefId,
                 [nameof(AnswerCommentCallback.UserId)] = request.UserId,
+                [nameof(AnswerCommentCallback.AiRef)] = request.AiRef,
             })),
             Request = openAiChat
         });

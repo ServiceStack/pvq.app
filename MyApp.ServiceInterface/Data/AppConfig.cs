@@ -3,6 +3,7 @@ using System.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.OrmLite;
+using ServiceStack.Text;
 
 namespace MyApp.Data;
 
@@ -33,6 +34,7 @@ public class AppConfig
     public ConcurrentDictionary<string,int> UsersQuestions { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersUnreadAchievements { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersUnreadNotifications { get; set; } = new();
+    public ConcurrentDictionary<string, long> PostsLastUpdated { get; set; } = new(); // RefId => UnixTimeMs
     
     public string MasterPassword { get; set; }
     public HashSet<string> AllTags { get; set; } = [];
@@ -109,6 +111,19 @@ public class AppConfig
     public void SetInitialPostId(long initialValue) => this.nextPostId = initialValue;
     public long LastPostId => Interlocked.Read(ref nextPostId);
     public long GetNextPostId() => Interlocked.Increment(ref nextPostId);
+
+    public void SetLastUpdated(string id, DateTime lastUpdated) => PostsLastUpdated[id] = lastUpdated.ToUnixTimeMs();  
+    public void SetLastUpdated(string id, long unixTimeMs) => PostsLastUpdated[id] = unixTimeMs;  
+    
+    public long GetLastUpdated(IDbConnection db, string id)
+    {
+        return PostsLastUpdated.GetOrAdd(id, key =>
+        {
+            var date = db.Scalar<DateTime?>(db.From<StatTotals>().Where(x => x.Id == id)
+                .Select(x => x.LastUpdated));
+            return date?.ToUnixTimeMs() ?? DateTimeExtensions.UnixEpoch;
+        });
+    }
 
     public string GetReputation(string? userName) => GetReputationValue(userName).ToHumanReadable();
     

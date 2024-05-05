@@ -55,6 +55,7 @@ public class NewComment
     // Post or AnswerId
     public string RefId { get; set; }
     public Comment Comment { get; set; }
+    public DateTime LastUpdated { get; set; }
 }
 
 public class DeletePost

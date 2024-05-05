@@ -152,6 +152,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
             Body = commentBody,
             Created = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             CreatedBy = modelUser.UserName,
+            AiRef = request.AiRef,
         };
         comments.Add(newComment);
 
@@ -159,8 +160,9 @@ public class AiServerServices(ILogger<AiServerServices> log,
         {
             NewComment = new()
             {
-                RefId = request.Id,
+                RefId = request.AnswerId,
                 Comment = newComment,
+                LastUpdated = DateTime.UtcNow,
             },
         });
 
