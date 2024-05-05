@@ -70,7 +70,7 @@
 
                 <div class="question-aside"></div>
             </div>
-            <div>
+            <div class="w-full">
                 <div id=@($"preview-{Question.Id}") class="pb-6 preview xl:flex-grow prose">
                     @BlazorHtml.Raw(Markdown.GenerateHtml(Question.Post.Body))
                 </div>
