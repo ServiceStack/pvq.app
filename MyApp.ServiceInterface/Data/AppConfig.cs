@@ -44,7 +44,10 @@ public class AppConfig
 
     public static (string Model, int Questions)[] GetActiveModelsForQuestions(int questionsCount) =>
         ModelsForQuestions.Where(x => questionsCount >= x.Questions && !DeprecatedModels.Contains(x.Model)).ToArray();
-    
+
+    public static (string Model, int Questions)[] GetActiveModelsForQuestionLevel(int level) =>
+        ModelsForQuestions.Where(x => level == x.Questions && !DeprecatedModels.Contains(x.Model)).ToArray();
+
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
         ("deepseek-coder", 0),
