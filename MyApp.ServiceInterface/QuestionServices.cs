@@ -188,6 +188,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
                 PostId = postId,
                 StartingUpVotes = 0,
                 CreatedBy = userName,
+                LastUpdated = DateTime.UtcNow,
             }
         });
         
@@ -518,6 +519,22 @@ public class QuestionServices(ILogger<QuestionServices> log,
         {
             Result = command.Result
                 ?? throw new Exception("Import failed")
+        };
+    }
+
+    public async Task<object> Any(GetLastUpdated request)
+    {
+        var lastUpdated = request.Id != null
+            ? await Db.ScalarAsync<DateTime?>(Db.From<StatTotals>().Where(x => x.Id == request.Id)
+                .Select(x => x.LastUpdated))
+            : request.PostId != null
+                ? await Db.ScalarAsync<DateTime?>(Db.From<StatTotals>().Where(x => x.PostId == request.PostId)
+                    .Select(x => Sql.Max(x.LastUpdated)))
+                : null;
+
+        return new GetLastUpdatedResponse
+        {
+            Result = lastUpdated
         };
     }
 }

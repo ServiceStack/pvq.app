@@ -40,6 +40,11 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCo
                 appConfig.IncrUnreadNotificationsFor(createdBy);
             }
 
+            await db.UpdateOnlyAsync(() => new StatTotals
+            {
+                LastUpdated = DateTime.UtcNow,
+            }, where: x => x.Id == request.RefId);
+
             var userNameMentions = cleanBody.FindUserNameMentions()
                 .Where(x => x != createdBy && x != comment.CreatedBy && appConfig.IsHuman(x))
                 .ToList();

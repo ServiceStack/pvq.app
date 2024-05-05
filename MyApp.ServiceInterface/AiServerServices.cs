@@ -35,6 +35,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
                 PostId = request.PostId,
                 StartingUpVotes = 0,
                 CreatedBy = modelUser.UserName,
+                LastUpdated = DateTime.UtcNow,
             }
         });
 
@@ -166,7 +167,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
         await questions.SaveMetaAsync(postId, meta);
     }
 
-    private async Task<string?> AssertUserNameById(string userId)
+    private async Task<string> AssertUserNameById(string userId)
     {
         var userName = appConfig.GetModelUserById(userId)?.UserName
             ?? await Db.ScalarAsync<string?>(Db.From<ApplicationUser>().Where(x => x.Id == userId).Select(x => x.UserName));

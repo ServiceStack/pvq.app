@@ -11,10 +11,12 @@ public class SaveGradeResultCommand(IDbConnection db, IMessageProducer mq, Worke
 {
     public async Task ExecuteAsync(StatTotals request)
     {
+        var lastUpdated = request.LastUpdated ?? DateTime.UtcNow;
         var updatedRow = await db.UpdateOnlyAsync(() => new StatTotals
         {
             StartingUpVotes = request.StartingUpVotes,
             CreatedBy = request.CreatedBy,
+            LastUpdated = lastUpdated,
         }, x => x.Id == request.Id);
         
         if (updatedRow == 0)

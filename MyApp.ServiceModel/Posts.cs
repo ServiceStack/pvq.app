@@ -554,3 +554,13 @@ public class ImportQuestionResponse
     public required AskQuestion Result { get; set; }
     public ResponseStatus? ResponseStatus { get; set; }
 }
+
+public class GetLastUpdated : IGet, IReturn<GetLastUpdated>
+{
+    public string? Id { get; set; }
+    public int? PostId { get; set; }
+}
+public class GetLastUpdatedResponse
+{
+    public DateTime? Result { get; set; }
+}
