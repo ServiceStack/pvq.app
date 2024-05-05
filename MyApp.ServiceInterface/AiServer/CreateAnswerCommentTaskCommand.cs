@@ -41,7 +41,7 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand
                 new() { Role = "assistant",  Content = answerPrompt },
             ],
             Temperature = 0.2,
-            MaxTokens = 100,
+            MaxTokens = 300,
         };
 
         var modelUser = appConfig.GetModelUser(request.Model);
