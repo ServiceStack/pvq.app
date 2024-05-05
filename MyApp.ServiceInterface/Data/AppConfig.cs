@@ -40,8 +40,8 @@ public class AppConfig
 
     public static string[] DeprecatedModels = ["deepseek-coder","gemma-2b","qwen-4b","deepseek-coder-33b"];
 
-    public static (string Model, int Questions)[] GetActiveModelsForQuestions(int level) =>
-        ModelsForQuestions.Where(x => x.Questions == level && !DeprecatedModels.Contains(x.Model)).ToArray();
+    public static (string Model, int Questions)[] GetActiveModelsForQuestions(int questionsCount) =>
+        ModelsForQuestions.Where(x => questionsCount >= x.Questions && !DeprecatedModels.Contains(x.Model)).ToArray();
     
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
