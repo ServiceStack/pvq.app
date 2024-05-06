@@ -13,6 +13,12 @@
     @if (TotalVotes.Count > 0 && WinRates.Count > 0)
     {
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Top 1000 Questions Votes</h3>
+        <div class="mt-8 mb-16 mx-auto">
+            <div class="mx-auto">
+                <LeaderboardStats Results=@Top1kVotes/>
+            </div>
+        </div>
+        
         <div data-component="pages/Leaderboard/TotalVotes.mjs" data-props=@ToProps(Top1kVotes)></div>
         <p class="py-4">
             Based on total number of total votes received for answers of the top 1000 questions. Votes distributed by a ranking model measuring how well they answer the question asked.
