@@ -24,10 +24,10 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand
         request.AiRef ??= Guid.NewGuid().ToString("N");
         
         var answerPrompt = 
-            $$"""
+            $"""
             ## Original Answer Attempt
 
-            {{request.Answer.Body}}
+            {request.Answer.Body}
             ---
             """;
 
@@ -59,6 +59,14 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand
                 openAiChat.Messages.Add(new() { Role = "assistant", Content = comment.Body });
             }
         }
+        openAiChat.Messages.Add(new() { Role = "user", 
+            Content = """
+                      ## Instruction
+                      Answer the question query above in a concise manner. 
+                      Keep your response on the topic of the original question and answer, directly addressing my specific comment. 
+                      Max 2-3 sentences.
+                      """
+        });
 
         var client = appConfig.CreateAiServerClient();
         
