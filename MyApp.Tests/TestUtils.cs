@@ -8,7 +8,8 @@ public static class TestUtils
     public static string GetHostDir()
     {
         LogManager.LogFactory = new ConsoleLogFactory();
-        var appSettings = JSON.parse(File.ReadAllText(Path.GetFullPath("appsettings.json")));
-        return appSettings.ToObjectDictionary()["HostDir"].ToString()!;
+        return "../../../../MyApp";
+        // var appSettings = JSON.parse(File.ReadAllText(Path.GetFullPath("appsettings.json")));
+        // return appSettings.ToObjectDictionary()["HostDir"].ToString()!;
     }
 }

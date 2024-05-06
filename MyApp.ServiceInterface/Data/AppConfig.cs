@@ -3,6 +3,7 @@ using System.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.OrmLite;
+using ServiceStack.Text;
 
 namespace MyApp.Data;
 
@@ -20,6 +21,9 @@ public class AppConfig
 
     public string AiServerBaseUrl { get; set; }
     public string AiServerApiKey { get; set; }
+    public string? RedditClient { get; set; }
+    public string? RedditSecret { get; set; }
+    public string? RedditAccessToken { get; set; }
     public JsonApiClient CreateAiServerClient() => new(AiServerBaseUrl) { BearerToken = AiServerApiKey };
     
     public string CacheDir { get; set; }
@@ -30,13 +34,27 @@ public class AppConfig
     public ConcurrentDictionary<string,int> UsersQuestions { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersUnreadAchievements { get; set; } = new();
     public ConcurrentDictionary<string,int> UsersUnreadNotifications { get; set; } = new();
+    public ConcurrentDictionary<string, long> PostsLastUpdated { get; set; } = new(); // RefId => UnixTimeMs
     
     public string MasterPassword { get; set; }
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
+    public static string[] DeprecatedModels = ["deepseek-coder","gemma-2b","qwen-4b","deepseek-coder-33b"];
+
+    public static (string Model, int Questions)[] GetActiveModelsForQuestions(int questionsCount) =>
+        ModelsForQuestions.Where(x => questionsCount >= x.Questions && !DeprecatedModels.Contains(x.Model)).ToArray();
+
+    public static (string Model, int Questions)[] GetActiveModelsForQuestionLevel(int level) =>
+        ModelsForQuestions.Where(x => level == x.Questions && !DeprecatedModels.Contains(x.Model)).ToArray();
+
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
+        ("deepseek-coder", 0),
+        ("gemma-2b", 0),
+        ("qwen-4b", 0),
+        ("deepseek-coder-33b", 100),
+        
         ("phi", 0),
         ("codellama", 0),
         ("mistral", 0),
@@ -46,12 +64,13 @@ public class AppConfig
         ("mixtral", 5),
         ("gpt3.5-turbo", 10),
         ("claude3-haiku", 25),
-        ("command-r", 50),
-        ("wizardlm", 75),
-        ("claude3-sonnet", 100),
-        ("command-r-plus", 150),
-        ("gpt4-turbo", 200),
-        ("claude3-opus", 300),
+        ("llama3-70b", 50),
+        ("command-r", 100),
+        ("wizardlm", 175),
+        ("claude3-sonnet", 250),
+        ("command-r-plus", 350),
+        ("gpt4-turbo", 450),
+        ("claude3-opus", 600),
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
@@ -96,6 +115,19 @@ public class AppConfig
     public long LastPostId => Interlocked.Read(ref nextPostId);
     public long GetNextPostId() => Interlocked.Increment(ref nextPostId);
 
+    public void SetLastUpdated(string id, DateTime lastUpdated) => PostsLastUpdated[id] = lastUpdated.ToUnixTimeMs();  
+    public void SetLastUpdated(string id, long unixTimeMs) => PostsLastUpdated[id] = unixTimeMs;  
+    
+    public long GetLastUpdated(IDbConnection db, string id)
+    {
+        return PostsLastUpdated.GetOrAdd(id, key =>
+        {
+            var date = db.Scalar<DateTime?>(db.From<StatTotals>().Where(x => x.Id == id)
+                .Select(x => x.LastUpdated));
+            return date?.ToUnixTimeMs() ?? DateTimeExtensions.UnixEpoch;
+        });
+    }
+
     public string GetReputation(string? userName) => GetReputationValue(userName).ToHumanReadable();
     
     public int GetReputationValue(string? userName) => 
@@ -103,10 +135,35 @@ public class AppConfig
             ? 1 
             : reputation;
 
-    public int GetQuestionCount(string? userName) => 
-        userName == null || !UsersQuestions.TryGetValue(userName, out var count) 
-            ? 0 
-            : count + (Stats.IsAdminOrModerator(userName) ? 10 : 0);
+    public bool CanUseModel(string userName, string model)
+    {
+        if (Stats.IsAdminOrModerator(userName))
+            return true;
+        var questionsCount = GetQuestionCount(userName);
+        
+        var modelLevel = GetModelLevel(model);
+        return modelLevel != -1 && questionsCount >= modelLevel;
+    }
+
+    public int GetModelLevel(string model)
+    {
+        foreach (var entry in ModelsForQuestions)
+        {
+            if (entry.Model == model)
+                return entry.Questions;
+        }
+        return -1;
+    }
+
+    public int GetQuestionCount(string? userName) => userName switch
+    {
+        "stackoverflow" or "reddit" or "discourse" => 5,
+        "pvq" => 25,
+        "mythz" => 100,
+        _ => userName == null || !UsersQuestions.TryGetValue(userName, out var count)
+            ? 0
+            : count + (Stats.IsAdminOrModerator(userName) ? 10 : 0)
+    };
 
     public void Init(IDbConnection db)
     {
@@ -154,7 +211,7 @@ public class AppConfig
     public void ResetInitialPostId(IDbConnection db)
     {
         var maxPostId = db.Scalar<int>("SELECT MAX(Id) FROM Post");
-        SetInitialPostId(Math.Max(100_000_000, maxPostId));
+        SetInitialPostId(Math.Max(100_000_000, maxPostId + 1));
     }
 
     public void ResetUsersReputation(IDbConnection db)
@@ -198,13 +255,22 @@ public class AppConfig
     public List<string> GetAnswerModelUsersFor(string? userName)
     {
         var questionsCount = GetQuestionCount(userName);
-        var models = ModelsForQuestions.Where(x => x.Questions <= questionsCount)
+        
+        var models = GetActiveModelsForQuestions(questionsCount)
             .Select(x => x.Model)
             .ToList();
+        
+        // Remove lower quality models
         if (models.Contains("gemma"))
             models.RemoveAll(x => x == "gemma:2b");
+        if (models.Contains("mixtral"))
+            models.RemoveAll(x => x == "mistral");
         if (models.Contains("deepseek-coder:33b"))
             models.RemoveAll(x => x == "deepseek-coder:6.7b");
+        if (models.Contains("gpt-4-turbo"))
+            models.RemoveAll(x => x == "gpt3.5-turbo");
+        if (models.Contains("command-r-plus"))
+            models.RemoveAll(x => x == "command-r");
         if (models.Contains("claude-3-opus"))
             models.RemoveAll(x => x is "claude-3-haiku" or "claude-3-sonnet");
         if (models.Contains("claude-3-sonnet"))

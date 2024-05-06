@@ -6,18 +6,23 @@ namespace MyApp.ServiceModel;
 [SystemJson(UseSystemJson.Never)]
 public class CreateAnswerCallback : OpenAiChatResponse, IPost, IReturnVoid 
 {
+    [ValidateGreaterThan(9)]
     public int PostId { get; set; }
-    
+
+    [ValidateNotEmpty]
     public string UserId { get; set; }
 }
 
 [SystemJson(UseSystemJson.Never)]
 public class RankAnswerCallback : OpenAiChatResponse, IPost, IReturnVoid
 {
+    [ValidateGreaterThan(9)]
     public int PostId { get; set; }
     
+    [ValidateNotEmpty]
     public string UserId { get; set; } // Use User GUID to prevent tampering
     
+    [ValidateNotEmpty]
     public string Grader { get; set; }
 }
 
@@ -32,6 +37,19 @@ public class GradeResult
     }
 }
 
+[SystemJson(UseSystemJson.Never)]
+public class AnswerCommentCallback : OpenAiChatResponse, IPost, IReturnVoid
+{
+    [ValidateNotEmpty]
+    public string AnswerId { get; set; }
+    
+    [ValidateNotEmpty]
+    public string UserId { get; set; } // Use User GUID to prevent tampering
+    
+    [ValidateNotEmpty]
+    public string AiRef { get; set; } // Ref for AI Task that generated the comment
+}
+
 public class CreateAnswerTasks
 {
     public Post Post { get; set; }
@@ -44,11 +62,23 @@ public class CreateRankAnswerTask
     public string UserId { get; set; }
 }
 
+public class CreateAnswerCommentTask
+{
+    public string? AiRef { get; set; }
+    public string Model { get; set; }
+    public Post Question { get; set; }
+    public Post Answer { get; set; }
+    public string UserId { get; set; }
+    public string UserName { get; set; }
+    public List<Comment> Comments { get; set; }
+}
+
 public class CreateOpenAiChat : IReturn<CreateOpenAiChatResponse>
 {
     public string? RefId { get; set; }
     public string? Provider { get; set; }
     public string? ReplyTo { get; set; }
+    public string? Tag { get; set; }
     public OpenAiChat Request { get; set; }
 }
 

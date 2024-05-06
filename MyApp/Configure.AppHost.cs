@@ -24,6 +24,9 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
 
             services.AddSingleton<ImageCreator>();
             
+            AppConfig.Instance.RedditClient ??= Environment.GetEnvironmentVariable("REDDIT_CLIENT");
+            AppConfig.Instance.RedditSecret ??= Environment.GetEnvironmentVariable("REDDIT_SECRET");
+            
             var r2Bucket = context.Configuration.GetValue("R2Bucket", "pvq-dev");
             var r2AccountId = context.Configuration.GetValue("R2AccountId", Environment.GetEnvironmentVariable("R2_ACCOUNT_ID"));
             var r2AccessId = context.Configuration.GetValue("R2AccessKeyId", Environment.GetEnvironmentVariable("R2_ACCESS_KEY_ID"));

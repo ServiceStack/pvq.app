@@ -6,6 +6,14 @@ namespace MyApp.ServiceInterface.AiServer;
 
 public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider questions) : IAsyncCommand<CreateRankAnswerTask>
 {
+    //https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-a-tech-reviewer
+    public const string SystemPrompt = 
+        """
+        I want you to act as a tech reviewer that votes on the quality and relevance of answers to a given question. 
+        I will give you the user's question and the answer that you should review and respond with a score out of 10.
+        Before giving a score, give a critique of the answer based on quality and relevance to the user's question. 
+        """;
+
     public async Task ExecuteAsync(CreateRankAnswerTask request)
     {
         var postId = request.AnswerId.LeftPart('-').ToInt();
@@ -62,6 +70,7 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
         var client = appConfig.CreateAiServerClient();
         var api = await client.ApiAsync(new CreateOpenAiChat {
             RefId = Guid.NewGuid().ToString("N"),
+            Tag = "pvq",
             Provider = null,
             ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(RankAnswerCallback).AddQueryParams(new() {
                 [nameof(RankAnswerCallback.PostId)] = postId,
@@ -72,7 +81,7 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
             {
                 Model = "mixtral",
                 Messages = [
-                    new() { Role = "system", Content = "You are an AI assistant that votes on the quality and relevance of answers to a given question. Before giving votes, give an critique of each answer based on quality and relevance." },
+                    new() { Role = "system", Content = SystemPrompt },
                     new() { Role = "user", Content = content },
                 ],
                 Temperature = 0.1,

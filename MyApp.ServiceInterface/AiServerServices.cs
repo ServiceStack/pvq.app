@@ -17,22 +17,15 @@ public class AiServerServices(ILogger<AiServerServices> log,
 {
     public async Task Any(CreateAnswerCallback request)
     {
-        if (request.PostId == 0)
-            request.PostId = int.TryParse(Request!.QueryString[nameof(request.PostId)], out var postId)
-                ? postId
-                : throw new ArgumentNullException(nameof(request.PostId));
-        if (string.IsNullOrEmpty(request.UserId))
-            request.UserId = Request!.QueryString[nameof(request.UserId)] ?? throw new ArgumentNullException(nameof(request.UserId));
-        
         var modelUser = appConfig.GetModelUserById(request.UserId);
         if (modelUser?.UserName == null)
-            throw HttpError.Forbidden("Invalid Model User Id");
+            throw HttpError.BadRequest("Invalid Model User Id");
 
         rendererCache.DeleteCachedQuestionPostHtml(request.PostId);
 
         var answer = request.ToAnswer(request.PostId, modelUser.UserName);
         
-        await questions.SaveHumanAnswerAsync(answer);
+        await questions.SaveAnswerAsync(answer);
             
         MessageProducer.Publish(new DbWrites
         {
@@ -42,29 +35,11 @@ public class AiServerServices(ILogger<AiServerServices> log,
                 PostId = request.PostId,
                 StartingUpVotes = 0,
                 CreatedBy = modelUser.UserName,
+                LastUpdated = DateTime.UtcNow,
             }
         });
 
-        // Only add notifications for answers older than 1hr
-        var post = await Db.SingleByIdAsync<Post>(request.PostId);
-        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
-        {
-            if (!string.IsNullOrEmpty(answer.Summary))
-            {
-                MessageProducer.Publish(new DbWrites {
-                    CreateNotification = new()
-                    {
-                        UserName = post.CreatedBy,
-                        PostId = post.Id,
-                        Type = NotificationType.NewAnswer,
-                        CreatedDate = DateTime.UtcNow,
-                        RefId = answer.RefId!,
-                        Summary = answer.Summary,
-                        RefUserName = answer.CreatedBy,
-                    },
-                });
-            }
-        }
+        await Db.NotifyQuestionAuthorIfRequiredAsync(MessageProducer, answer);
         
         MessageProducer.Publish(new AiServerTasks
         {
@@ -74,28 +49,18 @@ public class AiServerServices(ILogger<AiServerServices> log,
             } 
         });
         
-        MessageProducer.Publish(new SearchTasks { AddPostToIndex = request.PostId });
+        MessageProducer.Publish(new SearchTasks {
+            AddAnswerToIndex = answer.RefId
+        });
     }
     
     public async Task Any(RankAnswerCallback request)
     {
-        if (request.PostId == 0)
-            request.PostId = int.TryParse(Request!.QueryString[nameof(request.PostId)], out var postId)
-                ? postId
-                : throw new ArgumentNullException(nameof(request.PostId));
-        if (string.IsNullOrEmpty(request.UserId))
-            request.UserId = Request!.QueryString[nameof(request.UserId)] ?? throw new ArgumentNullException(nameof(request.UserId));
-
-        if (string.IsNullOrEmpty(request.Grader))
-            request.Grader = Request!.QueryString[nameof(request.Grader)] ?? throw new ArgumentNullException(nameof(request.Grader));
-        
-        var modelUser = appConfig.GetModelUserById(request.UserId);
-        if (modelUser?.UserName == null)
-            throw HttpError.Forbidden("Invalid Model User Id");
+        var answerCreator = await AssertUserNameById(request.UserId);
 
         var graderUser = appConfig.GetModelUser(request.Grader);
         if (graderUser?.UserName == null)
-            throw HttpError.Forbidden("Invalid Model Grader " + request.Model);
+            throw HttpError.BadRequest("Invalid Model Grader: " + request.Model);
 
         var body = request.GetBody()?.Trim();
         if (string.IsNullOrEmpty(body))
@@ -119,20 +84,20 @@ public class AiServerServices(ILogger<AiServerServices> log,
             var meta = await questions.GetMetaAsync(request.PostId);
                 
             meta.GradedBy ??= new();
-            meta.GradedBy[modelUser.UserName] = graderUser.UserName;
+            meta.GradedBy[answerCreator] = graderUser.UserName;
                 
             meta.ModelReasons ??= new();
-            meta.ModelReasons[modelUser.UserName] = reason ?? "";
+            meta.ModelReasons[answerCreator] = reason ?? "";
                 
             meta.ModelVotes ??= new();
-            meta.ModelVotes[modelUser.UserName] = score;
+            meta.ModelVotes[answerCreator] = score;
 
             var statTotals = new StatTotals
             {
-                Id = $"{request.PostId}-{modelUser.UserName}",
+                Id = $"{request.PostId}-{answerCreator}",
                 PostId = request.PostId,
                 StartingUpVotes = score,
-                CreatedBy = modelUser.UserName,
+                CreatedBy = answerCreator,
                 LastUpdated = DateTime.UtcNow,
             };
 
@@ -153,6 +118,65 @@ public class AiServerServices(ILogger<AiServerServices> log,
                 request.PostId, request.Model, request.UserId, body);
         }
     }
+
+    public async Task Any(AnswerCommentCallback request)
+    {
+        var commentCreator = await AssertUserNameById(request.UserId);
+        var postId = request.AnswerId.LeftPart('-').ToInt();
+        var modelUserName = request.AnswerId.RightPart('-');
+
+        var modelUser = appConfig.GetModelUser(modelUserName);
+        if (modelUser?.UserName == null)
+            throw HttpError.BadRequest("Invalid Model: " + modelUserName);
+
+        var metaFile = await questions.GetMetaFileAsync(postId);
+        if (metaFile == null)
+            throw HttpError.BadRequest("Invalid Post: " + postId);
+
+        var metaJson = await metaFile.ReadAllTextAsync();
+        var meta = metaJson.FromJson<Meta>();
+
+        var comments = meta.Comments.GetOrAdd(request.AnswerId, key => new());
+
+        var body = request.Choices?.FirstOrDefault()?.Message?.Content.GenerateModelComment();
+        if (string.IsNullOrEmpty(body))
+        {
+            log.LogError("Invalid AnswerCommentCallback: {AnswerId} for {UserId}: body missing", 
+                request.AnswerId, request.UserId);
+            return;
+        }
+
+        var commentBody = $"@{commentCreator} {body}";
+        var newComment = new Comment
+        {
+            Body = commentBody,
+            Created = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            CreatedBy = modelUser.UserName,
+            AiRef = request.AiRef,
+        };
+        comments.Add(newComment);
+
+        MessageProducer.Publish(new DbWrites
+        {
+            NewComment = new()
+            {
+                RefId = request.AnswerId,
+                Comment = newComment,
+                LastUpdated = DateTime.UtcNow,
+            },
+        });
+
+        await questions.SaveMetaAsync(postId, meta);
+    }
+
+    private async Task<string> AssertUserNameById(string userId)
+    {
+        var userName = appConfig.GetModelUserById(userId)?.UserName
+            ?? await Db.ScalarAsync<string?>(Db.From<ApplicationUser>().Where(x => x.Id == userId).Select(x => x.UserName));
+        if (userName == null)
+            throw HttpError.BadRequest("Invalid User Id: " + userId);
+        return userName;
+    }
 }
 
 public static class AiServerExtensions
@@ -162,6 +186,11 @@ public static class AiServerExtensions
     static readonly Regex CollapseNewLines = new(@"[\r\n]+", RegexOptions.Compiled | RegexOptions.Multiline);
     static readonly Regex CollapseSpaces = new(@"\s+", RegexOptions.Compiled | RegexOptions.Multiline);
 
+    public static string GenerateNotificationTitle(this string title) => title.SubstringWithEllipsis(0, 100);
+
+    public static string GenerateNotificationSummary(this string summary, int startPos=0) => 
+        summary.SubstringWithEllipsis(startPos, 100);
+    
     public static string GenerateSummary(this string body)
     {
         string withoutHtml = StripHtmlRegEx.Replace(body, string.Empty); // naive html stripping
@@ -177,6 +206,18 @@ public static class AiServerExtensions
 
         summary = summary.Length > 200 ? summary.Substring(0, 200) + "..." : summary;
         return summary;
+    }
+
+    public static string GenerateComment(this string body)
+    {
+        // body = body.Replace("\r\n", " ").Replace('\n', ' ');
+        return body;
+    }
+
+    public static string GenerateModelComment(this string body)
+    {
+        // body = body.TrimStart('#').Replace("\r\n", " ").Replace('\n', ' ');
+        return body;
     }
 
     public static string? GetBody(this OpenAiChatResponse request) => request.Choices?.FirstOrDefault()?.Message?.Content;

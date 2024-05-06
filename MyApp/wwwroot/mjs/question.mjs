@@ -1,13 +1,15 @@
 ﻿import { ref, computed, watch, watchEffect, nextTick, onMounted, onUpdated, getCurrentInstance  } from "vue"
 import { $$, $1, on, JsonServiceClient, EventBus, toDate, humanize, leftPart, lastRightPart } from "@servicestack/client"
 import { useClient, useAuth, useUtils } from "@servicestack/vue"
-import { mount, alreadyMounted, forceMount } from "app.mjs"
+import { mount, alreadyMounted, forceMount, modelUser } from "app.mjs"
 import { addCopyButtonToCodeBlocks } from "./header.mjs"
+import { renderMarkdown } from "markdown"
 import {
     UserPostData, PostVote, GetQuestionFile,
     AnswerQuestion, UpdateQuestion, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta,
     DeleteQuestion, DeleteComment, GetUserReputations, CommentVote,
     ShareContent, FlagContent, GetAnswer,
+    WaitForUpdate, GetLastUpdated,
 } from "dtos.mjs"
 
 const client = new JsonServiceClient(globalThis.BaseUrl)
@@ -21,7 +23,9 @@ function highlightAll() {
 
 function getComments(id) {
     if (!meta) return []
-    return meta.comments && meta.comments[id] || []
+    const comments = meta.comments && meta.comments[id] || []
+    comments.forEach(async x => x.bodyHtml = await renderMarkdown(x.body))
+    return comments
 }
 const signInUrl = () => `/Account/Login?ReturnUrl=${location.pathname}`
 
@@ -72,19 +76,19 @@ globalThis.removeComment = async function (el) {
     }
 }
 
-let userPostVotes = {upVoteIds:[], downVoteIds:[]}
-let origPostValues = {upVoteIds:[], downVoteIds:[]}
+let userPostData = {questionsAsked:0, upVoteIds:[], downVoteIds:[]}
+let origUserPostData = {questionsAsked:0, upVoteIds:[], downVoteIds:[]}
 function getValue(postVotes, refId) {
     return (postVotes.upVoteIds.includes(refId) ? 1 : postVotes.downVoteIds.includes(refId) ? -1 : 0)
 }
 function setValue(refId, value) {
-    userPostVotes.upVoteIds = userPostVotes.upVoteIds.filter(x => x !== refId)
-    userPostVotes.downVoteIds = userPostVotes.downVoteIds.filter(x => x !== refId)
+    userPostData.upVoteIds = userPostData.upVoteIds.filter(x => x !== refId)
+    userPostData.downVoteIds = userPostData.downVoteIds.filter(x => x !== refId)
     if (value === 1) {
-        userPostVotes.upVoteIds.push(refId)
+        userPostData.upVoteIds.push(refId)
     }
     if (value === -1) {
-        userPostVotes.downVoteIds.push(refId)
+        userPostData.downVoteIds.push(refId)
     }
     pageBus.publish('userPostData:load')
 }
@@ -92,8 +96,8 @@ function setValue(refId, value) {
 async function updateUserData(postId) {
     const api = await client.api(new UserPostData({ postId }))
     if (api.succeeded) {
-        origPostValues = api.response
-        userPostVotes = Object.assign({}, origPostValues)
+        origUserPostData = api.response
+        userPostData = Object.assign({}, origUserPostData)
         pageBus.publish('userPostData:load')
     }
 }
@@ -116,12 +120,12 @@ async function loadVoting(ctx) {
         const down = el.querySelector('.down')
         const score = el.querySelector('.score')
 
-        const value = getValue(userPostVotes, el.dataset.refid)
+        const value = getValue(userPostData, el.dataset.refid)
         up.classList.toggle('text-green-600',value === 1)
         up.innerHTML = value === 1 ? svgPaths.up.solid : svgPaths.up.empty
         down.classList.toggle('text-green-600',value === -1)
         down.innerHTML = value === -1 ? svgPaths.down.solid : svgPaths.down.empty
-        score.innerHTML = toHumanReadable(parseInt(score.dataset.score) + value - getValue(origPostValues, el.dataset.refid))
+        score.innerHTML = toHumanReadable(parseInt(score.dataset.score) + value - getValue(origUserPostData, el.dataset.refid))
     }
 
     $$('.voting').forEach(el => {
@@ -135,7 +139,7 @@ async function loadVoting(ctx) {
             if (userName === createdBy) 
                 return
 
-            const prevValue = getValue(userPostVotes, refId)
+            const prevValue = getValue(userPostData, refId)
             setValue(refId, value)
             updateVote(el)
 
@@ -158,12 +162,12 @@ async function loadVoting(ctx) {
 
         on(disableSelf(el.querySelector('.up')), {
             click(e) {
-                vote(getValue(userPostVotes, refId) === 1 ? 0 : 1)
+                vote(getValue(userPostData, refId) === 1 ? 0 : 1)
             }
         })
         on(disableSelf(el.querySelector('.down')), {
             click(e) {
-                vote(getValue(userPostVotes, refId) === -1 ? 0 : -1)
+                vote(getValue(userPostData, refId) === -1 ? 0 : -1)
             }
         })
     })
@@ -450,7 +454,9 @@ const Comments = {
                 </div>
             </div>
             <div class="pl-2">
-                <PrimaryButton class="whitespace-nowrap" @click="submit" :disabled="txt.length<15 || loading">Add Comment</PrimaryButton>
+                <PrimaryButton class="whitespace-nowrap" @click="submit" :disabled="txt.length<15 || loading">
+                    {{model ? 'Ask ' + model.userName : 'Add Comment'}}
+                </PrimaryButton>
                 <Loading v-if="loading" class="pt-2 !mb-0" />
                 <div v-else-if="txt.length > 0 && txt.length<15" class="mt-1 text-sm text-gray-400">
                     {{15-txt.length}} characters to go
@@ -459,33 +465,56 @@ const Comments = {
         </div>
         <div>
             <div v-if="comments.length" class="border-t border-gray-200 dark:border-gray-700">
-                <div v-for="comment in comments" :data-createdby="comment.createdBy" :data-created="comment.created" class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
-                    <div class="inline-block mr-1 min-w-[12px]" v-if="comment.upVotes">
-                        <span class="text-red-600 font-semibold">{{comment.upVotes}}</span>
-                    </div>
-                    <div class="inline-block mr-1">
-                        <div class="flex flex-col">
-                            <svg v-if="comment.createdBy !== userName" :class="['w-4 h-4',hasVoted(comment) ? 'text-red-600' : 'cursor-pointer text-gray-400 hover:text-red-600']" @click="voteUp(comment)"  
-                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15"><title>upvote comment</title><path fill="currentColor" d="m7.5 3l7.5 8H0z"/></svg>
-                            <svg class="cursor-pointer w-4 h-4 text-gray-400 hover:text-red-600" @click="flag(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                <title>flag comment</title>
-                                <path fill="currentColor" d="M4 5a1 1 0 0 1 .3-.714a6 6 0 0 1 8.213-.176l.351.328a4 4 0 0 0 5.272 0l.249-.227c.61-.483 1.527-.097 1.61.676L20 5v9a1 1 0 0 1-.3.714a6 6 0 0 1-8.213.176l-.351-.328A4 4 0 0 0 6 14.448V21a1 1 0 0 1-1.993.117L4 21z"/>
-                            </svg>
+                <div v-for="comment in comments" :data-createdby="comment.createdBy" :data-created="comment.created" class="py-2 border-b border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
+                    <div class="absolute -ml-12">   
+                        <div class="inline-block mr-1 min-w-[12px]" v-if="comment.upVotes">
+                            <span class="text-red-600 font-semibold">{{comment.upVotes}}</span>
                         </div>
+                        <div class="inline-block mr-1">
+                            <div class="flex flex-col">
+                                <svg v-if="comment.createdBy !== userName" :class="['w-4 h-4',hasVoted(comment) ? 'text-red-600' : 'cursor-pointer text-gray-400 hover:text-red-600']" @click="voteUp(comment)"  
+                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15"><title>upvote comment</title><path fill="currentColor" d="m7.5 3l7.5 8H0z"/></svg>
+                                <svg class="cursor-pointer w-4 h-4 text-gray-400 hover:text-red-600" @click="flag(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <title>flag comment</title>
+                                    <path fill="currentColor" d="M4 5a1 1 0 0 1 .3-.714a6 6 0 0 1 8.213-.176l.351.328a4 4 0 0 0 5.272 0l.249-.227c.61-.483 1.527-.097 1.61.676L20 5v9a1 1 0 0 1-.3.714a6 6 0 0 1-8.213.176l-.351-.328A4 4 0 0 0 6 14.448V21a1 1 0 0 1-1.993.117L4 21z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <svg v-if="isModerator || comment.createdBy === userName" class="mr-1 align-sub text-gray-400 hover:text-gray-500 w-4 h-4 inline-block cursor-pointer" @click="removeComment(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                            <title>Delete comment</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g>
+                        </svg>
                     </div>
-                    <svg v-if="isModerator || comment.createdBy === userName" class="mr-1 align-sub text-gray-400 hover:text-gray-500 w-4 h-4 inline-block cursor-pointer" @click="removeComment(comment)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete comment</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
-                    <span v-html="comment.body"></span>
-                    <span class="inline-block">
-                        <span class="px-1" aria-hidden="true">&middot;</span>
+                    <div class="inline-block">
                         <span class="text-indigo-700">{{comment.createdBy}}</span>
-                        <span class="ml-1 text-gray-400"> {{formatDate(comment.created)}}</span>
-                    </span>
+                        <span class="px-1" aria-hidden="true">&middot;</span>
+                        <span class="text-gray-400"> {{formatDate(comment.created)}}</span>
+                    </div>
+                    <div class="prose" v-html="comment.bodyHtml ?? comment.body"></div>
                 </div>
             </div>
-            <div v-if="!editing" @click="startEditing" class="pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Add a comment">add comment</div>
+            <div v-if="!editing" class="pt-2 text-sm cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500">
+                <div v-if="model" class="text-base" :title="'ask ' + model.userName">
+                    <a v-if="remainingToAskModel() > 0" href="/questions/ask">
+                        <svg class="w-5 h-5 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26"><path fill="currentColor" d="M10 0C4.547 0 0 3.75 0 8.5c0 2.43 1.33 4.548 3.219 6.094a4.778 4.778 0 0 1-.969 2.25a14.4 14.4 0 0 1-.656.781a2.507 2.507 0 0 0-.313.406c-.057.093-.146.197-.187.407c-.042.209.015.553.187.812l.125.219l.25.125c.875.437 1.82.36 2.688.125c.867-.236 1.701-.64 2.5-1.063c.798-.422 1.557-.864 2.156-1.187c.084-.045.138-.056.219-.094C10.796 19.543 13.684 21 16.906 21c.031.004.06 0 .094 0c1.3 0 5.5 4.294 8 2.594c.1-.399-2.198-1.4-2.313-4.375c1.957-1.383 3.22-3.44 3.22-5.719c0-3.372-2.676-6.158-6.25-7.156C18.526 2.664 14.594 0 10 0m0 2c4.547 0 8 3.05 8 6.5S14.547 15 10 15c-.812 0-1.278.332-1.938.688c-.66.355-1.417.796-2.156 1.187c-.64.338-1.25.598-1.812.781c.547-.79 1.118-1.829 1.218-3.281l.032-.563l-.469-.343C3.093 12.22 2 10.423 2 8.5C2 5.05 5.453 2 10 2"/></svg>
+                        <span>ask {{model.userName}}</span>
+                        <svg class="w-5 h-5 inline-block text-gray-600 ml-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>unlock</title><path fill="currentColor" d="M12 4c-1.648 0-3 1.352-3 3v3h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1V7c0-2.752 2.248-5 5-5s5 2.248 5 5a1 1 0 1 1-2 0c0-1.648-1.352-3-3-3m-6 8v8h12v-8z"/></svg>
+                        <span class="text-gray-600 ml-1">after {{remainingToAskModel()}} more {{remainingToAskModel() === 1 ? 'question' : 'questions' }}</span>
+                    </a>
+                    <div v-else class="flex items-center" @click="startEditing" :title="'ask ' + model.userName + ' for more info'">
+                        <svg class="w-5 h-5 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26"><path fill="currentColor" d="M10 0C4.547 0 0 3.75 0 8.5c0 2.43 1.33 4.548 3.219 6.094a4.778 4.778 0 0 1-.969 2.25a14.4 14.4 0 0 1-.656.781a2.507 2.507 0 0 0-.313.406c-.057.093-.146.197-.187.407c-.042.209.015.553.187.812l.125.219l.25.125c.875.437 1.82.36 2.688.125c.867-.236 1.701-.64 2.5-1.063c.798-.422 1.557-.864 2.156-1.187c.084-.045.138-.056.219-.094C10.796 19.543 13.684 21 16.906 21c.031.004.06 0 .094 0c1.3 0 5.5 4.294 8 2.594c.1-.399-2.198-1.4-2.313-4.375c1.957-1.383 3.22-3.44 3.22-5.719c0-3.372-2.676-6.158-6.25-7.156C18.526 2.664 14.594 0 10 0m0 2c4.547 0 8 3.05 8 6.5S14.547 15 10 15c-.812 0-1.278.332-1.938.688c-.66.355-1.417.796-2.156 1.187c-.64.338-1.25.598-1.812.781c.547-.79 1.118-1.829 1.218-3.281l.032-.563l-.469-.343C3.093 12.22 2 10.423 2 8.5C2 5.05 5.453 2 10 2"/></svg>
+                        <span>ask {{model.userName}}</span>
+                        <div v-if="modelLoading">
+                            <Loading class="ml-4 !mb-0 inline-block text-base">Waiting for {{model.userName}} to respond...</Loading>
+                        </div>
+                    </div>
+                </div>
+                <div v-else @click="startEditing">
+                    add comment
+                </div>
+            </div>
         </div>
     `,
-    props:['id'],
+    props:['id','createdBy'],
     setup(props) {
         const { user, hasRole } = useAuth()
         const userName = user.value?.userName
@@ -499,6 +528,8 @@ const Comments = {
         const input = ref()
         const instance = getCurrentInstance()
         const postId = parseInt(leftPart(props.id, '-'))
+        const model = computed(() => modelUser(props.createdBy))
+        const modelLoading = ref(false)
         
         pageBus.subscribe('meta:load', () => {
             console.log(`Comments: meta:load`)
@@ -511,9 +542,15 @@ const Comments = {
         })
 
         function hasVoted(comment) { 
-            const to = userPostVotes.upVoteIds.includes(`${props.id}-${comment.created}`)
+            const to = userPostData.upVoteIds.includes(`${props.id}-${comment.created}`)
             console.log('hasVoted', to)
             return to
+        }
+        
+        function remainingToAskModel() {
+            const userLevel = userPostData.questionsAsked || 0
+            const modelLevel = modelUser(props.createdBy).level || 0
+            return modelLevel - userLevel
         }
         
         function keyDown(e) {
@@ -531,12 +568,23 @@ const Comments = {
         }
         
         async function submit() {
-            const api = await client.api(new CreateComment({ id: `${props.id}`, body: txt.value }))
+            const id = `${props.id}`
+            const api = await client.api(new CreateComment({ id:id, body: txt.value }))
             if (api.succeeded) {
                 txt.value = ''
                 editing.value = false
                 comments.value = api.response.comments || []
                 close()
+                
+                if (api.response.aiRef) {
+                    modelLoading.value = true
+                    const apiWait = await client.api(new WaitForUpdate({
+                        id:id,    
+                        updatedAfter: api.response.lastUpdated
+                    }))
+                    await loadMeta(leftPart(id, '-'))
+                    modelLoading.value = false
+                }
             } else {
                 error.value = api.errorMessage
             }
@@ -578,8 +626,9 @@ const Comments = {
             pageBus.publish('showReportDialog', `${props.id}-${comment.created}`)
         }
         
-        return { editing, userName, isModerator, txt, input, comments, keyDown, startEditing, 
-                formatDate, loading, error, submit, close, removeComment, voteUp, flag, hasVoted }
+        return { editing, userName, isModerator, model, txt, input, comments, keyDown, startEditing,
+                formatDate, loading, error, submit, close, removeComment, voteUp, flag, hasVoted,
+                modelLoading, remainingToAskModel }
     }
 }
 
@@ -596,10 +645,10 @@ const ContentFeatures = {
             <span @click="flag" class="flag-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Flag this Question">flag</span>
         </div>
         <div class="mt-4">
-            <Comments :id="id" />
+            <Comments :id="id" :createdBy="createdBy" />
         </div>
     `,
-    props:['bus','id'],
+    props:['bus','id','createdBy'],
     setup(props) {
         const { user, hasRole } = useAuth()
         const editing = ref(false)
@@ -718,7 +767,7 @@ const EditQuestion = {
                 </div>
             </div>
         </div>
-        <ContentFeatures :bus="bus" :id="id" />
+        <ContentFeatures :bus="bus" :id="id" :createdBy="createdBy" />
     </div>
     `,
     props:['bus','id','createdBy','previewHtml'],
@@ -792,6 +841,14 @@ const EditQuestion = {
                     debounceApi(request.value.body)
                 }
             })
+            
+            const postJson = $1(`#Post`)?.innerHTML
+            if (postJson) {
+                const post = JSON.parse(postJson)
+                request.value.title = post.title
+                request.value.body = post.body
+                request.value.tags = post.tags
+            }
         })
 
         function close() {
@@ -914,7 +971,7 @@ const EditAnswer = {
                 </div>
             </div>
         </div>
-        <ContentFeatures :bus="bus" :id="id" />
+        <ContentFeatures :bus="bus" :id="id" :createdBy="createdBy" />
     </div>
     `,
     props:['bus','id','createdBy','previewHtml'],
@@ -1062,6 +1119,11 @@ async function loadUserReputations(userName) {
     }
 }
 
+async function loadMeta(postId) {
+    meta = await client.get(new GetMeta({ id:`${postId}` }))
+    pageBus.publish('meta:load')
+}
+
 export default  {
     async load() {
         const { user, hasRole } = useAuth()
@@ -1075,11 +1137,7 @@ export default  {
         }
         
         if (meta == null) {
-            client.get(new GetMeta({ id:`${postId}` }))
-                .then(r => {
-                    meta = r
-                    pageBus.publish('meta:load')
-                })
+            loadMeta(postId)
         }
         
         if (!isNaN(postId)) {

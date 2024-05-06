@@ -3,10 +3,12 @@ using MyApp.Data;
 using MyApp.ServiceInterface.Renderers;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserManager<ApplicationUser> userManager)
+public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserManager<ApplicationUser> userManager,
+    QuestionsProvider questions)
     : Service
 {
     private static readonly List<string> initUserNames = new()
@@ -79,5 +81,56 @@ public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserM
         }
         
         return new AdminResetCommonPasswordResponse { UpdatedUsers = updatedUsers };
+    }
+    
+    public async Task<object?> Any(ResaveQuestionFromFile request)
+    {
+        var post = await questions.GetQuestionFileAsPostAsync(request.Id);
+        if (post == null)
+            throw HttpError.NotFound("Post not found");
+
+        var refId = $"{request.Id}";
+        await Db.SaveAsync(post);
+        var statTotal = await Db.SingleAsync(Db.From<StatTotals>().Where(x => x.Id == refId));
+        if (statTotal != null)
+        {
+            await Db.InsertAsync(new StatTotals
+            {
+                Id = refId,
+                PostId = post.Id,
+                ViewCount = 0,
+                FavoriteCount = 0,
+                UpVotes = 0,
+                DownVotes = 0,
+                StartingUpVotes = 0,
+                CreatedBy = post.CreatedBy,
+            });
+        }
+        appConfig.ResetInitialPostId(Db);
+        return post;
+    }
+
+    public async Task<object> Any(RankAnswer request)
+    {
+        var answer = await questions.GetAnswerAsPostAsync(request.Id);
+        if (answer == null)
+            throw HttpError.NotFound("Answer not found");
+        
+        var answerCreator = !string.IsNullOrEmpty(answer.CreatedBy)
+            ? await Db.ScalarAsync<string>(Db.From<ApplicationUser>().Where(x => x.UserName == answer.CreatedBy).Select(x => x.Id))
+            : null;
+        
+        if (answerCreator == null)
+            throw HttpError.NotFound($"Answer Creator '{answer.CreatedBy}' not found");
+        
+        MessageProducer.Publish(new AiServerTasks
+        {
+            CreateRankAnswerTask = new CreateRankAnswerTask {
+                AnswerId = answer.RefId!,
+                UserId = answerCreator,
+            } 
+        });
+
+        return answer;
     }
 }

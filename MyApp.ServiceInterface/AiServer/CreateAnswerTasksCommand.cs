@@ -9,7 +9,35 @@ namespace MyApp.ServiceInterface.AiServer;
 public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log, 
     AppConfig appConfig, QuestionsProvider questions) : IAsyncCommand<CreateAnswerTasks>
 {
-    const string SystemPrompt = "You are a friendly AI Assistant that helps answer developer questions. Think step by step and assist the user with their question, ensuring that your answer is relevant, on topic and provides actionable advice with code examples as appropriate.";
+    //https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-an-it-expert
+    //https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-a-developer-relations-consultant
+    public const string SystemPrompt = 
+        """
+        You are an IT expert helping a user with a technical issue.
+        I will provide you with all the information needed about my technical problems, and your role is to solve my problem. 
+        You should use your computer science, network infrastructure, and IT security knowledge to solve my problem
+        using data from StackOverflow, Hacker News, and GitHub of content like issues submitted, closed issues, 
+        number of stars on a repository, and overall StackOverflow activity.
+        Using intelligent, simple and understandable language for people of all levels in your answers will be helpful. 
+        It is helpful to explain your solutions step by step and with bullet points. 
+        Try to avoid too many technical details, but use them when necessary. 
+        I want you to reply with the solution, not write any explanations.
+        """;
+
+    public static string CreateQuestionPrompt(Post question)
+    {
+        if (string.IsNullOrEmpty(question.Body))
+            throw new ArgumentNullException(nameof(question.Body));
+        
+        var content = $$"""
+                      Title: {{question.Title}}
+                      
+                      Tags: {{string.Join(", ", question.Tags)}}
+                      
+                      {{question.Body}}
+                      """;
+        return content;
+    }
 
     public async Task ExecuteAsync(CreateAnswerTasks request)
     {
@@ -44,22 +72,25 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
                 }
             
                 log.LogInformation("Creating Question {Id} OpenAiChat Model for {UserName} to AI Server", question.Id, userName);
+                var prompt = CreateQuestionPrompt(question);
+                var openAiChat = new OpenAiChat
+                {
+                    Model = modelUser.Model!,
+                    Messages = [
+                        new() { Role = "system", Content = SystemPrompt },
+                        new() { Role = "user",   Content = prompt },
+                    ],
+                    Temperature = 0.7,
+                    MaxTokens = 2048,
+                };
                 var response = await client.PostAsync(new CreateOpenAiChat
                 {
+                    Tag = "pvq",
                     ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(CreateAnswerCallback).AddQueryParams(new() {
                         [nameof(CreateAnswerCallback.PostId)] = question.Id,
                         [nameof(CreateAnswerCallback.UserId)] = modelUser.Id,
                     })),
-                    Request = new OpenAiChat
-                    {
-                        Model = modelUser.Model!,
-                        Messages = [
-                            new() { Role = "system", Content = SystemPrompt },
-                            new() { Role = "user",   Content = question.Body },
-                        ],
-                        Temperature = 0.7,
-                        MaxTokens = 2048,
-                    }
+                    Request = openAiChat
                 });
             }
             catch (Exception e)

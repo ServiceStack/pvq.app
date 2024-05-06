@@ -8,7 +8,9 @@
             @foreach (var comment in Comments)
             {
                 <div id=@($"{RefId}-{comment.Created}") data-id=@RefId data-created=@comment.Created data-createdby=@comment.CreatedBy class="py-2 border-b border-gray-100 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-300 prose prose-comment">
-                    @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
+                    <span class="preview prose">
+                        @BlazorHtml.Raw(Markdown.GenerateCommentHtml(comment.Body))
+                    </span>
                     <span class="inline-block">
                         <span class="px-1" aria-hidden="true">&middot;</span>
                         <span class="text-indigo-700">@comment.CreatedBy</span>

@@ -77,7 +77,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
                             RefId = $"{post.Id}",
                             PostId = post.Id,
                             CreatedDate = post.CreationDate,
-                            Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
+                            Summary = cleanBody.GenerateNotificationSummary(startPos),
                             RefUserName = createdBy,
                         });
                         appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);

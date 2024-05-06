@@ -71,7 +71,7 @@
                     }
 
                     <ul role="list" class=@CssUtils.ClassNames("border-2 py-2 px-4 rounded", qualified ? "border-green-600" : "border-gray-200")>
-                        @foreach (var model in AppConfig.ModelsForQuestions.Where(x => x.Questions == questionLevel))
+                        @foreach (var model in AppConfig.GetActiveModelsForQuestionLevel(questionLevel))
                         {
                             var assistant = AppConfig.GetModelUser(model.Model)!;
                             <li class="mb-2">

@@ -1,15 +1,18 @@
 ﻿using System.Net;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceInterface.App;
 using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.IO;
 using ServiceStack.OrmLite;
+using ServiceStack.Text;
 
 namespace MyApp.ServiceInterface;
 
-public class QuestionServices(AppConfig appConfig, 
+public class QuestionServices(ILogger<QuestionServices> log,
+    AppConfig appConfig, 
     QuestionsProvider questions, 
     RendererCache rendererCache, 
     WorkerAnswerNotifier answerNotifier,
@@ -75,7 +78,7 @@ public class QuestionServices(AppConfig appConfig,
         var title = request.Title.Trim();
         var body = request.Body.Trim();
         var slug = request.Title.GenerateSlug(200);
-        var summary = request.Body.StripHtml().SubstringWithEllipsis(0, 200);
+        var summary = request.Body.GenerateSummary();
 
         var existingPost = await Db.SingleAsync(Db.From<Post>().Where(x => x.Title == title));
         if (existingPost != null)
@@ -155,26 +158,55 @@ public class QuestionServices(AppConfig appConfig,
     {
         var userName = GetUserName();
         var now = DateTime.UtcNow;
-        var post = new Post
+        var postId = request.PostId;
+        var answerId = $"{postId}-{userName}";
+        var answer = new Post
         {
-            ParentId = request.PostId,
-            Summary = request.Body.StripHtml().SubstringWithEllipsis(0,200),
+            ParentId = postId,
+            Summary = request.Body.GenerateSummary(),
             CreationDate = now,
             CreatedBy = userName,
             LastActivityDate = now,
             Body = request.Body,
-            RefId = request.RefId, // Optional External Ref Id, not '{PostId}-{UserName}'
+            RefUrn = request.RefUrn,
+            RefId = answerId
         };
         
         MessageProducer.Publish(new DbWrites {
-            CreateAnswer = post,
-            AnswerAddedToPost = new() { Id = request.PostId},
+            CreateAnswer = answer,
+            AnswerAddedToPost = new() { Id = postId },
         });
         
-        await questions.SaveHumanAnswerAsync(post);
-        rendererCache.DeleteCachedQuestionPostHtml(post.Id);
+        rendererCache.DeleteCachedQuestionPostHtml(postId);
+
+        await questions.SaveAnswerAsync(answer);
+
+        MessageProducer.Publish(new DbWrites
+        {
+            SaveStartingUpVotes = new()
+            {
+                Id = answerId,
+                PostId = postId,
+                StartingUpVotes = 0,
+                CreatedBy = userName,
+                LastUpdated = DateTime.UtcNow,
+            }
+        });
         
-        answerNotifier.NotifyNewAnswer(request.PostId, post.CreatedBy);
+        answerNotifier.NotifyNewAnswer(postId, answer.CreatedBy);
+
+        var userId = Request.GetClaimsPrincipal().GetUserId();
+        MessageProducer.Publish(new AiServerTasks
+        {
+            CreateRankAnswerTask = new CreateRankAnswerTask {
+                AnswerId = answerId,
+                UserId = userId!,
+            } 
+        });
+        
+        MessageProducer.Publish(new SearchTasks {
+            AddAnswerToIndex = answerId
+        });
 
         return new AnswerQuestionResponse();
     }
@@ -203,7 +235,7 @@ public class QuestionServices(AppConfig appConfig,
         question.Title = request.Title;
         question.Tags = ValidateQuestionTags(request.Tags);
         question.Slug = request.Title.GenerateSlug(200);
-        question.Summary = request.Body.StripHtml().SubstringWithEllipsis(0, 200);
+        question.Summary = request.Body.GenerateSummary();
         question.Body = request.Body;
         question.ModifiedBy = userName;
         question.LastActivityDate = DateTime.UtcNow;
@@ -222,10 +254,10 @@ public class QuestionServices(AppConfig appConfig,
     }
 
     /* /100/000
-     *   001.a.model.json <OpenAI>
+     *   001.h.model.json <OpenAI>
      * Edit 1:
      *   001.h.model.json <Post>
-     *   edit.a.100000001-model_20240301-1200.json // original model answer, Modified Date <OpenAI>
+     *   edit.h.100000001-model_20240301-1200.json // original model answer, Modified Date <OpenAI>
      */
     public async Task<object> Any(UpdateAnswer request)
     {
@@ -314,130 +346,100 @@ public class QuestionServices(AppConfig appConfig,
         return new HttpResult(body, MimeTypes.PlainText);
     }
 
-    /// <summary>
-    /// DEBUG
-    /// </summary>
-    /// <param name="request"></param>
-    /// <returns></returns>
-    public async Task<object> Any(CreateRankingPostJob request)
-    {
-        MessageProducer.Publish(new DbWrites
-        {
-            CreatePostJobs = new()
-            {
-                PostJobs = [
-                    new PostJob
-                    {
-                        PostId = request.PostId,
-                        Model = "rank",
-                        Title = $"rank-{request.PostId}",
-                        CreatedDate = DateTime.UtcNow,
-                        CreatedBy = nameof(DbWrites),
-                    }
-                ]
-            }
-        });
-        return new EmptyResponse();
-    }
-
-    public async Task<object> Any(CreateWorkerAnswer request)
-    {
-        var json = request.Json;
-        if (string.IsNullOrEmpty(json))
-        {
-            var file = base.Request!.Files.FirstOrDefault();
-            if (file != null)
-            {
-                using var reader = new StreamReader(file.InputStream);
-                json = await reader.ReadToEndAsync();
-            }
-        }
-
-        json = json.Trim();
-        if (string.IsNullOrEmpty(json))
-            throw new ArgumentException("Json is required", nameof(request.Json));
-        if (!json.StartsWith('{'))
-            throw new ArgumentException("Invalid Json", nameof(request.Json));
-        
-        rendererCache.DeleteCachedQuestionPostHtml(request.PostId);
-
-        if (request.PostJobId != null)
-        {
-            MessageProducer.Publish(new DbWrites {
-                AnswerAddedToPost = new() { Id = request.PostId },
-                CompletePostJobs = new() { Ids = [request.PostJobId.Value] }
-            });
-        }
-        
-        await questions.SaveModelAnswerAsync(request.PostId, request.Model, json);
-        
-        answerNotifier.NotifyNewAnswer(request.PostId, request.Model);
-
-        // Only add notifications for answers older than 1hr
-        var post = await Db.SingleByIdAsync<Post>(request.PostId);
-        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
-        {
-            var userName = appConfig.GetUserName(request.Model);
-            var body = questions.GetModelAnswerBody(json);
-            var cleanBody = body.StripHtml()?.Trim();
-            if (!string.IsNullOrEmpty(cleanBody))
-            {
-                MessageProducer.Publish(new DbWrites {
-                    CreateNotification = new()
-                    {
-                        UserName = post.CreatedBy,
-                        PostId = post.Id,
-                        Type = NotificationType.NewAnswer,
-                        CreatedDate = DateTime.UtcNow,
-                        RefId = $"{post.Id}-{userName}",
-                        Summary = cleanBody.SubstringWithEllipsis(0,100),
-                        RefUserName = userName,
-                    },
-                });
-            }
-        }
-        
-        return new IdResponse { Id = $"{request.PostId}" };
-    }
-
-    public async Task<object> Any(RankAnswers request)
-    {
-        return new IdResponse { Id = $"{request.PostId}" };
-    }
-
     public async Task<object> Any(CreateComment request)
     {
         var question = await AssertValidQuestion(request.Id);
         if (question.LockedDate != null)
             throw HttpError.Conflict($"{question.GetPostType()} is locked");
 
+        var createdBy = GetUserName();
+
+        // If the comment is for a model answer, have the model respond to the comment
+        var answerCreator = request.Id.Contains('-')
+            ? request.Id.RightPart('-')
+            : null;
+        var modelCreator = answerCreator != null 
+            ? appConfig.GetModelUser(answerCreator) 
+            : null;
+
+        if (modelCreator?.UserName != null)
+        {
+            var canUseModel = appConfig.CanUseModel(createdBy, modelCreator.UserName);
+            if (!canUseModel)
+            {
+                var userCount = appConfig.GetQuestionCount(createdBy);
+                log.LogWarning("User {UserName} ({UserCount}) attempted to use model {ModelUserName} ({ModelCount})", 
+                    createdBy, userCount, modelCreator.UserName, appConfig.GetModelLevel(modelCreator.UserName));
+                throw HttpError.Forbidden("You have not met the requirements to access this model");
+            }
+        }
+
         var postId = question.Id;
         var meta = await questions.GetMetaAsync(postId);
         
         meta.Comments ??= new();
         var comments = meta.Comments.GetOrAdd(request.Id, key => new());
-        var body = request.Body.Replace("\r\n", " ").Replace('\n', ' ');
+        var body = request.Body.GenerateComment();
+        
         var newComment = new Comment
         {
             Body = body,
             Created = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            CreatedBy = GetUserName(),
+            CreatedBy = createdBy,
         };
         comments.Add(newComment);
-        
+
+        var lastUpdated = DateTime.UtcNow;
         MessageProducer.Publish(new DbWrites
         {
             NewComment = new()
             {
                 RefId = request.Id,
                 Comment = newComment,
+                LastUpdated = lastUpdated,
             },
         });
 
         await questions.SaveMetaAsync(postId, meta);
+
+        string? aiRef = null;
+        if (modelCreator?.UserName != null)
+        {
+            var answer = await questions.GetAnswerAsPostAsync(request.Id);
+            if (answer != null)
+            {
+                var mention = $"@{createdBy}";
+                var userConversation = comments
+                    .Where(x => x.CreatedBy == createdBy || x.Body.Contains(mention))
+                    .ToList();
+
+                aiRef = Guid.NewGuid().ToString("N");
+                var createdById = GetUserId();
+                var model = modelCreator.Model ?? throw new ArgumentNullException(nameof(modelCreator.Model));
+                MessageProducer.Publish(new AiServerTasks
+                {
+                    CreateAnswerCommentTask = new()
+                    {
+                        AiRef = aiRef, 
+                        Model = model,
+                        Question = question,
+                        Answer = answer,
+                        UserName = newComment.CreatedBy,
+                        UserId = createdById,
+                        Comments = userConversation,
+                    }
+                });
+            }
+            else
+            {
+                log.LogError("Answer {Id} not found", request.Id);
+            }
+        }
         
         return new CommentsResponse
         {
+            AiRef = aiRef,
+            LastUpdated = lastUpdated.ToUnixTimeMs(),
             Comments = comments
         };
     }
@@ -447,7 +449,7 @@ public class QuestionServices(AppConfig appConfig,
         var postId = refId.LeftPart('-').ToInt();
         var postType = refId.IndexOf('-') >= 0 ? "Answer" : "Question";
 
-        var question = await Db.SingleByIdAsync<Post>(postId);
+        var question = await questions.GetQuestionFileAsPostAsync(postId);
         if (question == null)
             throw HttpError.NotFound($"{postType} {postId} not found");
 
@@ -506,8 +508,15 @@ public class QuestionServices(AppConfig appConfig,
     private string GetUserName()
     {
         var userName = Request.GetClaimsPrincipal().GetUserName()
-                       ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
+            ?? throw new ArgumentNullException(nameof(ApplicationUser.UserName));
         return userName;
+    }
+
+    private string GetUserId()
+    {
+        var userId = Request.GetClaimsPrincipal().GetUserId()
+            ?? throw new ArgumentNullException(nameof(ApplicationUser.Id));
+        return userId;
     }
 
     public async Task<object> Any(ImportQuestion request)
@@ -520,45 +529,43 @@ public class QuestionServices(AppConfig appConfig,
                 ?? throw new Exception("Import failed")
         };
     }
+
+    public async Task<object> Any(GetLastUpdated request)
+    {
+        if (request.Id == null && request.PostId == null)
+            throw new ArgumentNullException(nameof(request.Id));
+        
+        var lastUpdated = request.PostId != null
+            ? await Db.ScalarAsync<DateTime?>(Db.From<StatTotals>().Where(x => x.PostId == request.PostId)
+                .Select(x => Sql.Max(x.LastUpdated)))
+            : null;
+
+        if (lastUpdated != null)
+            return new GetLastUpdatedResponse { Result = lastUpdated.Value.ToUnixTimeMs() };
+        
+        if (request.Id != null)
+            return new GetLastUpdatedResponse { Result = appConfig.GetLastUpdated(Db, request.Id) };
+
+        return new GetLastUpdatedResponse {
+            Result = DateTimeExtensions.UnixEpoch
+        };
+    }
+
+    public async Task<object> Any(WaitForUpdate request)
+    {
+        var afterDate = request.UpdatedAfter ?? DateTimeExtensions.UnixEpoch;
+        var lastUpdated = appConfig.GetLastUpdated(Db, request.Id);
+
+        var startedAt = DateTime.UtcNow;
+        while (DateTime.UtcNow - startedAt < TimeSpan.FromSeconds(120))
+        {
+            lastUpdated = appConfig.GetLastUpdated(Db, request.Id);
+            if (lastUpdated > afterDate)
+                return new GetLastUpdatedResponse { Result = lastUpdated };
+            await Task.Delay(500);
+        }
+        
+        return new GetLastUpdatedResponse { Result = lastUpdated };
+    }
 }
 
-
-/// <summary>
-/// DEBUG
-/// </summary>
-[ValidateIsAuthenticated]
-public class CreateRankingPostJob : IReturn<EmptyResponse>
-{
-    public int PostId { get; set; }
-}
-
-[ValidateHasRole(Roles.Moderator)]
-public class GetAnswerFile : IGet, IReturn<string>
-{
-    /// <summary>
-    /// Format is {PostId}-{UserName}
-    /// </summary>
-    public string Id { get; set; }
-}
-public class GetAllAnswerModelsResponse
-{
-    public List<string> Results { get; set; }
-}
-
-public class GetAnswer : IGet, IReturn<GetAnswerResponse>
-{
-    /// <summary>
-    /// Format is {PostId}-{UserName}
-    /// </summary>
-    public string Id { get; set; }
-}
-public class GetAnswerResponse
-{
-    public Post Result { get; set; }
-}
-
-[ValidateIsAuthenticated]
-public class GetAllAnswerModels : IReturn<GetAllAnswerModelsResponse>, IGet
-{
-    public int Id { get; set; }
-}

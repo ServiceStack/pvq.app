@@ -1,6 +1,8 @@
 ﻿using System.Data;
+using MyApp.ServiceInterface;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Messaging;
 using ServiceStack.OrmLite;
 
 namespace MyApp.Data;
@@ -63,7 +65,7 @@ public static class DbExtensions
     {
         Id = x.RefId.LeftPart('-').ToInt(),
         PostTypeId = x.RefId.Contains('-') ? 2 : 1,
-        Summary = x.Body.StripHtml().SubstringWithEllipsis(0, 200),
+        Summary = x.Body.GenerateSummary(),
         CreationDate = x.ModifiedDate,
         LastEditDate = x.ModifiedDate,
     };
@@ -101,4 +103,29 @@ public static class DbExtensions
 
     public static async Task<bool> IsWatchingTagAsync(this IDbConnection db, string userName, string tag) => 
         await db.ExistsAsync(db.From<WatchTag>().Where(x => x.UserName == userName && x.Tag == tag));
+
+    public static async Task NotifyQuestionAuthorIfRequiredAsync(this IDbConnection db, IMessageProducer mq, Post answer)
+    {
+        // Only add notifications for answers older than 1hr
+        var post = await db.SingleByIdAsync<Post>(answer.ParentId);
+        if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
+        {
+            if (!string.IsNullOrEmpty(answer.Summary))
+            {
+                mq.Publish(new DbWrites {
+                    CreateNotification = new()
+                    {
+                        UserName = post.CreatedBy,
+                        PostId = post.Id,
+                        Type = NotificationType.NewAnswer,
+                        CreatedDate = DateTime.UtcNow,
+                        RefId = answer.RefId!,
+                        Summary = answer.Summary,
+                        RefUserName = answer.CreatedBy,
+                    },
+                });
+            }
+        }
+    }
+    
 }

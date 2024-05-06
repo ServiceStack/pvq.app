@@ -55,6 +55,7 @@ public class NewComment
     // Post or AnswerId
     public string RefId { get; set; }
     public Comment Comment { get; set; }
+    public DateTime LastUpdated { get; set; }
 }
 
 public class DeletePost
@@ -102,10 +103,6 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     
     [Command<DeletePostCommand>]
     public DeletePost? DeletePost { get; set; }
-    
-    [Obsolete("Replaced with AI Server")]
-    [Command<CreatePostJobsCommand>]
-    public CreatePostJobs? CreatePostJobs { get; set; }
     
     [Command<StartJobCommand>]
     public StartJob? StartJob { get; set; }
@@ -162,7 +159,10 @@ public class AiServerTasks
     public CreateAnswerTasks? CreateAnswerTasks { get; set; } 
 
     [Command<CreateRankAnswerTaskCommand>]
-    public CreateRankAnswerTask? CreateRankAnswerTask { get; set; } 
+    public CreateRankAnswerTask? CreateRankAnswerTask { get; set; }
+    
+    [Command<CreateAnswerCommentTaskCommand>]
+    public CreateAnswerCommentTask? CreateAnswerCommentTask { get; set; }
 }
 
 public class RenderHome
@@ -191,5 +191,6 @@ public class RenderComponent : IReturnVoid
 public class SearchTasks
 {
     public int? AddPostToIndex { get; set; }
+    public string? AddAnswerToIndex { get; set; }
     public int? DeletePost { get; set; }
 }

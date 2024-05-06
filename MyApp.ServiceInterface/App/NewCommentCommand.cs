@@ -34,11 +34,18 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCo
                     RefId = commentRefId,
                     PostId = postId,
                     CreatedDate = createdDate,
-                    Summary = cleanBody.SubstringWithEllipsis(0, 100),
+                    Summary = cleanBody.GenerateNotificationSummary(),
                     RefUserName = comment.CreatedBy,
                 });
                 appConfig.IncrUnreadNotificationsFor(createdBy);
             }
+
+            var lastUpdated = request.LastUpdated;
+            appConfig.SetLastUpdated(request.RefId, lastUpdated);
+            await db.UpdateOnlyAsync(() => new StatTotals
+            {
+                LastUpdated = lastUpdated,
+            }, where: x => x.Id == request.RefId);
 
             var userNameMentions = cleanBody.FindUserNameMentions()
                 .Where(x => x != createdBy && x != comment.CreatedBy && appConfig.IsHuman(x))
@@ -63,7 +70,7 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCo
                             RefId = commentRefId,
                             PostId = postId,
                             CreatedDate = createdDate,
-                            Summary = cleanBody.SubstringWithEllipsis(startPos, 100),
+                            Summary = cleanBody.GenerateNotificationSummary(startPos),
                             RefUserName = comment.CreatedBy,
                         });
                         appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);

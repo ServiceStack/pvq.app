@@ -50,7 +50,7 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
             : files;
     }
     
-    public IEnumerable<IVirtualFile> GetAnswerFiles() => Files.Where(x => x.Name.Contains(".a.") || x.Name.Contains(".h."));
+    public IEnumerable<IVirtualFile> GetAnswerFiles() => Files.Where(x => x.Name.Contains(".h."));
 
     public int GetAnswerFilesCount() => GetAnswerFiles().Count();
 
@@ -88,7 +88,7 @@ public class QuestionFiles(int id, string dir1, string dir2, string fileId, List
         await Task.WhenAll(tasks);
     }
 
-    public string GetAnswerUserName(string answerFileName) => answerFileName[(FileId + ".a.").Length..].LastLeftPart('.');
+    public string GetAnswerUserName(string answerFileName) => answerFileName[(FileId + ".h.").Length..].LastLeftPart('.');
 
     public string GetAnswerId(string answerFileName) => Id + "-" + GetAnswerUserName(answerFileName);
 

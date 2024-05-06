@@ -1,0 +1,94 @@
+﻿@using MyApp.Data
+@inject AppConfig AppConfig
+@inject MarkdownQuestions Markdown
+@inject ServiceInterface.ImageCreator ImageCreator
+
+<article data-answer=@Answer.RefId data-createdby=@UserName class="py-8 border-b border-gray-200 dark:border-gray-700">
+    <div id=@Answer.RefId class="flex">
+        <div class="md:w-32 pr-2">
+            <div data-refid=@Answer.RefId class="voting flex flex-col items-center">
+                <svg class="up w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <title>Up Vote</title><path fill="currentColor" d="M3 19h18a1.002 1.002 0 0 0 .823-1.569l-9-13c-.373-.539-1.271-.539-1.645 0l-9 13A.999.999 0 0 0 3 19m9-12.243L19.092 17H4.908z"/>
+                </svg>
+                <b class="score text-xl" data-score=@Question.GetAnswerScore(Answer.GetRefId())>@Question.GetAnswerScore(Answer.GetRefId()).ToHumanReadable()</b>
+                <svg class="down w-6 h-6 sm:w-10 sm:h-10 cursor-pointer select-none hover:text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <title>Down Vote</title><path fill="currentColor" d="M21.886 5.536A1.002 1.002 0 0 0 21 5H3a1.002 1.002 0 0 0-.822 1.569l9 13a.998.998 0 0 0 1.644 0l9-13a.998.998 0 0 0 .064-1.033M12 17.243L4.908 7h14.184z"/>
+                </svg>
+            </div>
+            <div class="mt-8 flex flex-col items-center">
+                <img class="w-10 h-10 xl:w-20 xl:h-20 bg-cover inline-block" src="@UserName.GetAvatarUrl()">
+                <div class="mt-1 hidden md:block text-center whitespace-nowrap text-xs xl:text-sm font-semibold">@UserName</div>
+                <div class="mt-1 flex items-center">
+                    <svg class="h-4 w-4 text-yellow-500" viewBox="0 0 32 32">
+                        <circle cx="16" cy="16" r="8" fill="currentColor"/>
+                    </svg>
+                    <span data-rep-user=@UserName class="text-xs font-semibold">@AppConfig.GetReputation(UserName)</span>
+                </div>
+            </div>
+        </div>
+        <div class="w-full">
+            @if (Question.Meta?.ModelVotes?.TryGetValue(Answer.CreatedBy!, out var votes) == true &&
+                 Question.Meta?.ModelReasons?.TryGetValue(Answer.CreatedBy!, out var reason) == true)
+            {
+                var grader = Question.Meta?.GradedBy.TryGetValue(Answer.CreatedBy!, out var model) == true ? model : "mixtral";
+                var grade = ImageCreator.GradeLetter(votes);
+                <div class="relative -mt-6 lg:-mr-12 ml-4 mb-4 float-right w-10 h-10">
+                    <div class="absolute mt-4 group" title=@($"Grade: {grade}")>
+                        <img class="cursor-help	w-10 h-10 rounded-full" src=@ImageCreator.CreateGradeDataUri(grade) alt=@($"Grade: {grade}")/>
+
+                        <div class="hidden group-hover:block absolute right-0 -mr-6 z-10 mt-2 flex w-screen max-w-max px-4">
+                            <div class="w-screen max-w-md flex-auto overflow-hidden rounded-3xl bg-white text-sm leading-6 shadow-lg ring-1 ring-gray-900/5">
+                                <div class="p-4">
+                                    @BlazorHtml.Raw(Markdown.GenerateHtml(reason))
+                                </div>
+                                <div class="bg-gray-50 flex items-center justify-center gap-x-2.5 p-3 text-gray-900">
+                                    <span>
+                                        <b>@grader</b> gave this answer @(grade is 'A' or 'F' ? "an" : "a") <b>@grade</b> grade
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div id=@($"preview-{Answer.RefId}") class="preview xl:flex-grow prose">
+                @BlazorHtml.Raw(Markdown.GenerateHtml(Answer.Body))
+            </div>
+            <div id=@($"edit-{Answer.RefId}") class="edit w-full pl-2 hidden"></div>
+
+            <div class="answer-footer">
+                <div class="pt-6 flex flex-1 items-end">
+                    <div class="flex justify-end w-full">
+                        <div class="text-xs">
+                            <div class="flex">
+                                <span>answered</span>
+                                <dd class="ml-1 text-gray-600 dark:text-gray-300">
+                                    <time class="ml-1" datetime="@Markdown.GetDateTimestamp(Answer.CreationDate)">@Markdown.GetDateLabel(Answer.CreationDate)</time>
+                                </dd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Question.Post.LockedDate == null)
+                {
+                    <div data-answer=@Answer.RefId class="relative mt-4 text-sm">
+                        <div class="share-dialog absolute"></div>
+                        <span class="share-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Share this Answer">share</span>
+                        <span class="edit-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Answer">edit</span>
+                        <span class="flag-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Flag this Answer">flag</span>
+                    </div>
+                }
+
+                <PostComments RefId=@Answer.RefId Comments=@Question.GetAnswerComments(Answer.GetRefId())/>
+            </div>
+        </div>
+    </div>
+</article>
+
+@code {
+    [Parameter] public required QuestionAndAnswers Question { get; set; }
+    [Parameter] public required Post Answer { get; set; }
+    string UserName => Answer.CreatedBy!;
+}
