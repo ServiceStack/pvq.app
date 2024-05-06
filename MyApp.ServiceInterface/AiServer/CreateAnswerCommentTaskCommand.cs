@@ -62,7 +62,7 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand
         openAiChat.Messages.Add(new() { Role = "user", 
             Content = """
                       ## Instruction
-                      Answer the question query above in a concise manner. 
+                      Answer my follow up question above in a concise manner. 
                       Keep your response on the topic of the original question and answer, directly addressing my specific comment. 
                       Max 2-3 sentences.
                       """
