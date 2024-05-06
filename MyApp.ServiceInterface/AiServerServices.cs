@@ -210,13 +210,13 @@ public static class AiServerExtensions
 
     public static string GenerateComment(this string body)
     {
-        body = body.Replace("\r\n", " ").Replace('\n', ' ');
+        // body = body.Replace("\r\n", " ").Replace('\n', ' ');
         return body;
     }
 
     public static string GenerateModelComment(this string body)
     {
-        body = body.TrimStart('#').Replace("\r\n", " ").Replace('\n', ' ');
+        // body = body.TrimStart('#').Replace("\r\n", " ").Replace('\n', ' ');
         return body;
     }
 
