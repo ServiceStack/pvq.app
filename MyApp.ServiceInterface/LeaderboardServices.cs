@@ -62,10 +62,13 @@ public class LeaderboardServices : Service
         var topQuestions = await Db.SelectAsync(Db.From<Post>().OrderByDescending(x => x.Score).Limit(1000));
         var postIds = topQuestions.Select(x => x.Id).ToList();
         
-        var topAnswers = await Db.SelectAsync<StatTotals>(Db.From<StatTotals>()
+        var statTotals = await Db.SelectAsync<StatTotals>(Db.From<StatTotals>()
             .Where(x => Sql.In(x.PostId,postIds)));
         
-        var topStatsByUser = topAnswers.GroupBy(x => x.Id.RightPart('-')).Select(x => new StatTotals
+        // filter to answers only
+        var answers = statTotals.Where(x => FilterSpecificModels(x)).ToList();
+        
+        var topStatsByUser = answers.GroupBy(x => x.Id.RightPart('-')).Select(x => new StatTotals
         {
             Id = x.Key,
             UpVotes = x.Sum(y => y.UpVotes),
@@ -74,7 +77,7 @@ public class LeaderboardServices : Service
             FavoriteCount = x.Sum(y => y.FavoriteCount)
         }).ToList();
         
-        var topLeaderBoard = CalculateLeaderboardResponse(topStatsByUser, topAnswers);
+        var topLeaderBoard = CalculateLeaderboardResponse(topStatsByUser, statTotals);
         
         topLeaderBoard.AnswererWinRate = topLeaderBoard.AnswererWinRate
             .Where(x => x.NumberOfQuestions > minimumQuestions).ToList();
@@ -93,13 +96,14 @@ public class LeaderboardServices : Service
         return topLeaderBoard;
     }
 
-    private static bool FilterSpecificModels(StatTotals x,List<string> modelsToExclude)
+    private static bool FilterSpecificModels(StatTotals x,List<string>? modelsToExclude = null)
     {
+        var excludedModels = modelsToExclude ?? new List<string>();
         return x.Id.Contains('-') 
                && !x.Id.EndsWith("-accepted") 
                && !x.Id.EndsWith("-most-voted")
                && !x.Id.EndsWith("-undefined")
-               && !modelsToExclude.Contains(x.Id.RightPart('-'));
+               && !excludedModels.Contains(x.Id.RightPart('-'));
     }
 
     private CalculateLeaderboardResponse CalculateLeaderboardResponse(List<StatTotals> statsByUser, List<StatTotals> answers)
@@ -321,6 +325,5 @@ public record LeaderboardStat
 
 public class CalculateLeaderBoard : IReturn<CalculateLeaderboardResponse>, IGet
 {
-    public bool? TopQuestions { get; set; }
     public string? ModelsToExclude { get; set; }
 }

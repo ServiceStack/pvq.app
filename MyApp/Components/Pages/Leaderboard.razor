@@ -12,12 +12,13 @@
 
     @if (TotalVotes.Count > 0 && WinRates.Count > 0)
     {
-        <div class="mt-8 max-w-screen-md mx-auto">
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Top 1000 Questions Votes</h3>
+        <div class="mt-8 mx-auto">
             <div class="mx-auto">
-                <LeaderboardStats Title="Total Votes" Results=@TotalVotes />
+                <LeaderboardStats Results=@Top1kVotes/>
             </div>
             <p class="text-center py-4">
-                Based on total number of total votes received by each model by a ranking model measuring how well they answer the question asked.
+                Based on total number of total votes received for answers of the top 1000 questions. Votes distributed by a ranking model measuring how well they answer the question asked.
             </p>
         </div>
         
@@ -46,10 +47,13 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    CalculateLeaderboardResponse? data;
+    CalculateLeaderboardResponse? allData;
+    CalculateLeaderboardResponse? top1kData;
 
     public List<LeaderboardStat> TotalVotes { get; set; } = [];
     public List<LeaderboardStat> WinRates { get; set; } = [];
+    
+    public List<LeaderboardStat> Top1kVotes { get; set; } = [];
     
     public MarkupString ToProps(List<LeaderboardStat> results) => BlazorHtml.RawJson(new { results });
 
@@ -63,10 +67,13 @@
             await gateway.ApiAsync(new CalculateLeaderBoard());
         }
 
-        var jsonData = await File.ReadAllTextAsync("App_Data/leaderboard.json");
-        data = jsonData.FromJson<CalculateLeaderboardResponse>();
+        var allVotesData = await File.ReadAllTextAsync("App_Data/leaderboard.json");
+        allData = allVotesData.FromJson<CalculateLeaderboardResponse>();
 
-        TotalVotes = data.MostLikedModelsByLlm.OrderByDescending(x => x.StartingUpVotes).Select((x, index) =>
+        var top1kVotesData = await File.ReadAllTextAsync("App_Data/leaderboard-top1000.json");
+        top1kData = top1kVotesData.FromJson<CalculateLeaderboardResponse>();
+
+        TotalVotes = allData.MostLikedModelsByLlm.OrderByDescending(x => x.StartingUpVotes).Select((x, index) =>
             new LeaderboardStat
             {
                 Rank = index + 1,
@@ -76,7 +83,7 @@
                 Value = x.StartingUpVotes,
             }).Take(10).ToList();
 
-        WinRates = data.ModelWinRate.OrderByDescending(x => x.WinRate).Select((x, index) =>
+        WinRates = allData.ModelWinRate.OrderByDescending(x => x.WinRate).Select((x, index) =>
             new LeaderboardStat
             {
                 Rank = index + 1,
@@ -84,6 +91,16 @@
                 AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
                 Stat = $"{Math.Round(x.WinRate, 2)}% ({x.NumberOfQuestions.ToHumanReadable()})",
                 Value = Math.Round(x.WinRate, 2),
+            }).Take(10).ToList();
+        
+        Top1kVotes = top1kData.MostLikedModelsByLlm.OrderByDescending(x => x.StartingUpVotes).Select((x, index) =>
+            new LeaderboardStat
+            {
+                Rank = index + 1,
+                DisplayName = AppConfig.GetApplicationUser(x.Id).DisplayName!,
+                AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
+                Stat = $"{x.StartingUpVotes.ToHumanReadable()}",
+                Value = x.StartingUpVotes,
             }).Take(10).ToList();
     }
 }
