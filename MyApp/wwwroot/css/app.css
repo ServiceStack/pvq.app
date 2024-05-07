@@ -857,6 +857,10 @@ select{
   visibility: visible;
 }
 
+.invisible {
+  visibility: hidden;
+}
+
 .collapse {
   visibility: collapse;
 }
@@ -3557,6 +3561,10 @@ select{
 
 .ease-out {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+.\!\[a-zA-Z\:_\] {
+  a-z-a--z:  !important;
 }
 
 .\[a-zA-Z\:_\] {

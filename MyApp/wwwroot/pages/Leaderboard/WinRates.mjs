@@ -3,7 +3,7 @@
 export default {
     components: { ChartJs },
     template: `
-        <ChartJs :data="data" />
+        <ChartJs :data="data" :plugins="{ legend: { position: 'left' } }" />
     `,
     props:['results'],
     setup(props) {
@@ -20,7 +20,7 @@ export default {
         }))
 
         const data = {
-            labels: ['Win Rates'],
+            labels: ['Win Rates %'],
             datasets
         }
 
