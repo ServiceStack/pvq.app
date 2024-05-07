@@ -20,15 +20,21 @@
         
         <div class="mt-8 mx-auto">
             <div class="mx-auto">
-                <LeaderboardStats Results=@Top1kVotes/>
+                <LeaderboardStatsSingle Results=@Top1kVotes/>
             </div>
         </div>
+        
         
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes</h3>
         <div data-component="pages/Leaderboard/TotalVotes.mjs" data-props=@ToProps(TotalVotes)></div>
         <p class="py-4">
             Based on total number of total votes received by each model by a ranking model measuring how well they answer the question asked.
         </p>
+        
+        <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
+            <LeaderboardStats Title="Total Votes" Results=@TotalVotes />
+            <LeaderboardStats Title="Win Rates" Results=@WinRates />
+        </div>
 
         <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates</h3>
         <div data-component="pages/Leaderboard/WinRates.mjs" data-props=@ToProps(WinRates)></div>

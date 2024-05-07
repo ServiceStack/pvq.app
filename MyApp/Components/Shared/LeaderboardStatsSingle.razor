@@ -1,17 +1,16 @@
-﻿@using MyApp.ServiceInterface
+@using MyApp.ServiceInterface
 
 <DataGrid Items=@Results TableStyle="TableStyle.Simple">
-    <Column Field="(LeaderboardStat x) => x.Rank">
-        <Header>
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-50">@Title</h2>
-        </Header>
+    <Column Field="(LeaderboardStat x) => x.Rank" HeaderClass="hidden">
         <Template>
-            <div class="mt-2 flex items-center text-gray-900 dark:text-gray-50 w-80">
+            <div class="mt-2 flex justify-center items-center text-gray-900 dark:text-gray-50">
                 <div class="mr-4 text-gray-900 dark:text-gray-50 text-2xl">@(context.Rank).</div>
                 <img src="@context.AvatarUrl" alt="Avatar" class="w-16 h-16 mr-4"/>
-                <div class="flex-1">
+                <div class="flex-1 text-center">
                     <h3 class="text-xl font-semibold">@context.DisplayName</h3>
-                    <div class="text-base text-gray-600 dark:text-gray-300">@context.Stat</div>
+                </div>
+                <div class="flex-1 text-center">
+                    <h3 class="text-xl font-semibold bg-gray-100 dark:bg-blue-800 px-4 py-2 rounded-md">@context.Stat</h3>
                 </div>
             </div>
         </Template>
