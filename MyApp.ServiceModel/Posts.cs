@@ -280,7 +280,7 @@ public class FindSimilarQuestionsResponse
 [ValidateIsAuthenticated]
 public class AskQuestion : IPost, IReturn<AskQuestionResponse>
 {
-    [ValidateNotEmpty, ValidateMinimumLength(20), ValidateMaximumLength(120)]
+    [ValidateNotEmpty, ValidateMinimumLength(20), ValidateMaximumLength(130)]
     [Input(Type = "text", Help = "A summary of what your main question is asking"), FieldCss(Field="col-span-12")]
     public required string Title { get; set; }
     
@@ -288,7 +288,7 @@ public class AskQuestion : IPost, IReturn<AskQuestionResponse>
     [Input(Type="MarkdownInput", Help = "Include all information required for someone to identity and resolve your exact question"), FieldCss(Field="col-span-12", Input="h-60")]
     public required string Body { get; set; }
     
-    [ValidateNotEmpty, ValidateMinimumLength(2, Message = "At least 1 tag required"), ValidateMaximumLength(120)]
+    [ValidateNotEmpty, ValidateMinimumLength(2, Message = "At least 1 tag required"), ValidateMaximumLength(130)]
     [Input(Type = "tag", Help = "Up to 5 tags relevant to your question"), FieldCss(Field="col-span-12")]
     public required List<string> Tags { get; set; }
     
@@ -313,7 +313,7 @@ public class UpdateQuestion : IPost, IReturn<UpdateQuestionResponse>
     [ValidateGreaterThan(0)]
     public int Id { get; set; }
     
-    [ValidateNotEmpty, ValidateMinimumLength(20), ValidateMaximumLength(120)]
+    [ValidateNotEmpty, ValidateMinimumLength(20), ValidateMaximumLength(130)]
     [Input(Type = "text", Help = "A summary of what your main question is asking"), FieldCss(Field="col-span-12")]
     public required string Title { get; set; }
     
@@ -321,7 +321,7 @@ public class UpdateQuestion : IPost, IReturn<UpdateQuestionResponse>
     [Input(Type="MarkdownInput", Help = "Include all information required for someone to identity and resolve your exact question"), FieldCss(Field="col-span-12", Input="h-60")]
     public required string Body { get; set; }
     
-    [ValidateNotEmpty, ValidateMinimumLength(2, Message = "At least 1 tag required"), ValidateMaximumLength(120)]
+    [ValidateNotEmpty, ValidateMinimumLength(2, Message = "At least 1 tag required"), ValidateMaximumLength(130)]
     [Input(Type = "tag", Help = "Up to 5 tags relevant to your question"), FieldCss(Field="col-span-12")]
     public required List<string> Tags { get; set; }
 
