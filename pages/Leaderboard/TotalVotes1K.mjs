@@ -3,7 +3,7 @@
 export default {
     components: { ChartJs },
     template: `
-        <ChartJs :data="data" :plugins="{ legend: { position: 'left' } }" />
+        <ChartJs type="bar" :data="data" :options="options" style="width:1024px" />
     `,
     props:['results'],
     setup(props) {
@@ -20,10 +20,26 @@ export default {
         }))
         
         const data = {
-            labels: ['Total Votes'],
+            labels: ['Votes'],
             datasets
         }
         
-        return { data }
+        const options = {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: "left"
+                },
+                title: {
+                    display: true,
+                    text: 'Total Votes for Top 1000 Questions',
+                    font: {
+                        size: 20,
+                    }
+                },
+            },
+        }
+        
+        return { data, options }
     }
 }

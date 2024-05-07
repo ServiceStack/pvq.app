@@ -15,9 +15,8 @@ export const colors = [
     { background: 'rgba(162, 28, 175, 0.2)',  border: 'rgb(162, 28, 175)' },
 ]
 
-
 export default {
-    template:`<div><canvas ref="chart"></canvas></div>`,
+    template:`<canvas ref="chart"></canvas>`,
     props:['type','data','options','plugins'],
     setup(props) {
         const chart = ref()
@@ -26,9 +25,11 @@ export default {
 
             const options = props.options || {
                 responsive: true,
-                legend: {
-                    position: "top"
-                }
+                plugins: props.plugins || {
+                    legend: {
+                        position: "bottom"
+                    },
+                },
             }
             new Chart(chart.value, {
                 type: props.type || "bar",
