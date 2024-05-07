@@ -56,7 +56,7 @@ public class LeaderboardServices : Service
         return leaderBoard;
     }
 
-    public async Task<object> Any(CalculateTop1kLeaderboard request)
+    public async Task<object> Any(CalculateTop1KLeaderboard request)
     {
         // Do the same for top 1000 questions
         var topQuestions = await Db.SelectAsync(Db.From<Post>().OrderByDescending(x => x.Score).Limit(1000));
@@ -98,7 +98,7 @@ public class LeaderboardServices : Service
 
     private static bool FilterSpecificModels(StatTotals x,List<string>? modelsToExclude = null)
     {
-        var excludedModels = modelsToExclude ?? new List<string>();
+        var excludedModels = modelsToExclude ?? [];
         return x.Id.Contains('-') 
                && !x.Id.EndsWith("-accepted") 
                && !x.Id.EndsWith("-most-voted")
@@ -249,11 +249,6 @@ WHERE st.PostId in (select Id from post p where p.Tags LIKE @TagMiddle OR p.Tags
     }
 }
 
-public class CalculateTop1kLeaderboard
-{
-    public string? ModelsToExclude { get; set; }
-}
-
 public class GetLeaderboardStatsHuman
 {
 }
@@ -324,6 +319,11 @@ public record LeaderboardStat
 }
 
 public class CalculateLeaderBoard : IReturn<CalculateLeaderboardResponse>, IGet
+{
+    public string? ModelsToExclude { get; set; }
+}
+
+public class CalculateTop1KLeaderboard : IReturn<CalculateLeaderboardResponse>, IGet
 {
     public string? ModelsToExclude { get; set; }
 }

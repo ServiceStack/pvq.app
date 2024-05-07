@@ -67,19 +67,22 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await base.OnInitializedAsync();
         // Only generate if missing, otherwise background task will update it.
+        var gateway = GatewayFactory.GetServiceGateway(HttpContext.ToRequest());
         if (!File.Exists("App_Data/leaderboard.json"))
         {
-            var gateway = GatewayFactory.GetServiceGateway(HttpContext.ToRequest());
             await gateway.ApiAsync(new CalculateLeaderBoard());
+        }
+        if (!File.Exists("App_Data/leaderboard-top1000.json"))
+        {
+            await gateway.ApiAsync(new CalculateTop1KLeaderboard());
         }
 
         var allVotesData = await File.ReadAllTextAsync("App_Data/leaderboard.json");
         allData = allVotesData.FromJson<CalculateLeaderboardResponse>();
 
-        var top1kVotesData = await File.ReadAllTextAsync("App_Data/leaderboard-top1000.json");
-        top1kData = top1kVotesData.FromJson<CalculateLeaderboardResponse>();
+        var top1KVotesData = await File.ReadAllTextAsync("App_Data/leaderboard-top1000.json");
+        top1kData = top1KVotesData.FromJson<CalculateLeaderboardResponse>();
 
         TotalVotes = allData.MostLikedModelsByLlm.OrderByDescending(x => x.StartingUpVotes).Select((x, index) =>
             new LeaderboardStat
