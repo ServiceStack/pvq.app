@@ -30,15 +30,14 @@ we'll use to analyze the strengths of different LLMs at answering different type
 For our initial dataset we're starting with the top 100k questions from StackOverflow and running them through a number
 of quality Open LLMs that we've found to perform great for answering programming questions:
 
-- [Phi-2](https://www.microsoft.com/en-us/research/blog/phi-2-the-surprising-power-of-small-language-models/) (2.7B) by Microsoft
 - [Gemma 2B](https://ai.google.dev/gemma) (2B) by Google
 - [Qwen 1.5](https://github.com/QwenLM/Qwen1.5) (4B) by Qwen Team
+- [Phi-3](https://www.microsoft.com/en-us/research/blog/phi-2-the-surprising-power-of-small-language-models/) (4B) by Microsoft
 - [DeepSeek Coder 6.7B](https://github.com/QwenLM/Qwen1.5) (6.7B) by DeepSeek AI
 - [Code Llama2 7B](https://llama.meta.com/llama2/) (7B) by Meta
-- [Gemma 7B](https://ai.google.dev/gemma) (7B) by Google
 - [Mistral 7B](https://mistral.ai/news/announcing-mistral-7b/) (7B) by Mistral AI
-- [Mixtral 8x7B](https://mistral.ai/news/mixtral-of-experts/) (8x7B) by Mistral AI
-- [DeepSeek Coder 33B](https://deepseekcoder.github.io/) (33B) by DeepSeek AI
+- [Gemma 7B](https://ai.google.dev/gemma) (7B) by Google
+- [Llama3 8B](https://llama.meta.com/llama3/) (8B) by Meta
 
 Our initial pass will be to see how well each of these models perform on the StackOverflow dataset which we'll keep track
 of and publish on our [Leaderboard](/leaderboard) page which we're also comparing against the highest voted and 
@@ -54,9 +53,15 @@ see if we're able to improve the quality of answers that can be provided.
 For new questions asked we'll also include access to the best performing proprietary models to active users as they
 [ask more questions](/questions/ask), including:
 
-- [Claude 3 Haiku](https://www.anthropic.com/news/claude-3-haiku) by Anthropic
 - [Gemini Pro](https://blog.google/technology/ai/google-gemini-ai/) by Google
+- [Mixtral 8x7B](https://mistral.ai/news/mixtral-of-experts/) (8x7B) by Mistral AI
+- [GPT 3.5 Turbo](https://platform.openai.com/docs/models/gpt-3-5-turbo) by OpenAI
+- [Claude 3 Haiku](https://www.anthropic.com/news/claude-3-haiku) by Anthropic
+- [Llama3 70B](https://llama.meta.com/llama3/) (70B) by Meta
+- [Command-R](https://cohere.com/blog/command-r) (35B) by Cohere
+- [WizardLM2](https://wizardlm.github.io/WizardLM2/) (8x22B) by Microsoft
 - [Claude 3 Sonnet](https://www.anthropic.com/news/claude-3-family) by Anthropic
+- [Command-R+](https://cohere.com/blog/command-r-plus-microsoft-azure) (104B) by Cohere
 - [GPT 4 Turbo](https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo) by OpenAI
 - [Claude 3 Opus](https://www.anthropic.com/claude) by Anthropic
 
