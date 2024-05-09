@@ -1,5 +1,5 @@
 /* Options:
-Date: 2024-05-05 17:08:25
+Date: 2024-05-09 12:12:17
 Version: 8.23
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5001
@@ -1541,6 +1541,15 @@ export class CalculateLeaderBoard {
     getMethod() { return 'GET' }
     createResponse() { return new CalculateLeaderboardResponse() }
 }
+export class CalculateTop1KLeaderboard {
+    /** @param {{modelsToExclude?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {?string} */
+    modelsToExclude;
+    getTypeName() { return 'CalculateTop1KLeaderboard' }
+    getMethod() { return 'GET' }
+    createResponse() { return new CalculateLeaderboardResponse() }
+}
 export class GetLeaderboardStatsByTag {
     /** @param {{tag?:string,modelsToExclude?:string}} [init] */
     constructor(init) { Object.assign(this, init) }
@@ -1578,6 +1587,17 @@ export class DeleteQuestion {
     /** @type {?string} */
     returnUrl;
     getTypeName() { return 'DeleteQuestion' }
+    getMethod() { return 'GET' }
+    createResponse() { return new EmptyResponse() }
+}
+export class DeleteAnswer {
+    /** @param {{id?:string,returnUrl?:string}} [init] */
+    constructor(init) { Object.assign(this, init) }
+    /** @type {string} */
+    id;
+    /** @type {?string} */
+    returnUrl;
+    getTypeName() { return 'DeleteAnswer' }
     getMethod() { return 'GET' }
     createResponse() { return new EmptyResponse() }
 }
