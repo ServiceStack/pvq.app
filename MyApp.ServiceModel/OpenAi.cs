@@ -88,3 +88,13 @@ public class CreateOpenAiChatResponse
     public string RefId { get; set; }
     public ResponseStatus? ResponseStatus { get; set; }
 }
+
+[ValidateHasRole(Roles.Moderator)]
+public class CreateAnswersForModel : IPost, IReturn<StringResponse>
+{
+    [ValidateNotEmpty]
+    public string Model { get; set; }
+    
+    [Input(Type = "tag"), FieldCss(Field = "col-span-12")]
+    public List<int> PostIds { get; set; }
+}

@@ -118,3 +118,19 @@ public class SearchStat : StatBase
     public string? Query { get; set; }
     public SearchStatType Type { get; set; }
 }
+
+[ValidateHasRole(Roles.Moderator)]
+public class QueryStatTotals : QueryDb<StatTotals>
+{
+}
+
+[ValidateHasRole(Roles.Moderator)]
+public class MissingTop100 : IGet, IReturn<MissingTop100Response>
+{
+    [ValidateNotEmpty]
+    public string Model { get; set; }
+}
+public class MissingTop100Response
+{
+    public List<int> Results { get; set; }
+}

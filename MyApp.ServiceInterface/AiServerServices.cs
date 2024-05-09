@@ -1,7 +1,9 @@
 ﻿using System.Text.RegularExpressions;
 using AiServer.ServiceModel;
+using Markdig.Helpers;
 using Microsoft.Extensions.Logging;
 using MyApp.Data;
+using MyApp.ServiceInterface.AiServer;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.OrmLite;
@@ -15,6 +17,34 @@ public class AiServerServices(ILogger<AiServerServices> log,
     WorkerAnswerNotifier answerNotifier,
     ICommandExecutor executor) : Service
 {
+    public async Task<object> Any(CreateAnswersForModel request)
+    {
+        var command = executor.Command<CreateAnswerTasksCommand>();
+
+        int completed = 0;
+        var sb = StringBuilderCache.Local();
+        foreach (var postId in request.PostIds)
+        {
+            var post = await questions.GetQuestionFileAsPostAsync(postId);
+            if (post == null)
+            {
+                sb.Append("Missing: ").Append(postId).Append('\n');
+                continue;
+            }
+
+            completed++;
+            await command.ExecuteAsync(new CreateAnswerTasks
+            {
+                Post = post,
+                ModelUsers = [request.Model],
+            });
+        }
+        
+        sb.Append("Completed: ").Append(completed).Append('\n');
+        
+        return new StringResponse { Result = sb.ToString() };
+    }
+    
     public async Task Any(CreateAnswerCallback request)
     {
         var modelUser = appConfig.GetModelUserById(request.UserId);
@@ -26,7 +56,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
         var answer = request.ToAnswer(request.PostId, modelUser.UserName);
         
         await questions.SaveAnswerAsync(answer);
-            
+
         MessageProducer.Publish(new DbWrites
         {
             SaveStartingUpVotes = new()

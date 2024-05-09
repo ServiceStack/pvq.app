@@ -12,10 +12,10 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
     static readonly Regex ValidTagCharsRegex = new("[^a-zA-Z0-9#+.]", RegexOptions.Compiled);
     static readonly Regex SingleWhiteSpaceRegex = new(@"\s+", RegexOptions.Multiline | RegexOptions.Compiled);
 
-    public HashSet<string> IgnoreTags { get; set; } = new()
-    {
-        "this", "was", "feedback", "this", 
-    };
+    public HashSet<string> IgnoreTags { get; set; } =
+    [
+        "this", "was", "feedback", "this"
+    ];
     
     public Dictionary<string, string> TagAliases { get; set; } = new()
     {
