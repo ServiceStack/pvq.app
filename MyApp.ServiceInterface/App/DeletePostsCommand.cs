@@ -6,9 +6,9 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
-public class DeletePostCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<DeletePost>
+public class DeletePostsCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<DeletePosts>
 {
-    public async Task ExecuteAsync(DeletePost request)
+    public async Task ExecuteAsync(DeletePosts request)
     {
         foreach (var postId in request.Ids)
         {

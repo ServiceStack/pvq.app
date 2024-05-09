@@ -142,7 +142,7 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         var answerPath = GetAnswerPath(postId, userName);
 
         var file = fs.GetFile(answerPath)
-                ?? await r2.GetFileAsync(answerPath);
+            ?? await r2.GetFileAsync(answerPath);
 
         return file;
     }
@@ -315,6 +315,13 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         fs.DeleteFiles(localQuestionFiles.Files.Select(x => x.VirtualPath));
         var remoteQuestionFiles = await GetRemoteQuestionFilesAsync(id);
         await r2.DeleteFilesAsync(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
+    }
+
+    public async Task DeleteAnswerFileAsync(string answerId)
+    {
+        var answerFile = await GetAnswerFileAsync(answerId);
+        if (answerFile != null)
+            await DeleteFileAsync(answerFile.VirtualPath);
     }
 
     public async Task<string?> GetAnswerBodyAsync(string answerId)

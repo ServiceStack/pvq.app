@@ -25,6 +25,7 @@
                     <span data-rep-user=@UserName class="text-xs font-semibold">@AppConfig.GetReputation(UserName)</span>
                 </div>
             </div>
+            <div class="answer-aside"></div>
         </div>
         <div class="w-full">
             @if (Question.Meta?.ModelVotes?.TryGetValue(Answer.CreatedBy!, out var votes) == true &&
@@ -73,7 +74,7 @@
 
                 @if (Question.Post.LockedDate == null)
                 {
-                    <div data-answer=@Answer.RefId class="relative mt-4 text-sm">
+                    <div class="relative mt-4 text-sm">
                         <div class="share-dialog absolute"></div>
                         <span class="share-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Share this Answer">share</span>
                         <span class="edit-link mr-2 cursor-pointer select-none text-indigo-700 dark:text-indigo-300 hover:text-indigo-500" title="Edit this Answer">edit</span>

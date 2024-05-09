@@ -7,7 +7,7 @@ import { renderMarkdown } from "markdown"
 import {
     UserPostData, PostVote, GetQuestionFile,
     AnswerQuestion, UpdateQuestion, PreviewMarkdown, GetAnswerBody, CreateComment, GetMeta,
-    DeleteQuestion, DeleteComment, GetUserReputations, CommentVote,
+    DeleteQuestion, DeleteAnswer, DeleteComment, GetUserReputations, CommentVote,
     ShareContent, FlagContent, GetAnswer,
     WaitForUpdate, GetLastUpdated,
 } from "dtos.mjs"
@@ -433,6 +433,29 @@ const QuestionAside = {
             }
         }
         return { deleteQuestion, isModerator }
+    }
+}
+
+const AnswerAside = {
+    template:`
+        <div v-if="isModerator" class="mt-2 flex justify-center">
+            <svg class="mr-1 align-sub text-gray-400 hover:text-gray-500 w-6 h-6 inline-block cursor-pointer" @click="deleteAnswer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><title>Delete question</title><g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="4"><path d="M9 10v34h30V10z"/><path stroke-linecap="round" d="M20 20v13m8-13v13M4 10h40"/><path d="m16 10l3.289-6h9.488L32 10z"/></g></svg>
+        </div>
+    `,
+    props:['id'],
+    setup(props) {
+        const { hasRole } = useAuth()
+        const isModerator = hasRole('Moderator')
+        const client = useClient()
+        async function deleteAnswer() {
+            if (confirm('Are you sure?')) {
+                const api = await client.api(new DeleteAnswer({ id:props.id }))
+                if (api.succeeded) {
+                    location.href = location.href
+                }
+            }
+        }
+        return { deleteAnswer, isModerator }
     }
 }
 
@@ -1067,6 +1090,7 @@ async function loadEditAnswers(ctx) {
             edit = el.querySelector('.edit'),
             preview = el.querySelector('.preview'),
             previewHtml = preview?.innerHTML,
+            answerAside = el.querySelector('.answer-aside'),
             footer = el.querySelector('.answer-footer')
 
         const bus = new EventBus()
@@ -1080,7 +1104,12 @@ async function loadEditAnswers(ctx) {
                 footer.innerHTML = ''
             }
         } else {
-            console.warn(`could not find .edit'`)
+            console.warn(`could not find .edit'`, el)
+        }
+        if (answerAside) {
+            mount(answerAside, AnswerAside, { id })
+        } else {
+            console.warn(`could not find .answer-aside'`, el)
         }
     })
 }

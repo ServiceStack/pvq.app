@@ -58,9 +58,14 @@ public class NewComment
     public DateTime LastUpdated { get; set; }
 }
 
-public class DeletePost
+public class DeletePosts
 {
     public required List<int> Ids { get; set; }
+}
+
+public class DeleteAnswers
+{
+    public required List<string> Ids { get; set; }
 }
 
 public class CreatePostJobs
@@ -101,8 +106,11 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     [Command<UpdatePostCommand>]
     public Post? UpdatePost { get; set; }
     
-    [Command<DeletePostCommand>]
-    public DeletePost? DeletePost { get; set; }
+    [Command<DeletePostsCommand>]
+    public DeletePosts? DeletePosts { get; set; }
+    
+    [Command<DeleteAnswersCommand>]
+    public DeleteAnswers? DeleteAnswers { get; set; }
     
     [Command<StartJobCommand>]
     public StartJob? StartJob { get; set; }
@@ -192,5 +200,6 @@ public class SearchTasks
 {
     public int? AddPostToIndex { get; set; }
     public string? AddAnswerToIndex { get; set; }
-    public int? DeletePost { get; set; }
+    public List<int>? DeletePosts { get; set; }
+    public List<string>? DeleteAnswers { get; set; }
 }

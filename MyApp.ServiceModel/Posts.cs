@@ -465,6 +465,15 @@ public class DeleteQuestion : IGet, IReturn<EmptyResponse>
     public string? ReturnUrl { get; set; }
 }
 
+[ValidateHasRole(Roles.Moderator)]
+public class DeleteAnswer : IGet, IReturn<EmptyResponse>
+{
+    [ValidateNotEmpty]
+    public string Id { get; set; }
+    
+    public string? ReturnUrl { get; set; }
+}
+
 public class GetRequestInfo : IGet, IReturn<string> {}
 
 public class GetUserReputations : IGet, IReturn<GetUserReputationsResponse>

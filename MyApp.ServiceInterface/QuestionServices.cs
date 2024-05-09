@@ -141,11 +141,34 @@ public class QuestionServices(ILogger<QuestionServices> log,
         rendererCache.DeleteCachedQuestionPostHtml(request.Id);
         MessageProducer.Publish(new DbWrites
         {
-            DeletePost = new() { Ids = [request.Id] },
+            DeletePosts = new() { Ids = [request.Id] },
         });
         MessageProducer.Publish(new SearchTasks
         {
-            DeletePost = request.Id,
+            DeletePosts = [request.Id],
+        });
+
+        if (request.ReturnUrl != null && request.ReturnUrl.StartsWith('/') && request.ReturnUrl.IndexOf(':') < 0)
+            return HttpResult.Redirect(request.ReturnUrl, HttpStatusCode.TemporaryRedirect);
+        
+        return new EmptyResponse();
+    }
+
+    public async Task<object> Any(DeleteAnswer request)
+    {
+        if (!request.Id.Contains('-'))
+            throw new ArgumentException("Invalid Answer Id", nameof(request.Id));
+        var postId = request.Id.LeftPart('-').ToInt();
+        
+        await questions.DeleteAnswerFileAsync(request.Id);
+        rendererCache.DeleteCachedQuestionPostHtml(postId);
+        MessageProducer.Publish(new DbWrites
+        {
+            DeleteAnswers = new() { Ids = [request.Id] },
+        });
+        MessageProducer.Publish(new SearchTasks
+        {
+            DeleteAnswers = [request.Id],
         });
 
         if (request.ReturnUrl != null && request.ReturnUrl.StartsWith('/') && request.ReturnUrl.IndexOf(':') < 0)

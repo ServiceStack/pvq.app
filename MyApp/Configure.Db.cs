@@ -13,11 +13,7 @@ public class ConfigureDb : IHostingStartup
     public const string AnalyticsDbPath = "App_Data/analytics.db";
     public const string CreatorKitDbPath = "App_Data/creatorkit.db";
     public const string ArchiveDbPath = "App_Data/archive.db";
-#if DEBUG
-    public const string SearchDbPath = "../../pvq/dist/search.db";
-#else
     public const string SearchDbPath = "App_Data/search.db";
-#endif
     
     public void Configure(IWebHostBuilder builder) => builder
         .ConfigureServices((context, services) => {

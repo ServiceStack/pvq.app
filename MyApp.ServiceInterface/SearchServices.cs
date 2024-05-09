@@ -78,11 +78,22 @@ public class SearchServices(ILogger<SearchServices> log, QuestionsProvider quest
             )");
         }
         
-        if (request.DeletePost != null)
+        if (request.DeletePosts != null)
         {
-            var id = request.DeletePost.Value;
-            log.LogInformation("[SEARCH] Deleting Post '{PostId}' from Search Index...", id);
-            await db.ExecuteNonQueryAsync($"DELETE FROM PostFts where RefId = '{id}' or RefId LIKE '{id}-%'");
+            foreach (var id in request.DeletePosts)
+            {
+                log.LogInformation("[SEARCH] Deleting Post '{PostId}' from Search Index...", id);
+                await db.ExecuteNonQueryAsync($"DELETE FROM PostFts where RefId = '{id}' or RefId LIKE '{id}-%'");
+            }
+        }
+        
+        if (request.DeleteAnswers != null)
+        {
+            foreach (var refId in request.DeleteAnswers)
+            {
+                log.LogInformation("[SEARCH] Deleting Answer '{PostId}' from Search Index...", refId);
+                await db.ExecuteNonQueryAsync($"DELETE FROM PostFts where RefId = @refId or RefId = @refId", new { refId });
+            }
         }
     }
 }
