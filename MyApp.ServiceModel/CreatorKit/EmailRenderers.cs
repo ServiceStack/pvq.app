@@ -39,3 +39,14 @@ public class RenderDoc : IGet, IReturn<string>
     [ValidateNotEmpty]
     public string Page { get; set; }
 }
+
+[Tag(ServiceModel.Tag.Mail), ValidateIsAdmin, ExcludeMetadata]
+public class RenderTagQuestionsEmail : RenderEmailBase, IGet, IReturn<string>
+{
+    [ValidateNotEmpty]
+    public string Tag { get; set; }
+    
+    [ValidateNotEmpty]
+    public DateTime Date { get; set; }
+}
+

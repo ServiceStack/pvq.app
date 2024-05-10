@@ -4,7 +4,7 @@ using CreatorKit.ServiceModel.Types;
 
 namespace CreatorKit.ServiceModel;
 
-[Renderer(typeof(RenderSimpleText))]
+[Renderer<RenderSimpleText>]
 [Tag(Tag.Mail), ValidateIsAdmin]
 [Description("Simple Text Email")]
 public class SimpleTextEmail : CreateEmailBase, IPost, IReturn<MailMessage>
@@ -19,7 +19,7 @@ public class SimpleTextEmail : CreateEmailBase, IPost, IReturn<MailMessage>
     public bool? Draft { get; set; }
 }
 
-[Renderer(typeof(RenderCustomHtml))]
+[Renderer<RenderCustomHtml>]
 [Tag(Tag.Mail), ValidateIsAdmin]
 [Icon(Svg = Icons.RichHtml)]
 [Description("Custom HTML Email")]
@@ -41,3 +41,18 @@ public class CustomHtmlEmail : CreateEmailBase, IPost, IReturn<MailMessage>
     public string? Body { get; set; }
     public bool? Draft { get; set; }
 }
+
+[Renderer<RenderTagQuestionsEmail>]
+[Tag(ServiceModel.Tag.Mail), ValidateIsAdmin]
+[Description("New Questions with Tag")]
+public class TagQuestionsEmail : CreateEmailBase, IPost, IReturn<MailMessage>
+{
+    [ValidateNotEmpty]
+    public string Tag { get; set; }
+    
+    [ValidateNotEmpty]
+    public DateTime Date { get; set; }
+
+    public bool? Draft { get; set; }
+}
+

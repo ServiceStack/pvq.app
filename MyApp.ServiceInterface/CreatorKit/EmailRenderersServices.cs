@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using ServiceStack;
+﻿using ServiceStack;
 using ServiceStack.Script;
 using CreatorKit.ServiceModel;
-using Markdig;
-using Markdig.Syntax;
 using MyApp.ServiceModel;
+using ServiceStack.OrmLite;
 
 namespace CreatorKit.ServiceInterface;
 
@@ -69,6 +63,25 @@ public class EmailRenderersServices(EmailRenderer renderer) : Service
         return await renderer.RenderToHtmlResultAsync(db, context, request, 
             args:new() {
                 ["body"] = evalBody,
+            });
+    }
+
+    public async Task<object> Any(RenderTagQuestionsEmail request)
+    {
+        OrmLiteUtils.PrintSql();
+        var context = renderer.CreateMailContext(layout:"tags", page:"tagged-questions");
+
+        var posts = await Db.SelectAsync(Db.From<Post>()
+            .Where(x => x.CreationDate >= request.Date && x.CreationDate < request.Date.AddDays(1))
+            .Where("replace(replace(tags,'[',','),']',',') LIKE '%,' || {0} || ',%'", request.Tag)
+            .Limit(10));
+        
+        using var db = HostContext.AppHost.GetDbConnection(Databases.CreatorKit);
+        return await renderer.RenderToHtmlResultAsync(db, context, request, 
+            args:new() {
+                ["tag"] = request.Tag,
+                ["date"] = request.Date.ToString("MMMM dd"),
+                [nameof(posts)] = posts,
             });
     }
 }

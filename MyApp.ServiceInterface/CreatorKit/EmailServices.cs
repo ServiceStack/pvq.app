@@ -30,14 +30,14 @@ public class EmailServices(EmailRenderer renderer) : Service
         if (response is IHttpError httpError)
             return httpError;
         var responseBody = response is IHttpResult httpResult ? httpResult.Response.ToString() : response.ToString();
-        
+
         if (message.Renderer == nameof(RenderSimpleText))
             message.Message.BodyText = responseBody;
         else
             message.Message.BodyHtml = responseBody;
 
         await db.UpdateAsync(message);
-        
+
         if (request.Send == true)
         {
             renderer.SendMailMessage(message.Id);
@@ -51,8 +51,8 @@ public class EmailServices(EmailRenderer renderer) : Service
         using var db = HostContext.AppHost.GetDbConnection(Databases.CreatorKit);
         var contact = await db.GetOrCreateContact(request);
         var viewRequest = request.ConvertTo<RenderSimpleText>().FromContact(contact);
-        var bodyText = (string) await Gateway.SendAsync(typeof(string), viewRequest);
-        
+        var bodyText = (string)await Gateway.SendAsync(typeof(string), viewRequest);
+
         var email = await renderer.CreateMessageAsync(db, new MailMessage
         {
             Draft = request.Draft ?? false,
@@ -72,7 +72,7 @@ public class EmailServices(EmailRenderer renderer) : Service
         using var db = HostContext.AppHost.GetDbConnection(Databases.CreatorKit);
         var contact = await db.GetOrCreateContact(request);
         var viewRequest = request.ConvertTo<RenderCustomHtml>().FromContact(contact);
-        var bodyHtml = (string) await Gateway.SendAsync(typeof(string), viewRequest);
+        var bodyHtml = (string)await Gateway.SendAsync(typeof(string), viewRequest);
 
         var email = await renderer.CreateMessageAsync(db, new MailMessage
         {
@@ -86,5 +86,25 @@ public class EmailServices(EmailRenderer renderer) : Service
             },
         }.FromRequest(viewRequest));
         return email;
-    }    
+    }
+
+    public async Task<object> Any(TagQuestionsEmail request)
+    {
+        using var db = HostContext.AppHost.GetDbConnection(Databases.CreatorKit);
+        var contact = await db.GetOrCreateContact(request);
+        var viewRequest = request.ConvertTo<RenderTagQuestionsEmail>().FromContact(contact);
+        var bodyHtml = (string)await Gateway.SendAsync(typeof(string), viewRequest);
+
+        var email = await renderer.CreateMessageAsync(db, new MailMessage
+        {
+            Draft = request.Draft ?? false,
+            Message = new EmailMessage
+            {
+                To = contact.ToMailTos(),
+                Subject = $"New {request.Tag} questions for {request.Date:MMMM dd} - pvq.app",
+                BodyHtml = bodyHtml,
+            },
+        }.FromRequest(viewRequest));
+        return email;
+    }
 }

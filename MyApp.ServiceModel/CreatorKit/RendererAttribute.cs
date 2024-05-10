@@ -4,7 +4,7 @@ using ServiceStack;
 namespace CreatorKit.ServiceModel;
 
 [AttributeUsage(AttributeTargets.Class)]
-public class RendererAttribute<T>(string template) : RendererAttribute(typeof(T)) {}
+public class RendererAttribute<T>() : RendererAttribute(typeof(T)) {}
 
 /// <summary>
 /// Specify which renderer should be used to render emails

@@ -1,0 +1,21 @@
+{{ var title = `New ${tag} questions for ${date} - ${info.Domain}` }}
+<table width="100%" border="0" cellpadding="0" cellspacing="0" style="border:0 none;border-collapse:collapse">
+    <tbody>
+    <tr>
+        <td width="100%" align="center" valign="top" style="padding-top:20px 0;border-collapse:collapse;font-family:'Google Sans',Roboto,sans-serif;font-size:24px;line-height:28px;color:#000000">&nbsp;</td>
+    </tr>
+
+    {{#if posts.Count > 0 }}
+    {{ 'section' |> partial({ iconSrc:images.speaker_48x48, title }) }}
+    <tr>
+        <td width="100%" align="left" valign="top" style="padding:0 40px 30px 40px;border-collapse:collapse;font-family:'Google Sans Text',Roboto,sans-serif;font-size:14px;line-height:21px;color:#000000">
+            {{#each posts }}
+                <h3 style="margin:1em 0 0.25em 0"><a href="{{WebsiteBaseUrl}}/questions/{{ it.id }}/{{ it.slug }}" style="font-size:16px;color:#4338CA!important;text-decoration:none" target="_blank">{{ it.title }} →</a></h3>
+                <p style="margin:.5em 0;color:#4b5563">{{ it.summary }}</p>
+            {{/each}}
+        </td>
+    </tr>
+    {{/if}}
+
+    </tbody>
+</table>
