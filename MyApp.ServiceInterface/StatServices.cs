@@ -18,7 +18,7 @@ public class QuestionGroup
 
 public class StatServices(AppConfig appConfig) : Service
 {
-    public async Task<object> Any(MissingTop100 request)
+    public async Task<object> Any(MissingTop1K request)
     {
         var top1kIds = await Db.ColumnAsync<int>(Db.From<QuestionGroup>()
             .Where(x => x.Group == PostGroup.Top1K));
@@ -34,6 +34,6 @@ public class StatServices(AppConfig appConfig) : Service
 
         var missingIds = top1kIds.Where(x => !existingQuestionIds.Contains(x)).ToList();
         
-        return new MissingTop100Response { Results = missingIds };
+        return new MissingTop1KResponse { Results = missingIds };
     }
 }

@@ -125,12 +125,12 @@ public class QueryStatTotals : QueryDb<StatTotals>
 }
 
 [ValidateHasRole(Roles.Moderator)]
-public class MissingTop100 : IGet, IReturn<MissingTop100Response>
+public class MissingTop1K : IGet, IReturn<MissingTop1KResponse>
 {
     [ValidateNotEmpty]
     public string Model { get; set; }
 }
-public class MissingTop100Response
+public class MissingTop1KResponse
 {
     public List<int> Results { get; set; }
 }

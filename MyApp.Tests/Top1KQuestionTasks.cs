@@ -30,7 +30,7 @@ public class Top1KQuestionTasks
 
         var client = CreateLiveClient();
         
-        var api = await client.ApiAsync(new MissingTop100
+        var api = await client.ApiAsync(new MissingTop1K
         {
             Model = model,
         });
@@ -60,7 +60,7 @@ public class Top1KQuestionTasks
     [Test]
     public async Task Create_missing_Top1K_Answers_for_Adhoc_Model()
     {
-        var model = "gpt4-turbo";
+        var model = "command-r-plus";
 
         var client = CreateLiveClient();
         await client.ApiAsync(new Authenticate
@@ -75,7 +75,7 @@ public class Top1KQuestionTasks
 
     private static async Task CreateMissing1KModelsForModelAsync(JsonApiClient client, string model)
     {
-        var api = await client.ApiAsync(new MissingTop100
+        var api = await client.ApiAsync(new MissingTop1K
         {
             Model = model,
         });
@@ -99,5 +99,11 @@ public class Top1KQuestionTasks
         apiCreate.Error.PrintDump();
         apiCreate.ThrowIfError();
         apiCreate.Response!.Result.Print();
+    }
+
+    [Test]
+    public void Find_answers_that_have_not_been_individually_graded()
+    {
+        
     }
 }
