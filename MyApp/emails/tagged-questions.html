@@ -1,4 +1,3 @@
-{{ var title = `New ${tag} questions for ${date} - ${info.Domain}` }}
 <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border:0 none;border-collapse:collapse">
     <tbody>
     <tr>
@@ -6,7 +5,7 @@
     </tr>
 
     {{#if posts.Count > 0 }}
-    {{ 'section' |> partial({ iconSrc:images.speaker_48x48, title }) }}
+    {{ 'section' |> partial({ iconSrc:images.speaker_48x48, title:`New ${tag} questions for ${date}` }) }}
     <tr>
         <td width="100%" align="left" valign="top" style="padding:0 40px 30px 40px;border-collapse:collapse;font-family:'Google Sans Text',Roboto,sans-serif;font-size:14px;line-height:21px;color:#000000">
             {{#each posts }}
