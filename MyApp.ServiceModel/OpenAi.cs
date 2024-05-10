@@ -90,11 +90,30 @@ public class CreateOpenAiChatResponse
 }
 
 [ValidateHasRole(Roles.Moderator)]
-public class CreateAnswersForModel : IPost, IReturn<StringResponse>
+public class CreateAnswersForModel : IPost, IReturn<CreateAnswersForModelResponse>
 {
     [ValidateNotEmpty]
     public string Model { get; set; }
     
     [Input(Type = "tag"), FieldCss(Field = "col-span-12")]
     public List<int> PostIds { get; set; }
+}
+public class CreateAnswersForModelResponse
+{
+    public Dictionary<int, string> Errors { get; set; } = new();
+    public List<int> Results { get; set; } = [];
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
+[ValidateHasRole(Roles.Moderator)]
+public class CreateRankingTasks : IPost, IReturn<CreateRankingTasksResponse>
+{
+    [Input(Type = "tag"), FieldCss(Field = "col-span-12")]
+    public List<string> AnswerIds { get; set; }
+}
+public class CreateRankingTasksResponse
+{
+    public Dictionary<string, string> Errors { get; set; } = new();
+    public List<string> Results { get; set; } = [];
+    public ResponseStatus? ResponseStatus { get; set; }
 }

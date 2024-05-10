@@ -20,31 +20,62 @@ public class AiServerServices(ILogger<AiServerServices> log,
     public async Task<object> Any(CreateAnswersForModel request)
     {
         var command = executor.Command<CreateAnswerTasksCommand>();
+        var to = new CreateAnswersForModelResponse();
 
-        int completed = 0;
-        var sb = StringBuilderCache.Local();
         foreach (var postId in request.PostIds)
         {
             var post = await questions.GetQuestionFileAsPostAsync(postId);
             if (post == null)
             {
-                sb.Append("Missing: ").Append(postId).Append('\n');
+                to.Errors[postId] = "Missing QuestionFile";
                 continue;
             }
-
-            completed++;
             await command.ExecuteAsync(new CreateAnswerTasks
             {
                 Post = post,
                 ModelUsers = [request.Model],
             });
+            to.Results.Add(post.Id);
         }
-        
-        sb.Append("Completed: ").Append(completed).Append('\n');
-        
-        return new StringResponse { Result = sb.ToString() };
+        return to;
     }
-    
+
+    public async Task<object> Any(CreateRankingTasks request)
+    {
+        var command = executor.Command<CreateRankAnswerTaskCommand>();
+
+        var to = new CreateRankingTasksResponse();
+
+        var uniqueUserNames = request.AnswerIds.Select(x => x.RightPart('-')).ToSet();
+        var userIdMap = await Db.DictionaryAsync<string, string>(
+            Db.From<ApplicationUser>().Where(x => uniqueUserNames.Contains(x.UserName!))
+                .Select(x => new { x.UserName, x.Id }));
+        
+        foreach (var id in request.AnswerIds)
+        {
+            try
+            {
+                var postId = id.LeftPart('-').ToInt();
+                var userName = id.RightPart('-');
+                if (!userIdMap.TryGetValue(userName, out var userId))
+                {
+                    to.Errors[id] = "Unknown User";
+                    continue;
+                }
+                await command.ExecuteAsync(new CreateRankAnswerTask
+                {
+                    UserId = userId,
+                    AnswerId = id,
+                });
+            }
+            catch (Exception e)
+            {
+                to.Errors[id] = e.Message;
+            }
+        }
+        return to;
+    }
+
     public async Task Any(CreateAnswerCallback request)
     {
         var modelUser = appConfig.GetModelUserById(request.UserId);

@@ -133,4 +133,16 @@ public class MissingTop1K : IGet, IReturn<MissingTop1KResponse>
 public class MissingTop1KResponse
 {
     public List<int> Results { get; set; }
+    public ResponseStatus? ResponseStatus { get; set; }
+}
+
+[ValidateHasRole(Roles.Moderator)]
+public class MissingGradedAnswersTop1K : IGet, IReturn<MissingGradedAnswersTop1KResponse>
+{
+}
+public class MissingGradedAnswersTop1KResponse
+{
+    public List<string> Results { get; set; } = [];
+    public Dictionary<string, string> Errors { get; set; } = new();
+    public ResponseStatus? ResponseStatus { get; set; }
 }
