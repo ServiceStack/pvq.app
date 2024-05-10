@@ -160,10 +160,11 @@
             }
             else
             {
-                MessageProducer.Publish(new RenderComponent {
-                    RegenerateMeta = new() { IfPostModified = Id },
-                    Question = question,
-                });
+                // Change to regenerating meta when post is modified
+                // MessageProducer.Publish(new RenderComponent {
+                //     RegenerateMeta = new() { IfPostModified = Id },
+                //     Question = question,
+                // });
             }
         }
         else
