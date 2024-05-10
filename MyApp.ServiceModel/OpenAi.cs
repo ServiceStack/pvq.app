@@ -6,7 +6,7 @@ namespace MyApp.ServiceModel;
 [SystemJson(UseSystemJson.Never)]
 public class CreateAnswerCallback : OpenAiChatResponse, IPost, IReturnVoid 
 {
-    [ValidateGreaterThan(9)]
+    [ValidateGreaterThan(0)]
     public int PostId { get; set; }
 
     [ValidateNotEmpty]
