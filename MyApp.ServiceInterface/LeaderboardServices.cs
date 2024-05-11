@@ -62,7 +62,7 @@ public class LeaderboardServices : Service
         var topQuestions = await Db.SelectAsync(Db.From<Post>().OrderByDescending(x => x.Score).Limit(1000));
         var postIds = topQuestions.Select(x => x.Id).ToList();
         
-        var statTotals = await Db.SelectAsync<StatTotals>(Db.From<StatTotals>()
+        var statTotals = await Db.SelectAsync(Db.From<StatTotals>()
             .Where(x => Sql.In(x.PostId,postIds)));
         
         // filter to answers only
@@ -150,10 +150,7 @@ public class LeaderboardServices : Service
         return leaderBoard;
     }
 
-    bool IsHuman(string id)
-    {
-        return id == "accepted" || id == "most-voted";
-    }
+    bool IsHuman(string id) => id is "accepted" or "most-voted";
 
 
     /// <summary>
@@ -184,7 +181,6 @@ public class LeaderboardServices : Service
             {
                 PostId = g.Key,
                 TopScores = g.GroupBy(x => x.GetScore())
-                    
                     .OrderByDescending(x => x.Key)
                     .Take(2)
                     .Select(x => new { Score = x.Key, Count = x.Count() })
@@ -216,8 +212,12 @@ public class LeaderboardServices : Service
     public async Task<object> Any(GetLeaderboardStatsByTag request)
     {
         var allStatsForTag = await Db.SelectAsync<StatTotals>(@"SELECT st.*
-FROM main.StatTotals st
-WHERE st.PostId in (select Id from post p where p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR p.Tags LIKE @TagRight OR p.Tags = @TagSolo)", new { TagSolo = $"[{request.Tag}]", 
+                FROM main.StatTotals st WHERE st.PostId in 
+                    (SELECT Id 
+                       FROM post p 
+                      WHERE p.Tags LIKE @TagMiddle OR p.Tags LIKE @TagLeft OR 
+                            p.Tags LIKE @TagRight OR p.Tags = @TagSolo)", 
+                new { TagSolo = $"[{request.Tag}]", 
             TagRight = $"%,{request.Tag}]", 
             TagLeft = $"[{request.Tag},%",
             TagMiddle = $"%,{request.Tag},%",

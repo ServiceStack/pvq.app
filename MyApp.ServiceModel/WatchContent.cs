@@ -13,7 +13,21 @@ public class WatchPost
     public DateTime CreatedDate { get; set; }
     public DateTime? AfterDate { get; set; } // Email new answers 1hr after asking question
 }
-    
+
+[UniqueConstraint(nameof(Date), nameof(Tag))]
+public class WatchPostMail
+{
+    [AutoIncrement]
+    public int Id { get; set; }
+    public string Date { get; set; }
+    public string Tag { get; set; }
+    public List<string> UserNames { get; set; }
+    public List<int> PostIds { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public DateTime GeneratedDate { get; set; }
+    public int? MailRunId { get; set; }
+}
+
 [UniqueConstraint(nameof(UserName), nameof(Tag))]
 public class WatchTag
 {

@@ -20,4 +20,6 @@ public enum MailingList
     ProductReleases = 1 << 4,            //16
     [Description("Yearly Updates")]
     YearlyUpdates = 1 << 5,              //32
+    [Description("Watched Tags")]
+    WatchedTags = 1 << 6,                //64
 }

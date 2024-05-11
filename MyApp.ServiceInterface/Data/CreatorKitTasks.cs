@@ -1,5 +1,7 @@
 ﻿using CreatorKit.ServiceInterface;
+using CreatorKit.ServiceModel;
 using CreatorKit.ServiceModel.Types;
+using MyApp.ServiceInterface.CreatorKit;
 using ServiceStack;
 
 namespace MyApp.Data;
@@ -14,4 +16,7 @@ public class CreatorKitTasks
 {
     [Command<SendMessagesCommand>]
     public SendMailMessages? SendMessages { get; set; }
+    
+    [Command<SendMailRunCommand>]
+    public SendMailRun? SendMailRun { get; set; }
 }

@@ -9,7 +9,7 @@
     <tr>
         <td width="100%" align="left" valign="top" style="padding:0 40px 30px 40px;border-collapse:collapse;font-family:'Google Sans Text',Roboto,sans-serif;font-size:14px;line-height:21px;color:#000000">
             {{#each posts }}
-                <h3 style="margin:1em 0 0.25em 0"><a href="{{WebsiteBaseUrl}}/questions/{{ it.id }}/{{ it.slug }}" style="font-size:16px;color:#4338CA!important;text-decoration:none" target="_blank">{{ it.title }} →</a></h3>
+                <h3 style="margin:1em 0 0.25em 0"><a href="{{urls.WebsiteBaseUrl}}/questions/{{ it.id }}/{{ it.slug }}" style="font-size:16px;color:#4338CA!important;text-decoration:none" target="_blank">{{ it.title }} →</a></h3>
                 <p style="margin:.5em 0;color:#4b5563">{{ it.summary }}</p>
             {{/each}}
         </td>

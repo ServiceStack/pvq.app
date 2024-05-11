@@ -26,6 +26,7 @@ public class ConfigureMq : IHostingStartup
             services.AddSingleton<ModelWorkerQueue>();
             services.AddSingleton<WorkerAnswerNotifier>();
             services.AddPlugin(new CommandsFeature());
+            services.AddHostedService<TimedHostedService>();
         })
         .ConfigureAppHost(afterAppHostInit: appHost => {
             var mqService = appHost.Resolve<IMessageService>();

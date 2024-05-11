@@ -68,7 +68,6 @@ public class EmailRenderersServices(EmailRenderer renderer) : Service
 
     public async Task<object> Any(RenderTagQuestionsEmail request)
     {
-        OrmLiteUtils.PrintSql();
         var context = renderer.CreateMailContext(layout:"tags", page:"tagged-questions");
 
         var posts = await Db.SelectAsync(Db.From<Post>()

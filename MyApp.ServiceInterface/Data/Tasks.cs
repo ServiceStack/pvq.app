@@ -159,6 +159,9 @@ public class DbWrites : IGet, IReturn<EmptyResponse>
     
     [Command<SaveGradeResultCommand>]
     public StatTotals? SaveStartingUpVotes { get; set; }
+    
+    [Command<AppDbPeriodicTasksCommand>]
+    public PeriodicTasks? PeriodicTasks { get; set; } 
 }
 
 public class AiServerTasks
