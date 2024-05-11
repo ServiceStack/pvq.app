@@ -3,13 +3,13 @@
 export default {
     components: { ChartJs },
     template: `
-        <ChartJs :data="data" :plugins="{ legend: { position: 'left' } }" />
+        <ChartJs :data="data" :plugins="{ legend: { position: 'left' } }" style="width:1024px" />
     `,
     props:['results'],
     setup(props) {
         let results = props.results
         results.sort((a,b) => b.value - a.value)
-        results = results.slice(0,10)
+        results = results.slice(0,20)
 
         const datasets = results.map((x,i) => ({
             label: x.displayName,

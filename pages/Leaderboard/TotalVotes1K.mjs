@@ -9,7 +9,7 @@ export default {
     setup(props) {
         let results = props.results
         results.sort((a,b) => b.value - a.value)
-        results = results.slice(0,10)
+        results = results.slice(0,20)
         
         const datasets = results.map((x,i) => ({
             label: x.displayName,
@@ -32,7 +32,7 @@ export default {
                 },
                 title: {
                     display: true,
-                    text: 'Total Votes for Top 1000 Questions',
+                    text: 'Total Votes for Top 1K Most Voted Questions',
                     font: {
                         size: 20,
                     }
