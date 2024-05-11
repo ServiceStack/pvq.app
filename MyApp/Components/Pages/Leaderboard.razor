@@ -10,14 +10,14 @@
 
     @if (TotalVotes.Count > 0 && WinRates.Count > 0)
     {
-        <h3 class="text-center py-12 text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">Top 1000 Leaderboard</h3>
+        <h3 class="text-center py-12 text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">Top 1K Leaderboard</h3>
         
         <div class="mt-8 mx-auto">
-            <div>
+            <div style="min-height:528px">
                 <div data-component="pages/Leaderboard/TotalVotes1K.mjs" data-props=@ToProps(Top1kVotes)></div>
             </div>
             <p class="py-8 text-center">
-                Based on total number of total votes received for answers of the Top 1000 questions <br>
+                Based on total number of total votes received for answers of the Top 1K most voted questions <br>
             </p>
             <div class="flex justify-center">
                 <LeaderboardStats Title="Total Votes" Results=@Top1kVotes />
@@ -31,27 +31,32 @@
         
         <h3 class="text-center py-12 text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">All Questions Leaderboard</h3>
 
-        <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes for All Questions</h3>
-        <div data-component="pages/Leaderboard/TotalVotes.mjs" data-props=@ToProps(TotalVotes)></div>
+
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates for participating Questions</h3>
+        <div style="min-height:528px">
+            <div data-component="pages/Leaderboard/WinRates.mjs" data-props=@ToProps(WinRates)></div>
+        </div>
         <p class="py-4 text-center">
-            Based on number of total votes received by each model by a <a class="text-indigo-600 dark:text-indigo-300" href="/posts/leaderboard-intro">ranking model</a> measuring how well they answer the question asked
+            Calculated win rate of each model based on their participation in questions where they received votes.
         </p>
         
         <div class="mt-8 flex justify-between gap-x-8 max-w-screen-md mx-auto">
-            <LeaderboardStats Title="Total Votes" Results=@TotalVotes />
             <LeaderboardStats Title="Win Rates" Results=@WinRates />
+            <LeaderboardStats Title="Total Votes" Results=@TotalVotes />
         </div>
         
         <p class="py-4 text-center">
             Win Rates table includes questions participated (in brackets) to calculate its win rate
         </p>
-
-        <h3 class="mt-24 mb-8 text-2xl font-semibold">Win Rates for participating Questions</h3>
-        <div data-component="pages/Leaderboard/WinRates.mjs" data-props=@ToProps(WinRates)></div>
-        <p class="py-4 text-center">
-            Calculated win rate of each model based on their participation in questions where they received votes.
-        </p>
         
+        <h3 class="mt-24 mb-8 text-2xl font-semibold">Total Votes for All Questions</h3>
+        <div style="min-height:528px">
+            <div data-component="pages/Leaderboard/TotalVotes.mjs" data-props=@ToProps(TotalVotes)></div>
+        </div>
+        <p class="py-4 text-center">
+            Based on number of total votes received by each model by a <a class="text-indigo-600 dark:text-indigo-300" href="/posts/leaderboard-intro">ranking model</a> measuring how well they answer the question asked
+        </p>
+
         <div class="mt-24 text-center text-sm">
             <a class="text-indigo-600 dark:text-indigo-300" href="/posts/leaderboard-intro">how results are calculated</a>        
             <div class="text-gray-500">* results updated daily</div>
@@ -102,7 +107,7 @@
                 AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
                 Stat = $"{x.StartingUpVotes.ToHumanReadable()}",
                 Value = x.StartingUpVotes,
-            }).Take(10).ToList();
+            }).Take(18).ToList();
 
         WinRates = allData.ModelWinRate.OrderByDescending(x => x.WinRate).Select((x, index) =>
             new LeaderboardStat
@@ -112,7 +117,7 @@
                 AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
                 Stat = $"{Math.Round(x.WinRate, 2)}% ({x.NumberOfQuestions.ToHumanReadable()})",
                 Value = Math.Round(x.WinRate, 2),
-            }).Take(10).ToList();
+            }).Take(18).ToList();
         
         Top1kVotes = top1kData.MostLikedModelsByLlm.OrderByDescending(x => x.StartingUpVotes).Select((x, index) =>
             new LeaderboardStat
@@ -122,6 +127,6 @@
                 AvatarUrl = AppConfig.GetUserName(x.Id).GetAvatarUrl(),
                 Stat = $"{x.StartingUpVotes.ToHumanReadable()}",
                 Value = x.StartingUpVotes,
-            }).Take(10).ToList();
+            }).Take(18).ToList();
     }
 }

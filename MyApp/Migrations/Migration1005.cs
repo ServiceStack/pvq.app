@@ -18,7 +18,7 @@ public class Migration1005 : MigrationBase
     public override void Up()
     {
         Db.CreateTable<QuestionGroup>();
-        var top1kRows = Top1000Ids.Map(x => new QuestionGroup { Id = x, Group = PostGroup.Top1K });
+        var top1kRows = Top1KIds.Map(x => new QuestionGroup { Id = x, Group = PostGroup.Top1K });
         Db.BulkInsert(top1kRows);
     }
 
@@ -27,7 +27,7 @@ public class Migration1005 : MigrationBase
         Db.DropTable<QuestionGroup>();
     }
 
-    private List<int> Top1000Ids =
+    public static List<int> Top1KIds =
     [
         927358,
         292357,

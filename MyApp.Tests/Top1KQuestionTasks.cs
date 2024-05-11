@@ -1,4 +1,6 @@
-﻿using MyApp.ServiceModel;
+﻿using MyApp.Data;
+using MyApp.Migrations;
+using MyApp.ServiceModel;
 using NUnit.Framework;
 using ServiceStack;
 using ServiceStack.Text;
@@ -8,19 +10,6 @@ namespace MyApp.Tests;
 [Explicit]
 public class Top1KQuestionTasks
 {
-    private List<string> top10Models =
-    [
-        "claude3-opus",
-        "claude3-sonnet",
-        "claude3-haiku",
-        "mixtral",
-        "gemini-pro",
-        "mistral",
-        "gemma",
-        "deepseek-coder",
-        "gemma-2b",
-    ];
-
     [Test]
     public async Task Find_Missing_Top1K_Questions_For_Model()
     {
@@ -39,8 +28,6 @@ public class Top1KQuestionTasks
     [Test]
     public async Task Create_missing_Top1K_Answers_for_Models()
     {
-        // var model = "mixtral";
-
         var client = TestUtils.CreateProdClient();
         await client.ApiAsync(new Authenticate
         {
@@ -49,7 +36,9 @@ public class Top1KQuestionTasks
             Password = Environment.GetEnvironmentVariable("AUTH_SECRET")
         });
 
-        foreach (var model in top10Models)
+        var allModels = AppConfig.ModelsForQuestions.Select(x => x.Model).ToList();
+        allModels.Remove("deepseek-coder-33b");
+        foreach (var model in allModels)
         {
             await CreateMissing1KModelsForModelAsync(client, model);
         }
@@ -94,6 +83,22 @@ public class Top1KQuestionTasks
     }
 
     [Test]
+    public async Task Recreate_answers_for_Top1K_questions_for_phi()
+    {
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModel
+        {
+            Model = "phi",
+            PostIds = Migration1005.Top1KIds,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
+    }
+
+    [Test]
     public async Task Find_answers_that_have_not_been_individually_graded()
     {
         var client = await TestUtils.CreateAuthenticatedProdClientAsync();
@@ -107,7 +112,7 @@ public class Top1KQuestionTasks
 
         if (api.Response!.Results.Count == 0)
         {
-            $"No more ungraded answers".Print();
+            "No more ungraded answers".Print();
             return;
         }
 
