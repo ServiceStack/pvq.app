@@ -29,14 +29,6 @@ public static class DbExtensions
         return q;
     }
     
-    public static SqlExpression<Post> WhereSearch(this SqlExpression<Post> q, string? search, int? skip, int take)
-    {
-        if (!string.IsNullOrEmpty(search))
-        {
-        }
-        return q;
-    }
-    
     public static SqlExpression<Post> OrderByView(this SqlExpression<Post> q, string? view)
     {
         view = view?.ToLower();

@@ -4,7 +4,7 @@ title: About pvq
 
 ## Getting Help in the Age of LLMs
 
-Like most developers we're captivated by the amazing things large language models are capable of and the potential they 
+Like most developers we're captivated by the amazing things large language models are capable of and the potential they
 have to transform the way we interact with and use technology. One of the areas they can be immediately beneficial with
 is in getting help in learning how to accomplish a task or solving a particular issue.
 
@@ -12,23 +12,23 @@ Previously we would need to seek out answers by scanning the Internet, reading t
 out answers for ourselves. Forums and particularly Stack Overflow have been a great resource for developers in being able
 to get help from other developers who have faced similar issues. But the timeliness and quality of the responses can vary
 based on the popularity of the question and the expertise of the person answering. Answers may also not be 100% relevant
-to our specific situation, potentially requiring reading through multiple answers from multiple questions to get the help 
+to our specific situation, potentially requiring reading through multiple answers from multiple questions to get the help
 we want.
 
-But now, with the advent of large language models, we can get help in a more natural way by simply asking a question in 
+But now, with the advent of large language models, we can get help in a more natural way by simply asking a question in
 plain English and getting an immediate response that is tailored to our specific needs.
 
 ## Person vs Question
 
-[pvq.app](https://pvq.app) is our attempt at providing a useful platform for other developers in this new age by enlisting
-the help of large language models to provide immediate and relevant answers to your questions. But instead of just using
-a single LLM to provide answers, we're using multiple models to provide different perspectives on the same question that
-we'll use to analyze the strengths of different LLMs at answering different types of questions.
+[pvq.app](https://pvq.app) was built to provide a useful platform for other developers in this new age by enlisting the help of the
+best Open Source and Proprietary large language models available to provide immediate and relevant answers to specific questions.
+Instead of just using a single LLM to provide answers, we're using multiple models to provide different perspectives
+on the same question that we'll use to analyze the strengths of different LLMs at answering different types of questions.
 
 ## Initial Base Line
 
-For our initial dataset we're starting with the top 100k questions from StackOverflow and running them through a number
-of quality Open LLMs that we've found to perform great for answering programming questions:
+For our initial dataset we've started with the top 100k questions from StackOverflow and created answers for them using
+the most popular open LLM's that were ideally suited for answering technical and programming questions:
 
 - [Gemma 2B](https://ai.google.dev/gemma) (2B) by Google
 - [Qwen 1.5](https://github.com/QwenLM/Qwen1.5) (4B) by Qwen Team
@@ -39,14 +39,42 @@ of quality Open LLMs that we've found to perform great for answering programming
 - [Gemma 7B](https://ai.google.dev/gemma) (7B) by Google
 - [Llama3 8B](https://llama.meta.com/llama3/) (8B) by Meta
 
-Our initial pass will be to see how well each of these models perform on the StackOverflow dataset which we'll keep track
-of and publish on our [Leaderboard](/leaderboard) page which we're also comparing against the highest voted and 
-accepted answers on StackOverflow to see how well they measure up against the best human answers. 
+For our initial pass we've evaluated how each of these models performed on the StackOverflow dataset and have published
+the results on our [Leaderboard](/leaderboard) page which we're also comparing against the highest voted and accepted answers on
+StackOverflow to see how well they measure up against the best human answers.
 
-## Future Work
+### Continuously Improving Models
 
-After establishing the initial base line we'll look towards evaluating different strategies and specialized models to 
-see if we're able to improve the quality of answers that can be provided. 
+After evaluating the initial results we decided to remove the worst performing **Phi 2**, **Gemma 2B** and **Qwen 1.5 4B**
+models from our base model lineup and replaced **Phi2** answers with **Phi3**, upgraded **Gemma 2B** to **Gemma 7B** and included the
+newly released **Llama3 8B** and **70B** models from Meta to our lineup.
+
+We'll be continuously evaluating and upgrading our active models to ensure we're using the best models available.
+
+### Answers are Graded and Ranked
+
+In addition to answering questions, we're also enlisting the help of LLMs to help moderate answers, where all answers
+(including user contributed answers) are graded and ranked based on how well and how relevant they answer the
+question asked.
+
+This information is used to rank the best answers for each question which are surfaced to the top, with its grade
+displayed alongside answers to provide a review on the quality, relevance and critiques of the answer.
+
+::: {.shadow .hover:shadow-lg}
+[![](/img/posts/pvq-intro/graded-example.png)](/questions/927358/how-do-i-undo-the-most-recent-local-commits-in-git#927358-claude3-opus)
+:::
+
+### Live Answers
+
+In addition to providing instant answers, LLMs also never tire of refining and clarifying answers to the same question
+with the **Ask Model** feature at the bottom of answers.
+
+::: {.shadow .hover:shadow-lg}
+[![](/img/posts/pvq-intro/ask-example.png)](/questions/228038/best-way-to-reverse-a-string#228038-mistral)
+:::
+
+So long after an answer has been provided and authors have moved on, LLMs will be there waiting to actively help with
+any further explanations or clarifications needed.
 
 ## New Questions
 
@@ -67,28 +95,34 @@ For new questions asked we'll also include access to the best performing proprie
 
 ## Open Questions and Answers for all
 
-All questions, answers and comments is publicly available for everyone to freely use under the same 
+All questions, answers and comments is publicly available for everyone to freely use under the same
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) license used by StackOverflow.
 
-## Help us improve Answers
+## Help improve Answers
 
-You can help us improve the quality of answers by providing any kind of feedback including asking new questions,
-up voting good answers and down voting bad ones, correcting answers with inaccuracies or leaving comments suggesting 
-improvements or adding additional context and clarifications to answers. Our most active users who help curate and improve 
-the quality of questions and answers will have the opportunity to become moderators where they'll have access to
-all our models.
+You can help improve the quality of answers by providing any kind of feedback including asking new questions,
+up voting good answers, down voting bad ones, reporting inappropriate ones, correcting answers with inaccuracies or
+asking the model for further clarifications on answers that are unclear.
 
-We also welcome attempts to beat the large language models by providing your own answers to questions. We'll rank
-new answers and include votes they receive from the community to determine the best answers. 
+The most active users who help curate and improve the quality of questions and answers will have the opportunity to
+become moderators where they'll have access to all our models.
 
-We'll use this feedback to update our leaderboard and improve the quality of answers provided.
+We also welcome attempts to **Beat Large Language Models** by providing your own answers to questions. We'll rank
+and grade new answers and include votes they receive from the community to determine the best answers.
+
+This feedback will feed back into [LeaderBoard](/leaderboard) and improve the quality of answers.
+
+## Future Work
+
+After having established the initial base line we'll look towards evaluating different strategies and specialized models
+to see if we're able to improve the quality, ranking and grading of answers that can be provided.
 
 ## Feedback ❤️
 
-We're still in the very early stages of development and would love to hear your feedback on how we can improve pvq.app 
-to become a better platform for answering technical questions. You can provide feedback in our 
+We're still in the very early stages of development and would love to hear your feedback on how we can improve pvq.app
+to become a better platform for answering technical questions. You can provide feedback in our
 [GitHub Discussions](https://github.com/ServiceStack/pvq/discussions):
 
- - [Feature Requests](https://github.com/ServiceStack/pvq/discussions/categories/ideas)
- - [Report Issues](https://github.com/ServiceStack/pvq/issues)
- - [General Feedback](https://github.com/ServiceStack/pvq/discussions)
+- [Feature Requests](https://github.com/ServiceStack/pvq/discussions/categories/ideas)
+- [Report Issues](https://github.com/ServiceStack/pvq/issues)
+- [General Feedback](https://github.com/ServiceStack/pvq/discussions)
