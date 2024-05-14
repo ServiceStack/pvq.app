@@ -93,8 +93,10 @@ public class CreateOpenAiChatResponse
 public class CreateAnswersForModels : IPost, IReturn<CreateAnswersForModelsResponse>
 {
     [ValidateNotEmpty]
+    [Input(Type = "tag"), FieldCss(Field = "col-span-12")]
     public List<string> Models { get; set; }
     
+    [ValidateNotEmpty]
     [Input(Type = "tag"), FieldCss(Field = "col-span-12")]
     public List<int> PostIds { get; set; }
 }

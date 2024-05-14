@@ -22,6 +22,9 @@ public class AiServerServices(ILogger<AiServerServices> log,
         if (request.Models.IsEmpty())
             throw new ArgumentNullException(nameof(request.Models));
         
+        if (request.PostIds.IsEmpty())
+            throw new ArgumentNullException(nameof(request.PostIds));
+        
         var command = executor.Command<CreateAnswerTasksCommand>();
         var to = new CreateAnswersForModelsResponse();
 
