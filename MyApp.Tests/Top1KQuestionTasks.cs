@@ -70,9 +70,9 @@ public class Top1KQuestionTasks
             return;
         }
 
-        var apiCreate = await client.ApiAsync(new CreateAnswersForModel
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
         {
-            Model = model,
+            Models = [model],
             PostIds = api.Response!.Results,
         });
             
@@ -86,9 +86,9 @@ public class Top1KQuestionTasks
     public async Task Recreate_answers_for_Top1K_questions_for_phi()
     {
         var client = await TestUtils.CreateAuthenticatedProdClientAsync();
-        var apiCreate = await client.ApiAsync(new CreateAnswersForModel
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
         {
-            Model = "phi",
+            Models = ["phi"],
             PostIds = Migration1005.Top1KIds,
         });
 

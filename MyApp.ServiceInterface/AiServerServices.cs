@@ -17,10 +17,13 @@ public class AiServerServices(ILogger<AiServerServices> log,
     WorkerAnswerNotifier answerNotifier,
     ICommandExecutor executor) : Service
 {
-    public async Task<object> Any(CreateAnswersForModel request)
+    public async Task<object> Any(CreateAnswersForModels request)
     {
+        if (request.Models.IsEmpty())
+            throw new ArgumentNullException(nameof(request.Models));
+        
         var command = executor.Command<CreateAnswerTasksCommand>();
-        var to = new CreateAnswersForModelResponse();
+        var to = new CreateAnswersForModelsResponse();
 
         foreach (var postId in request.PostIds)
         {
@@ -33,7 +36,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
             await command.ExecuteAsync(new CreateAnswerTasks
             {
                 Post = post,
-                ModelUsers = [request.Model],
+                ModelUsers = request.Models,
             });
             to.Results.Add(post.Id);
         }

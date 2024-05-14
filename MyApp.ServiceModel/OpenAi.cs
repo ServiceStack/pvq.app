@@ -90,15 +90,15 @@ public class CreateOpenAiChatResponse
 }
 
 [ValidateHasRole(Roles.Moderator)]
-public class CreateAnswersForModel : IPost, IReturn<CreateAnswersForModelResponse>
+public class CreateAnswersForModels : IPost, IReturn<CreateAnswersForModelsResponse>
 {
     [ValidateNotEmpty]
-    public string Model { get; set; }
+    public List<string> Models { get; set; }
     
     [Input(Type = "tag"), FieldCss(Field = "col-span-12")]
     public List<int> PostIds { get; set; }
 }
-public class CreateAnswersForModelResponse
+public class CreateAnswersForModelsResponse
 {
     public Dictionary<int, string> Errors { get; set; } = new();
     public List<int> Results { get; set; } = [];
