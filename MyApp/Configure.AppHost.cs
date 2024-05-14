@@ -52,8 +52,7 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             services.AddPlugin(new FilesUploadFeature(
                 new UploadLocation("profiles", appFs, allowExtensions: FileExt.WebImages,
                     // Use unique URL to invalidate CDN caches
-                    resolvePath: ctx =>
-                    {
+                    resolvePath: ctx => {
                         var userName = ctx.Session.UserName;
                         return $"/profiles/{userName[..2]}/{userName}/{ctx.FileName}";
                     },
