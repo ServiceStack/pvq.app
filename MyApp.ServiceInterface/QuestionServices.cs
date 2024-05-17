@@ -298,6 +298,21 @@ public class QuestionServices(ILogger<QuestionServices> log,
         }
 
         await questions.SaveAnswerEditAsync(answerFile, userName, request.Body, request.EditReason);
+        
+        var postId = request.Id.LeftPart('-').ToInt();
+        var post = await questions.GetQuestionFileAsPostAsync(postId);
+        if (post != null)
+        {
+            var user = request.Id.RightPart('-');
+            MessageProducer.Publish(new AiServerTasks
+            {
+                CreateAnswerTasks = new()
+                {
+                    Post = post,
+                    ModelUsers = [user],
+                }
+            });
+        }
 
         return new UpdateAnswerResponse();
     }
