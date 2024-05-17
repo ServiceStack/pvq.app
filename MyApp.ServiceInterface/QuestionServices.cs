@@ -303,15 +303,22 @@ public class QuestionServices(ILogger<QuestionServices> log,
         var post = await questions.GetQuestionFileAsPostAsync(postId);
         if (post != null)
         {
-            var user = request.Id.RightPart('-');
-            MessageProducer.Publish(new AiServerTasks
+            var createdBy = request.Id.RightPart('-');
+            var answerCreatorId = !string.IsNullOrEmpty(createdBy)
+                ? await Db.ScalarAsync<string>(Db.From<ApplicationUser>().Where(x => x.UserName == createdBy).Select(x => x.Id))
+                : null;
+
+            if (answerCreatorId != null)
             {
-                CreateAnswerTasks = new()
+                MessageProducer.Publish(new AiServerTasks
                 {
-                    Post = post,
-                    ModelUsers = [user],
-                }
-            });
+                    CreateRankAnswerTask = new()
+                    {
+                        AnswerId = request.Id,
+                        UserId = answerCreatorId,
+                    }
+                });
+            }
         }
 
         return new UpdateAnswerResponse();
@@ -606,4 +613,3 @@ public class QuestionServices(ILogger<QuestionServices> log,
         return new GetLastUpdatedResponse { Result = lastUpdated };
     }
 }
-
