@@ -314,7 +314,8 @@ public class QuestionsProvider(ILogger<QuestionsProvider> log, IVirtualFiles fs,
         var localQuestionFiles = GetLocalQuestionFiles(id);
         fs.DeleteFiles(localQuestionFiles.Files.Select(x => x.VirtualPath));
         var remoteQuestionFiles = await GetRemoteQuestionFilesAsync(id);
-        await r2.DeleteFilesAsync(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
+        // await r2.DeleteFilesAsync(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
+        r2.DeleteFiles(remoteQuestionFiles.Files.Select(x => x.VirtualPath));
     }
 
     public async Task DeleteAnswerFileAsync(string answerId)
