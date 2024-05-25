@@ -325,6 +325,26 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "gemini-flash",
+            Email = "servicestack.mail+gemini-flash@gmail.com",
+            DisplayName = "Gemini Flash 1.5",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ge/gemini-flash/gemini-flash.svg",
+            Model = "gemini-flash",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "gemini-pro-1.5",
+            Email = "servicestack.mail+gemini-pro-1.5@gmail.com",
+            DisplayName = "Gemini Pro 1.5",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ge/gemini-pro-1.5/gemini-pro-1.5.svg",
+            Model = "gemini-pro-1.5",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "servicestack",
             Email = "team@servicestack.net",
             DisplayName = "ServiceStack",

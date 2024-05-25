@@ -65,12 +65,14 @@ public class AppConfig
         ("gpt3.5-turbo", 10),
         ("claude3-haiku", 25),
         ("llama3-70b", 50),
+        ("gemini-flash", 75),
         ("command-r", 100),
         ("wizardlm", 175),
         ("claude3-sonnet", 250),
-        ("command-r-plus", 350),
-        ("gpt4-turbo", 450),
-        ("claude3-opus", 600),
+        ("gemini-pro-1.5", 350),
+        ("command-r-plus", 450),
+        ("gpt4-turbo", 600),
+        ("claude3-opus", 750),
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
@@ -275,6 +277,10 @@ public class AppConfig
             models.RemoveAll(x => x is "claude-3-haiku" or "claude-3-sonnet");
         if (models.Contains("claude-3-sonnet"))
             models.RemoveAll(x => x is "claude-3-haiku");
+        if (models.Contains("gemini-pro-1.5"))
+            models.RemoveAll(x => x is "gemini-flash" or "gemini-pro");
+        if (models.Contains("gemini-flash"))
+            models.RemoveAll(x => x is "gemini-pro");
         return models;
     }
 

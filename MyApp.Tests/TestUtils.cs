@@ -25,7 +25,18 @@ public static class TestUtils
         });
         return client;
     }
-   
+    public static async Task<JsonApiClient> CreateAdminDevClientAsync()
+    {
+        var client = CreateDevClient();
+        await client.ApiAsync(new Authenticate
+        {
+            provider = "credentials",
+            UserName = "admin",
+            Password = Environment.GetEnvironmentVariable("AUTH_SECRET")
+        });
+        return client;
+    }
+
     public static JsonApiClient CreateProdClient() => new("https://pvq.app");
     public static async Task<JsonApiClient> CreateAuthenticatedProdClientAsync()
     {
@@ -34,6 +45,18 @@ public static class TestUtils
         {
             provider = "credentials",
             UserName = "mythz",
+            Password = Environment.GetEnvironmentVariable("AUTH_SECRET")
+        });
+        return client;
+    }
+    
+    public static async Task<JsonApiClient> CreateAdminProdClientAsync()
+    {
+        var client = CreateProdClient();
+        await client.ApiAsync(new Authenticate
+        {
+            provider = "credentials",
+            UserName = "admin",
             Password = Environment.GetEnvironmentVariable("AUTH_SECRET")
         });
         return client;
