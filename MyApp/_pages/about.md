@@ -16,9 +16,9 @@ to our specific situation, potentially requiring reading through multiple answer
 we want.
 
 But with the advent of large language models, we can get help in a more natural way by simply asking a question in
-plain English and getting an immediate response that's tailored to our specific needs. 
+plain English and getting an immediate response that's tailored to our specific needs.
 
-With the rate of progress in both the quality of performance of LLMs and the hardware to run them we expect this to become 
+With the rate of progress in both the quality of performance of LLMs and the hardware to run them we expect this to become
 the new normal for how most people will get answers to their questions in future.
 
 ## Person vs Question
@@ -50,7 +50,7 @@ StackOverflow to see how well they measure up against the best human answers.
 
 After evaluating the initial results we decided to remove the worst performing **Phi 2**, **Gemma 2B** and **Qwen 1.5 4B**
 models from our base model lineup and replaced **Phi2** answers with **Phi3**, upgraded **Gemma 2B** to **Gemma 7B** and included the
-newly released **Llama3 8B** and **70B** models from Meta to our lineup.
+newly released **Llama3 8B** and **70B** models from Meta as well as **Gemini Flash** and **Gemini Pro 1.5** from Google to our lineup.
 
 We'll be continuously evaluating and upgrading our active models to ensure we're using the best models available.
 
@@ -67,7 +67,7 @@ displayed alongside answers to provide a review on the quality, relevance and cr
 [![](/img/posts/pvq-intro/graded-example.png)](/questions/927358/how-do-i-undo-the-most-recent-local-commits-in-git#927358-claude3-opus)
 :::
 
-### Live Answers
+### Live, Long-Lived Answers
 
 In addition to providing instant answers, LLMs also never tire of refining and clarifying answers to the same question
 with the **Ask Model** feature at the bottom of answers.
@@ -76,8 +76,8 @@ with the **Ask Model** feature at the bottom of answers.
 [![](/img/posts/pvq-intro/ask-example.png)](/questions/228038/best-way-to-reverse-a-string#228038-mistral)
 :::
 
-So long after an answer has been provided and authors have moved on, LLMs will be there waiting to actively help with
-any further explanations or clarifications needed.
+Necro bumps are a thing of the past! Long after an answer has been provided and authors have moved on,
+LLMs will still be there tirelessly waiting to actively help with any further explanations or clarifications as needed.
 
 ## New Questions
 
@@ -89,9 +89,11 @@ For new questions asked we'll also include access to the best performing proprie
 - [GPT 3.5 Turbo](https://platform.openai.com/docs/models/gpt-3-5-turbo) by OpenAI
 - [Claude 3 Haiku](https://www.anthropic.com/news/claude-3-haiku) by Anthropic
 - [Llama3 70B](https://llama.meta.com/llama3/) (70B) by Meta
+- [Gemini Flash](https://deepmind.google/technologies/gemini/flash/) by Google DeepMind
 - [Command-R](https://cohere.com/blog/command-r) (35B) by Cohere
-- [WizardLM2](https://wizardlm.github.io/WizardLM2/) (8x22B) by Microsoft (Mistral AI base model)
+- [WizardLM2](https://wizardlm.github.io/WizardLM2/) (8x22B) by Microsoft (Mistral 8x22B base model)
 - [Claude 3 Sonnet](https://www.anthropic.com/news/claude-3-family) by Anthropic
+- [Gemini Pro 1.5](https://deepmind.google/technologies/gemini/pro/) by Google DeepMind
 - [Command-R+](https://cohere.com/blog/command-r-plus-microsoft-azure) (104B) by Cohere
 - [GPT 4 Turbo](https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo) by OpenAI
 - [Claude 3 Opus](https://www.anthropic.com/claude) by Anthropic
