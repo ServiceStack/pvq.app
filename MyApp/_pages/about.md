@@ -87,9 +87,9 @@ For new questions asked we'll also include access to the best performing proprie
 - [Gemini Pro](https://blog.google/technology/ai/google-gemini-ai/) by Google
 - [Mixtral 8x7B](https://mistral.ai/news/mixtral-of-experts/) (8x7B) by Mistral AI
 - [GPT 3.5 Turbo](https://platform.openai.com/docs/models/gpt-3-5-turbo) by OpenAI
+- [Gemini Flash](https://deepmind.google/technologies/gemini/flash/) by Google DeepMind
 - [Claude 3 Haiku](https://www.anthropic.com/news/claude-3-haiku) by Anthropic
 - [Llama3 70B](https://llama.meta.com/llama3/) (70B) by Meta
-- [Gemini Flash](https://deepmind.google/technologies/gemini/flash/) by Google DeepMind
 - [Command-R](https://cohere.com/blog/command-r) (35B) by Cohere
 - [WizardLM2](https://wizardlm.github.io/WizardLM2/) (8x22B) by Microsoft (Mistral 8x22B base model)
 - [Claude 3 Sonnet](https://www.anthropic.com/news/claude-3-family) by Anthropic
