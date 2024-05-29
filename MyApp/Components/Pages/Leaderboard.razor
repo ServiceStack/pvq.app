@@ -6,6 +6,20 @@
 
 <PageTitle>Leaderboard</PageTitle>
 
+@if (LeaderboardInfo != null)
+{
+    <div class="absolute right-4 -mt-6">
+        <p class="text-sm text-gray-500">
+            <span>Leaderboard</span>
+            <a class="text-indigo-600 dark:text-indigo-300" href="/posts/leaderboard-intro">generated</a>
+            <span>
+                from <b>@LeaderboardInfo.AnswerCount.ToString("N0")</b> answers on 
+                <b>@LeaderboardInfo.GeneratedDate.ToString("MMM dd, yyyy")</b>
+            </span>
+        </p>
+    </div>
+}
+    
 <div class="mt-8 mb-20 mx-auto max-w-screen-lg">
 
     @if (TotalVotes.Count > 0 && WinRates.Count > 0)
@@ -70,6 +84,7 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
+    LeaderboardInfo? LeaderboardInfo;
     CalculateLeaderboardResponse? allData;
     CalculateLeaderboardResponse? top1kData;
 
@@ -84,7 +99,7 @@
     {
         // Only generate if missing, otherwise background task will update it.
         var gateway = GatewayFactory.GetServiceGateway(HttpContext.ToRequest());
-        if (!File.Exists("App_Data/leaderboard.json"))
+        if (!File.Exists("App_Data/leaderboard.json") || !File.Exists("App_Data/leaderboard-info.json"))
         {
             await gateway.ApiAsync(new CalculateLeaderBoard());
         }
@@ -93,6 +108,7 @@
             await gateway.ApiAsync(new CalculateTop1KLeaderboard());
         }
 
+        LeaderboardInfo = (await File.ReadAllTextAsync("App_Data/leaderboard-info.json")).FromJson<LeaderboardInfo>();
         var allVotesData = await File.ReadAllTextAsync("App_Data/leaderboard.json");
         allData = allVotesData.FromJson<CalculateLeaderboardResponse>();
 

@@ -23,7 +23,7 @@ public class LeaderboardServices : Service
     public async Task<object> Any(CalculateLeaderBoard request)
     {
         var statTotals = await Db.SelectAsync<StatTotals>();
-        var modelsToExclude = request.ModelsToExclude?.Split(",").ToList() ?? new List<string>();
+        var modelsToExclude = request.ModelsToExclude?.Split(",").ToList() ?? [];
         // filter to answers only
         var answers = statTotals.Where(x => FilterSpecificModels(x, modelsToExclude)).ToList();
         // Sum up votes by model, first group by UserName
@@ -52,6 +52,14 @@ public class LeaderboardServices : Service
         var modelsToExcludeSlug = request.ModelsToExclude?.GenerateSlug();
         var combinedSuffix = modelsToExcludeSlug.IsNullOrEmpty() ? "" : $"-{modelsToExcludeSlug}";
         await File.WriteAllTextAsync($"App_Data/leaderboard{combinedSuffix}.json", json);
+
+        var count = Db.Count<StatTotals>(x => x.Id != x.PostId.ToString());
+        var info = new LeaderboardInfo
+        {
+            AnswerCount = count,
+            GeneratedDate = DateTime.UtcNow,
+        };
+        await File.WriteAllTextAsync("App_Data/leaderboard-info.json", info.ToJson());
         
         return leaderBoard;
     }
@@ -316,6 +324,12 @@ public record LeaderboardStat
     public string DisplayName { get; set; }
     public string Stat { get; set; }
     public double Value { get; set; }
+}
+
+public class LeaderboardInfo
+{
+    public long AnswerCount { get; set; }
+    public DateTime GeneratedDate { get; set; }
 }
 
 public class CalculateLeaderBoard : IReturn<CalculateLeaderboardResponse>, IGet
