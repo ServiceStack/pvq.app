@@ -32,7 +32,7 @@ export default {
                 },
                 title: {
                     display: true,
-                    text: 'Total Votes for Top 1K Most Voted Questions',
+                    text: 'Total Votes for Top 1K Highest Voted Questions',
                     font: {
                         size: 20,
                     }
