@@ -9,6 +9,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.CreatorKit;
 
+[Tag(Tags.CreatorKit)]
 public class SendMailRunCommand(
     ILogger<SendMailRunCommand> log,
     IDbConnectionFactory dbFactory,

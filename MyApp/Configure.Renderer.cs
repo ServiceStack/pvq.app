@@ -52,6 +52,7 @@ internal class StaticNavigationManager : NavigationManager
     }
 }
 
+[Tag(Tags.Renderer)]
 public class RenderQuestionPostCommand(BlazorRenderer renderer, RendererCache cache) : IAsyncCommand<QuestionAndAnswers>
 {
     public async Task ExecuteAsync(QuestionAndAnswers request)
@@ -61,6 +62,7 @@ public class RenderQuestionPostCommand(BlazorRenderer renderer, RendererCache ca
     }
 }
 
+[Tag(Tags.Renderer)]
 public class RenderHomeTabCommand(BlazorRenderer renderer, RendererCache cache) : IAsyncCommand<RenderHome>
 {
     public async Task ExecuteAsync(RenderHome request)

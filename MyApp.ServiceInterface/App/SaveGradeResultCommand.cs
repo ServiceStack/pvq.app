@@ -7,6 +7,7 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Answers)]
 public class SaveGradeResultCommand(AppConfig appConfig, IDbConnection db, IMessageProducer mq, WorkerAnswerNotifier answerNotifier) 
     : IAsyncCommand<StatTotals>
 {

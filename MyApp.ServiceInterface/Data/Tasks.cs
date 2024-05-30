@@ -1,6 +1,7 @@
 ﻿using MyApp.ServiceInterface;
 using MyApp.ServiceInterface.AiServer;
 using MyApp.ServiceInterface.App;
+using MyApp.ServiceInterface.Jobs;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.DataAnnotations;

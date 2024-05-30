@@ -6,6 +6,7 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Answers)]
 public class AnswerAddedToPostCommand(IDbConnection db) : IAsyncCommand<AnswerAddedToPost>
 {
     public async Task ExecuteAsync(AnswerAddedToPost request)

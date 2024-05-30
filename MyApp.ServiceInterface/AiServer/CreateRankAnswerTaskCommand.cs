@@ -4,6 +4,7 @@ using ServiceStack;
 
 namespace MyApp.ServiceInterface.AiServer;
 
+[Tag(Tags.AI)]
 public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider questions) : IAsyncCommand<CreateRankAnswerTask>
 {
     //https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-a-tech-reviewer

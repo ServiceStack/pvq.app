@@ -6,6 +6,7 @@ using ServiceStack;
 
 namespace MyApp.ServiceInterface.AiServer;
 
+[Tag(Tags.AI)]
 public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log, 
     AppConfig appConfig, QuestionsProvider questions) : IAsyncCommand<CreateAnswerTasks>
 {

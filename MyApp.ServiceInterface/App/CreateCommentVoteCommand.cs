@@ -6,6 +6,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Database)]
 public class CreateCommentVoteCommand(IDbConnection db, QuestionsProvider questions) : IAsyncCommand<Vote>
 {
     public async Task ExecuteAsync(Vote vote)

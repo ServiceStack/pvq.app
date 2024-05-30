@@ -1,5 +1,6 @@
 ﻿using CreatorKit.ServiceModel.Types;
 using MyApp.Data;
+using MyApp.ServiceInterface;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.Data;
@@ -7,6 +8,7 @@ using ServiceStack.OrmLite;
 
 namespace CreatorKit.ServiceInterface;
 
+[Tag(Tags.CreatorKit)]
 public class SendMessagesCommand(IDbConnectionFactory dbFactory, EmailProvider emailProvider) : IAsyncCommand<SendMailMessages>
 {
     public async Task ExecuteAsync(SendMailMessages request)

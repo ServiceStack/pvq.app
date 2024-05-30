@@ -7,6 +7,7 @@ using ServiceStack.Text;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Questions)]
 public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig appConfig) : IAsyncCommand<ImportQuestion>
 {
     static readonly Regex ValidTagCharsRegex = new("[^a-zA-Z0-9#+.]", RegexOptions.Compiled);

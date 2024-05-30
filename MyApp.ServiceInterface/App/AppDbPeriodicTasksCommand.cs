@@ -13,6 +13,7 @@ using ServiceStack.Script;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Database)]
 public class AppDbPeriodicTasksCommand(ILogger<AppDbPeriodicTasksCommand> log, 
     AppConfig appConfig, IDbConnectionFactory dbFactory, IMessageProducer mq, EmailRenderer renderer) 
     : IAsyncCommand<PeriodicTasks>

@@ -115,6 +115,22 @@ public class Top1KQuestionTasks
     }
 
     [Test]
+    public async Task Recreate_answers_for_Top1K_questions_for_gemini_flash()
+    {
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
+        {
+            Models = ["gemini-flash"],
+            PostIds = Migration1005.Top1KIds,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
+    }
+
+    [Test]
     public async Task Find_answers_that_have_not_been_individually_graded()
     {
         var client = await TestUtils.CreateAuthenticatedProdClientAsync();
@@ -175,5 +191,30 @@ public class Top1KQuestionTasks
         });
         api.Response.PrintDump();
         api.ThrowIfError();
+    }
+
+    [Test]
+    public async Task Generate_top_10k_answers_for_gemini_flash()
+    {
+        var txt = await File.ReadAllTextAsync(TestUtils.GetHostDir().CombineWith("App_Data/top10k-6.txt"));
+        var ids = new List<int>();
+        foreach (var line in txt.ReadLines())
+        {
+            ids.Add(int.Parse(line.Trim()));
+        }
+        
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        // client.GetHttpClient().Timeout = TimeSpan.FromMinutes(5);
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
+        {
+            // Models = ["gemini-flash","gemini-pro-1.5"],
+            Models = ["gemini-flash"],
+            PostIds = ids,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
     }
 }

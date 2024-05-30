@@ -5,6 +5,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Notifications)]
 public class PostSubscriptionsCommand(IDbConnection db) : IAsyncCommand<PostSubscriptions>
 {
     public async Task ExecuteAsync(PostSubscriptions request)

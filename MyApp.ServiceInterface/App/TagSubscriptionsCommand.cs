@@ -5,6 +5,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Notifications)]
 public class TagSubscriptionsCommand(IDbConnection db) : IAsyncCommand<TagSubscriptions>
 {
     public async Task ExecuteAsync(TagSubscriptions request)

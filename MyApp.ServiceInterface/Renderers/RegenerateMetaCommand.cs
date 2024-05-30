@@ -9,6 +9,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.Renderers;
 
+[Tag(Tags.Renderer)]
 public class RegenerateMetaCommand(
     ILogger<RegenerateMetaCommand> log,
     IDbConnectionFactory dbFactory,

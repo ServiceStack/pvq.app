@@ -6,6 +6,7 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Database)]
 public class DeletePostsCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<DeletePosts>
 {
     public async Task ExecuteAsync(DeletePosts request)

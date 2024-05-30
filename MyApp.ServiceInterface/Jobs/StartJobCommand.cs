@@ -1,11 +1,12 @@
 ﻿using System.Data;
-using ServiceStack;
-using ServiceStack.OrmLite;
 using MyApp.Data;
 using MyApp.ServiceModel;
+using ServiceStack;
+using ServiceStack.OrmLite;
 
-namespace MyApp.ServiceInterface.App;
+namespace MyApp.ServiceInterface.Jobs;
 
+[Tag(Tags.Jobs)]
 public class StartJobCommand(IDbConnection db) : IAsyncCommand<StartJob>
 {
     public async Task ExecuteAsync(StartJob job)

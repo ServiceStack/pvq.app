@@ -7,6 +7,7 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Database)]
 public class CreatePostVoteCommand(AppConfig appConfig, IDbConnection db, IMessageProducer mqClient) : IAsyncCommand<Vote>
 {
     public async Task ExecuteAsync(Vote vote)

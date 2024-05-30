@@ -6,6 +6,7 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Notifications)]
 public class MarkPostAsReadCommand(AppConfig appConfig, IDbConnection db, QuestionsProvider questions) : IAsyncCommand<MarkPostAsRead>
 {
     public async Task ExecuteAsync(MarkPostAsRead request)

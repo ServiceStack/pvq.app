@@ -6,6 +6,7 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Answers)]
 public class DeleteAnswersCommand(IDbConnection db) : IAsyncCommand<DeleteAnswers>
 {
     public async Task ExecuteAsync(DeleteAnswers request)

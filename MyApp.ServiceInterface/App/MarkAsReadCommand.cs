@@ -6,6 +6,7 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Notifications)]
 public class MarkAsReadCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<MarkAsRead>
 {
     public async Task ExecuteAsync(MarkAsRead request)

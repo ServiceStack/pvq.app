@@ -5,6 +5,7 @@ using ServiceStack;
 
 namespace MyApp.ServiceInterface.AiServer;
 
+[Tag(Tags.AI)]
 public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand<CreateAnswerCommentTask>
 {
     public const string SystemPrompt = 

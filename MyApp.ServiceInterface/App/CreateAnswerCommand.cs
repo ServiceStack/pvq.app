@@ -6,6 +6,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Answers)]
 public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<Post>
 {
     public async Task ExecuteAsync(Post answer)

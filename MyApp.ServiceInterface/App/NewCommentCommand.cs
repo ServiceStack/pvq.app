@@ -6,6 +6,7 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
+[Tag(Tags.Database)]
 public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<NewComment>
 {
     public async Task ExecuteAsync(NewComment request)
