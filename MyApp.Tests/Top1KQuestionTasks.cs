@@ -196,7 +196,7 @@ public class Top1KQuestionTasks
     [Test]
     public async Task Generate_top_10k_answers_for_gemini_flash()
     {
-        var txt = await File.ReadAllTextAsync(TestUtils.GetHostDir().CombineWith("App_Data/top10k-6.txt"));
+        var txt = await File.ReadAllTextAsync(TestUtils.GetHostDir().CombineWith("App_Data/top10k-10.txt"));
         var ids = new List<int>();
         foreach (var line in txt.ReadLines())
         {
