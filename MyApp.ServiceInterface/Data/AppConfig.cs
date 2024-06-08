@@ -66,13 +66,14 @@ public class AppConfig
         ("gpt3.5-turbo", 10),
         ("claude3-haiku", 25),
         ("llama3-70b", 50),
-        ("command-r", 75),
-        ("wizardlm", 100),
-        ("claude3-sonnet", 175),
-        ("gemini-pro-1.5", 250),
-        ("command-r-plus", 350),
-        ("gpt4-turbo", 450),
-        ("claude3-opus", 600),
+        ("qwen2-72b", 75),
+        ("command-r", 100),
+        ("wizardlm", 175),
+        ("claude3-sonnet", 250),
+        ("gemini-pro-1.5", 350),
+        ("command-r-plus", 450),
+        ("gpt4-turbo", 600),
+        ("claude3-opus", 750),
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
