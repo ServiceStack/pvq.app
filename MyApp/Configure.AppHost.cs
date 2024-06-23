@@ -42,7 +42,7 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             var questionsDir = context.HostingEnvironment.ContentRootPath.CombineWith("App_Data/questions");
 #if DEBUG
             questionsDir = Path.GetFullPath(
-                Path.Combine(context.HostingEnvironment.ContentRootPath, "../../pvq/questions"));
+                Path.Combine(context.HostingEnvironment.ContentRootPath, "../../../mythz/pvq/questions"));
 #endif
             services.AddSingleton(c => new QuestionsProvider(
                 c.GetRequiredService<ILogger<QuestionsProvider>>(),
