@@ -61,5 +61,15 @@ public static class TestUtils
         });
         return client;
     }
+
+    public static JsonApiClient CreateAiDevClient() => new("https://localhost:5005")
+    {
+        BearerToken = Environment.GetEnvironmentVariable("AK_PVQ")
+    };
     
+    public static JsonApiClient CreateAiProdClient() => new("https://openai.servicestack.net")
+    {
+        BearerToken = Environment.GetEnvironmentVariable("AK_PVQ")
+    };
+  
 }

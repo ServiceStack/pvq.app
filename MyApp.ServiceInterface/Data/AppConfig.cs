@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Data;
+using System.Net.Http.Headers;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.OrmLite;
@@ -24,8 +25,32 @@ public class AppConfig
     public string? RedditClient { get; set; }
     public string? RedditSecret { get; set; }
     public string? RedditAccessToken { get; set; }
-    public JsonApiClient CreateAiServerClient() => new(AiServerBaseUrl) { BearerToken = AiServerApiKey };
+
+    public JsonApiClient CreateAiServerClientIgnoringSsl(string baseUrl)
+    {
+        var client = new JsonApiClient(AiServerBaseUrl);
+            
+        // Ignore local SSL Errors
+        var handler = HttpUtils.HttpClientHandlerFactory();
+        handler.ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true;
+        var httpClient = new HttpClient(handler, disposeHandler:client.HttpMessageHandler == null) {
+            BaseAddress = new Uri(AiServerBaseUrl),
+        };
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AiServerApiKey);
+        client = new JsonApiClient(httpClient) {
+            BearerToken = AiServerApiKey
+        };
+        return client;
+    }
     
+    public JsonApiClient CreateAiServerClient()
+    {
+        // if (Env.IsLinux && AiServerBaseUrl.StartsWith("https://localhost"))
+        //     return CreateAiServerClientIgnoringSsl(AiServerBaseUrl);
+        
+        return new JsonApiClient(AiServerBaseUrl) { BearerToken = AiServerApiKey };
+    }
+
     public string CacheDir { get; set; }
     public string ProfilesDir { get; set; }
     public string NotificationsEmail { get; set; } = "notifications@pvq.app";
