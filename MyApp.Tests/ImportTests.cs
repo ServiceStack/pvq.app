@@ -252,4 +252,41 @@ public class ImportTests
         var result = StringBuilderCache.ReturnAndFree(sb);
         Assert.That(result.Trim(), Does.StartWith("[{"));
     }
+
+    private static string Password = Environment.GetEnvironmentVariable("AUTH_SECRET") ?? "p@55wOrd";
+    
+    [Explicit("Run Manually")]
+    [Test]
+    public async Task Can_create_new_users()
+    {
+        var client = await TestUtils.CreateAdminProdClientAsync();
+        
+        var api = await client.ApiAsync(new EnsureApplicationUser
+        {
+            UserName = "gemma2-27b",
+            Email = "servicestack.mail+gemma2-27b@gmail.com",
+            DisplayName = "Gemma2 27B",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ge/gemma2-27b/gemma2-27b.svg",
+            Model = "gemma2:27b", //27B
+            Password = Password, 
+        });
+        
+        api.ThrowIfError();
+        api.Response.PrintDump();
+        
+        api = await client.ApiAsync(new EnsureApplicationUser
+        {
+            UserName = "claude3-5-sonnet",
+            Email = "servicestack.mail+claude3-5-sonnet@gmail.com",
+            DisplayName = "Claude 3.5 Sonnet",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/cl/claude3-5-sonnet/claude3-5-sonnet.svg",
+            Model = "claude-3-5-sonnet",
+            Password = Password, 
+        });
+            
+        api.ThrowIfError();
+        api.Response.PrintDump();
+    }
 }

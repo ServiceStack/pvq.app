@@ -108,6 +108,25 @@ public class GetUsersInfoResponse
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
+[ExcludeMetadata]
+[ValidateIsAdmin]
+public class EnsureApplicationUser : IGet, IReturn<StringResponse>
+{
+    public string? Id { get; set; }
+    [ValidateNotEmpty]
+    public string UserName { get; set; }
+    [ValidateNotEmpty]
+    public string Email { get; set; }
+    [ValidateNotEmpty]
+    public string DisplayName { get; set; }
+    public string? Model { get; set; }
+    [ValidateNotEmpty]
+    public string ProfilePath { get; set; }
+    public bool? EmailConfirmed { get; set; }
+    [ValidateNotEmpty]
+    public string Password { get; set; }
+}
+
 [Route("/q/{RefId}")]
 [Route("/q/{RefId}/{UserId}")]
 public class ShareContent : IGet, IReturn<string>

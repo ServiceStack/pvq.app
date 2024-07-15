@@ -1,4 +1,5 @@
-﻿using MyApp.Data;
+﻿using Microsoft.AspNetCore.Identity;
+using MyApp.Data;
 using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.IO;
@@ -7,7 +8,7 @@ using SixLabors.ImageSharp.Formats.Png;
 
 namespace MyApp.ServiceInterface;
 
-public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator imageCreator) : Service
+public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator imageCreator, UserManager<ApplicationUser> userManager) : Service
 {
     private const string AppData = "/App_Data";
     
@@ -263,6 +264,30 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
             UsersReputation = appConfig.UsersReputation.ToDictionary(),
             UsersUnreadAchievements = appConfig.UsersUnreadAchievements.ToDictionary(),
             UsersUnreadNotifications = appConfig.UsersUnreadNotifications.ToDictionary(),
+        };
+    }
+
+    public async Task<object> Any(EnsureApplicationUser request)
+    {
+        var existingUser = await userManager.FindByEmailAsync(request.Email);
+        if (existingUser == null)
+        {
+            var user = new ApplicationUser
+            {
+                UserName = request.UserName,
+                Email = request.Email,
+                DisplayName = request.DisplayName,
+                EmailConfirmed = request.EmailConfirmed ?? false,
+                ProfilePath = request.ProfilePath,
+                Model = request.Model,
+            };
+            await userManager!.CreateAsync(user, request.Password);
+        }
+        
+        var newUser = await userManager.FindByEmailAsync(request.Email!);
+        return new StringResponse
+        {
+            Result = newUser?.Id
         };
     }
 

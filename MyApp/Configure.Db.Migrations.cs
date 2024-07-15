@@ -206,7 +206,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "gemma2-27b",
-            Email = "servicestack.mail+gemma@gmail.com",
+            Email = "servicestack.mail+gemma2-27b@gmail.com",
             DisplayName = "Gemma2 27B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemma2-27b/gemma2-27b.svg",
@@ -306,7 +306,7 @@ public class ConfigureDbMigrations : IHostingStartup
         await EnsureUserAsync(new ApplicationUser
         {
             UserName = "claude3-5-sonnet",
-            Email = "servicestack.mail+claude3-sonnet@gmail.com",
+            Email = "servicestack.mail+claude3-5-sonnet@gmail.com",
             DisplayName = "Claude 3.5 Sonnet",
             EmailConfirmed = true,
             ProfilePath = "/profiles/cl/claude3-5-sonnet/claude3-5-sonnet.svg",
