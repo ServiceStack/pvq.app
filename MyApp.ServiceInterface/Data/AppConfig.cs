@@ -88,7 +88,7 @@ public class AppConfig
         ("gemini-pro", 0),
         ("mixtral", 3),
         ("gemini-flash", 5),
-        ("gpt3.5-turbo", 10),
+        ("gpt-4o-mini", 10),
         ("claude3-haiku", 25),
         ("llama3-70b", 50),
         ("qwen2-72b", 75),

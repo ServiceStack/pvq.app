@@ -263,29 +263,15 @@ public class ImportTests
         
         var api = await client.ApiAsync(new EnsureApplicationUser
         {
-            UserName = "gemma2-27b",
-            Email = "servicestack.mail+gemma2-27b@gmail.com",
-            DisplayName = "Gemma2 27B",
+            UserName = "gpt-4o-mini",
+            Email = "servicestack.mail+gpt-4o-mini@gmail.com",
+            DisplayName = "GPT-4o mini",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/ge/gemma2-27b/gemma2-27b.svg",
-            Model = "gemma2:27b", //27B
+            ProfilePath = "/profiles/gp/gpt-4o-mini/gpt-4o-mini.svg",
+            Model = "gpt-4o-mini",
             Password = Password, 
         });
         
-        api.ThrowIfError();
-        api.Response.PrintDump();
-        
-        api = await client.ApiAsync(new EnsureApplicationUser
-        {
-            UserName = "claude3-5-sonnet",
-            Email = "servicestack.mail+claude3-5-sonnet@gmail.com",
-            DisplayName = "Claude 3.5 Sonnet",
-            EmailConfirmed = true,
-            ProfilePath = "/profiles/cl/claude3-5-sonnet/claude3-5-sonnet.svg",
-            Model = "claude-3-5-sonnet",
-            Password = Password, 
-        });
-            
         api.ThrowIfError();
         api.Response.PrintDump();
     }
