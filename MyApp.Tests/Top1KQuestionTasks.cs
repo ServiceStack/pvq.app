@@ -131,6 +131,38 @@ public class Top1KQuestionTasks
     }
 
     [Test]
+    public async Task Recreate_answers_for_Top1K_questions_for_gemma2()
+    {
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
+        {
+            Models = ["gemma2:27b"],
+            PostIds = Migration1005.Top1KIds,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
+    }
+
+    [Test]
+    public async Task Recreate_answers_for_Top1K_questions_for_sonnet3_5()
+    {
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
+        {
+            Models = ["claude-3-5-sonnet"],
+            PostIds = Migration1005.Top1KIds,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
+    }
+
+    [Test]
     public async Task Find_answers_that_have_not_been_individually_graded()
     {
         var client = await TestUtils.CreateAuthenticatedProdClientAsync();
