@@ -30,6 +30,10 @@ public class ConfigureAuth : IHostingStartup
                         {
                             c.FieldsPerRow(2); 
                         }),
+                        Input.For<ApplicationUser>(x => x.DisplayName, c =>
+                        {
+                            c.FieldsPerRow(2); 
+                        }),
                         Input.For<ApplicationUser>(x => x.ProfilePath)
                     ];
                         
