@@ -251,7 +251,11 @@ public class Top1KQuestionTasks
             UserName = "mistral-nemo",
             Email = "servicestack.mail+mistral-nemo@gmail.com",
             DisplayName = "Mistral NeMo",
-            ProfileUrl = "/profiles/mi/mistral-nemo/mistral-nemo.svg",
+            UserAuthProperties = new()
+            {
+                [nameof(ApplicationUser.Model)] = "mistral-nemo",
+                [nameof(ApplicationUser.ProfilePath)] = "/profiles/mi/mistral-nemo/mistral-nemo.svg",
+            },
             Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
         });
         api.Response.PrintDump();
