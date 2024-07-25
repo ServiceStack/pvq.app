@@ -179,6 +179,22 @@ public class Top1KQuestionTasks
     }
 
     [Test]
+    public async Task Recreate_answers_for_Top1K_questions_for_Mistral_Nemo()
+    {
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
+        {
+            Models = ["mistral-nemo"],
+            PostIds = Migration1005.Top1KIds,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
+    }
+
+    [Test]
     public async Task Find_answers_that_have_not_been_individually_graded()
     {
         var client = await TestUtils.CreateAuthenticatedProdClientAsync();
@@ -208,40 +224,6 @@ public class Top1KQuestionTasks
     }
 
     [Test]
-    public async Task Create_Gemini_Flash_User()
-    {
-        var client = await TestUtils.CreateAdminDevClientAsync();
-        // var client = await TestUtils.CreateAdminProdClientAsync();
-        var api = await client.ApiAsync(new AdminCreateUser
-        {
-            UserName = "gemini-flash",
-            Email = "servicestack.mail+gemini-flash@gmail.com",
-            DisplayName = "Gemini Flash 1.5",
-            ProfileUrl = "/profiles/ge/gemini-flash/gemini-flash.svg",
-            Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
-        });
-        api.Response.PrintDump();
-        api.ThrowIfError();
-    }
-
-    [Test]
-    public async Task Create_Gemini_Pro_15_User()
-    {
-        var client = await TestUtils.CreateAdminDevClientAsync();
-        // var client = await TestUtils.CreateAdminProdClientAsync();
-        var api = await client.ApiAsync(new AdminCreateUser
-        {
-            UserName = "gemini-pro-1.5",
-            Email = "servicestack.mail+gemini-pro-1.5@gmail.com",
-            DisplayName = "Gemini Pro 1.5",
-            ProfileUrl = "/profiles/ge/gemini-pro-1.5/gemini-pro-1.5.svg",
-            Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
-        });
-        api.Response.PrintDump();
-        api.ThrowIfError();
-    }
-
-    [Test]
     public async Task Create_Mistral_Nemo_User()
     {
         // var client = await TestUtils.CreateAdminDevClientAsync();
@@ -249,11 +231,12 @@ public class Top1KQuestionTasks
         var api = await client.ApiAsync(new AdminCreateUser
         {
             UserName = "mistral-nemo",
-            Email = "servicestack.mail+mistral-nemo@gmail.com",
             DisplayName = "Mistral NeMo",
+            Email = "servicestack.mail+mistral-nemo@gmail.com",
             UserAuthProperties = new()
             {
                 [nameof(ApplicationUser.Model)] = "mistral-nemo",
+                [nameof(ApplicationUser.DisplayName)] = "Mistral NeMo",
                 [nameof(ApplicationUser.ProfilePath)] = "/profiles/mi/mistral-nemo/mistral-nemo.svg",
             },
             Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
