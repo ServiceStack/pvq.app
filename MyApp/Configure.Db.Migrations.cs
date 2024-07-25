@@ -235,6 +235,16 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "mistral-nemo",
+            Email = "servicestack.mail+mistral-nemo@gmail.com",
+            DisplayName = "Mistral NeMo",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/mi/mistral-nemo/mistral-nemo.svg",
+            Model = "mistral-nemo", //12
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "mixtral",
             Email = "servicestack.mail+mixtral-8x7b@gmail.com",
             DisplayName = "Mixtral 8x7B",
