@@ -75,11 +75,11 @@ public class AppConfig
 
     public static (string Model, int Questions)[] ModelsForQuestions =
     [
-        ("deepseek-coder", 1000),
-        ("gemma-2b", 1000),
-        ("qwen-4b", 1000),
-        ("deepseek-coder-33b", 1000),
-        ("mistral", 1000),
+        ("deepseek-coder", -1),
+        ("gemma-2b", -1),
+        ("qwen-4b", -1),
+        ("deepseek-coder-33b", -1),
+        ("mistral", -1),
 
         ("phi", 0),
         ("codellama", 0),
