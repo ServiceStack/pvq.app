@@ -43,7 +43,7 @@
                     <h3 class="ml-2 text-2xl font-semibold">AI Assistants</h3>
                 </div>
                 <p class="my-2 text-sm text-gray-500">ask more questions to unlock new assistants</p>
-                @foreach (var questionLevel in AppConfig.QuestionLevels)
+                @foreach (var questionLevel in AppConfig.QuestionLevels.Where(x => x >= 0))
                 {
                     var qualified = totalQuestions >= questionLevel; 
                     var questionsToGo = "question" + (questionLevel - totalQuestions == 1 ? "" : "s");
