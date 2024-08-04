@@ -246,6 +246,28 @@ public class Top1KQuestionTasks
     }
 
     [Test]
+    public async Task Create_DeepSeek236B_User()
+    {
+        // var client = await TestUtils.CreateAdminDevClientAsync();
+        var client = await TestUtils.CreateAdminProdClientAsync();
+        var api = await client.ApiAsync(new AdminCreateUser
+        {
+            UserName = "deepseek-coder2-236b",
+            DisplayName = "DeepSeek Coder2 236B",
+            Email = "servicestack.mail+deepseek-coder2-236b@gmail.com",
+            UserAuthProperties = new()
+            {
+                [nameof(ApplicationUser.Model)] = "deepseek-coder-v2:236b",
+                [nameof(ApplicationUser.DisplayName)] = "DeepSeek Coder2 236B",
+                [nameof(ApplicationUser.ProfilePath)] = "/profiles/de/deepseek-coder2-236b/deepseek-coder2-236b.jpg",
+            },
+            Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
+        });
+        api.Response.PrintDump();
+        api.ThrowIfError();
+    }
+
+    [Test]
     public async Task Generate_top_10k_answers_for_gemini_flash()
     {
         var txt = await File.ReadAllTextAsync(TestUtils.GetHostDir().CombineWith("App_Data/top10k-10.txt"));

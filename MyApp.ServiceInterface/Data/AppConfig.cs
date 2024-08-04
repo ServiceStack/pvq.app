@@ -79,6 +79,7 @@ public class AppConfig
         ("gemma-2b", -1),
         ("qwen-4b", -1),
         ("deepseek-coder-33b", -1),
+        ("deepseek-coder2-236b", -1),
         ("mistral", -1),
 
         ("phi", 0),
