@@ -181,11 +181,31 @@ public class Top1KQuestionTasks
     [Test]
     public async Task Recreate_answers_for_Top1K_questions_for_Mistral_Nemo()
     {
-        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        // var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        var client = await TestUtils.CreateAuthenticatedDevClientAsync();
         var apiCreate = await client.ApiAsync(new CreateAnswersForModels
         {
             Models = ["mistral-nemo"],
-            PostIds = Migration1005.Top1KIds,
+            PostIds = [9],
+            // PostIds = Migration1005.Top1KIds,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
+    }
+
+    [Test]
+    public async Task Recreate_answers_for_Top1K_questions_for_DeepSeekCoderV2()
+    {
+        // var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        var client = await TestUtils.CreateAuthenticatedDevClientAsync();
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
+        {
+            Models = ["deepseek-coder2-236b"],
+            PostIds = [9],
+            // PostIds = Migration1005.Top1KIds,
         });
 
         apiCreate.Error.PrintDump();
