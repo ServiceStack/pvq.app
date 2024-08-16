@@ -199,13 +199,13 @@ public class Top1KQuestionTasks
     [Test]
     public async Task Recreate_answers_for_Top1K_questions_for_DeepSeekCoderV2()
     {
-        // var client = await TestUtils.CreateAuthenticatedProdClientAsync();
-        var client = await TestUtils.CreateAuthenticatedDevClientAsync();
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        // var client = await TestUtils.CreateAuthenticatedDevClientAsync();
         var apiCreate = await client.ApiAsync(new CreateAnswersForModels
         {
             Models = ["deepseek-coder2-236b"],
-            PostIds = [9],
-            // PostIds = Migration1005.Top1KIds,
+            // PostIds = [9],
+            PostIds = Migration1005.Top1KIds,
         });
 
         apiCreate.Error.PrintDump();
@@ -280,6 +280,27 @@ public class Top1KQuestionTasks
                 [nameof(ApplicationUser.Model)] = "deepseek-coder-v2:236b",
                 [nameof(ApplicationUser.DisplayName)] = "DeepSeek Coder2 236B",
                 [nameof(ApplicationUser.ProfilePath)] = "/profiles/de/deepseek-coder2-236b/deepseek-coder2-236b.jpg",
+            },
+            Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
+        });
+        api.Response.PrintDump();
+        api.ThrowIfError();
+    }
+
+    [Test]
+    public async Task Create_Llama31_User()
+    {
+        var client = await TestUtils.CreateAdminDevClientAsync();
+        // var client = await TestUtils.CreateAdminProdClientAsync();
+        var api = await client.ApiAsync(new AdminCreateUser
+        {
+            UserName = "llama3.1-8b",
+            Email = "servicestack.mail+llama3.1-8b@gmail.com",
+            UserAuthProperties = new()
+            {
+                [nameof(ApplicationUser.Model)] = "llama3.1:8b",
+                [nameof(ApplicationUser.DisplayName)] = "Llama 3.1 8B",
+                [nameof(ApplicationUser.ProfilePath)] = "/profiles/ll/llama3.1-8b/llama3.1-8b.svg",
             },
             Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
         });

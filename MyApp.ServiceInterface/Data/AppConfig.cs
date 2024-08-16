@@ -65,7 +65,7 @@ public class AppConfig
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
-    public static string[] DeprecatedModels = ["deepseek-coder","gemma-2b","qwen-4b","deepseek-coder-33b","mistral"];
+    public static string[] DeprecatedModels = ["deepseek-coder","gemma-2b","qwen-4b","deepseek-coder-33b","mistral","llama3-8b"];
 
     public static (string Model, int Questions)[] GetActiveModelsForQuestions(int questionsCount) =>
         ModelsForQuestions.Where(x => questionsCount >= x.Questions && !DeprecatedModels.Contains(x.Model)).ToArray();
@@ -80,11 +80,12 @@ public class AppConfig
         ("qwen-4b", -1),
         ("deepseek-coder-33b", -1),
         ("mistral", -1),
+        ("llama3-8b", -1),
 
         ("phi", 0),
         ("codellama", 0),
         ("mistral-nemo", 0),
-        ("llama3-8b", 0),
+        ("llama3.1-8b", 0),
         ("gemma2-27b", 0),
         ("gemini-pro", 0),
         ("mixtral", 3),
