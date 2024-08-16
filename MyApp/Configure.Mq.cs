@@ -25,8 +25,9 @@ public class ConfigureMq : IHostingStartup
             services.AddSingleton<IMessageProducer>(c => c.GetRequiredService<IMessageService>().MessageFactory.CreateMessageProducer());
             services.AddSingleton<ModelWorkerQueue>();
             services.AddSingleton<WorkerAnswerNotifier>();
-            services.AddPlugin(new CommandsFeature());
-            services.AddHostedService<TimedHostedService>();
+            // services.AddPlugin(new CommandsFeature());
+            // Use ServiceStack.Jobs Recurring Tasks instead
+            // services.AddHostedService<TimedHostedService>();
         })
         .ConfigureAppHost(afterAppHostInit: appHost => {
             var mqService = appHost.Resolve<IMessageService>();
