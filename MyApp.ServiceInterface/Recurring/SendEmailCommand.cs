@@ -1,32 +1,14 @@
 using System.Net.Mail;
 using Microsoft.Extensions.Logging;
-using MyApp.Data;
 using ServiceStack;
+using MyApp.Data;
 
-namespace MyApp.ServiceInterface.App;
+namespace MyApp.ServiceInterface.Recurring;
 
-public class LogRequest
+public abstract class SendEmailCommand(ILogger<LogCommand> log, SmtpConfig config) : SyncCommand<SendEmail>
 {
-    public string Message { get; set; }
-}
-
-public class LogCommand(ILogger<LogCommand> log) : IAsyncCommand<LogRequest>
-{
-    private static int count = 0;
-    
-    public Task ExecuteAsync(LogRequest request)
-    {
-        Interlocked.Increment(ref count);
-        log.LogInformation("Log {Count}: {Message}", count, request.Message);
-        return Task.CompletedTask;
-    }
-}
-
-public class SendEmailCommand(ILogger<LogCommand> log, SmtpConfig config) : IAsyncCommand<SendEmail>
-{
-    private static int count = 0;
-
-    public Task ExecuteAsync(SendEmail request)
+    private static long count = 0;
+    protected override void Run(SendEmail request)
     {
         Interlocked.Increment(ref count);
         log.LogInformation("Sending {Count} email to {Email} with subject {Subject}", count, request.To, request.Subject);
@@ -55,6 +37,5 @@ public class SendEmailCommand(ILogger<LogCommand> log, SmtpConfig config) : IAsy
         }
 
         client.Send(msg);
-        return Task.CompletedTask;
     }
 }

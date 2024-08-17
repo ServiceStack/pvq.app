@@ -1,5 +1,6 @@
 using MyApp.Data;
 using MyApp.ServiceInterface.App;
+using MyApp.ServiceInterface.Recurring;
 using MyApp.ServiceModel;
 using ServiceStack.Jobs;
 
@@ -18,8 +19,7 @@ public class ConfigureBackgroundJobs : IHostingStartup
         {
             var jobs = appHost.Resolve<IBackgroundJobs>();
             
-            jobs.RecurringCommand<LogCommand>("Every Minute", Schedule.EveryMinute, 
-                new LogRequest { Message = "Hello from Recurring Command" });
+            jobs.RecurringCommand<LogCommand>("Every Minute", Schedule.EveryMinute);
             
             jobs.RecurringCommand<SendEmailCommand>("Every 8 hours", Schedule.Interval(TimeSpan.FromHours(8)), 
                 new SendEmail
@@ -33,7 +33,7 @@ public class ConfigureBackgroundJobs : IHostingStartup
                 new DbWrites {
                     PeriodicTasks = new PeriodicTasks { PeriodicFrequency = PeriodicFrequency.Hourly }
                 });
-            
+
         });
 }
 
