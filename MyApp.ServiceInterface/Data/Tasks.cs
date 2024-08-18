@@ -1,8 +1,4 @@
-﻿using MyApp.ServiceInterface;
-using MyApp.ServiceInterface.AiServer;
-using MyApp.ServiceInterface.App;
-using MyApp.ServiceInterface.Jobs;
-using MyApp.ServiceModel;
+﻿using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.DataAnnotations;
 
@@ -44,21 +40,6 @@ public class AnalyticsTasks
     public int? DeletePost { get; set; }
 }
 
-public class StartJob
-{
-    public int Id { get; set; }
-    public string? Worker { get; set; }
-    public string? WorkerIp { get; set; }
-}
-
-public class NewComment
-{
-    // Post or AnswerId
-    public string RefId { get; set; }
-    public Comment Comment { get; set; }
-    public DateTime LastUpdated { get; set; }
-}
-
 public class DeletePosts
 {
     public required List<int> Ids { get; set; }
@@ -67,16 +48,6 @@ public class DeletePosts
 public class DeleteAnswers
 {
     public required List<string> Ids { get; set; }
-}
-
-public class CreatePostJobs
-{
-    public required List<PostJob> PostJobs { get; set; }
-}
-
-public class CompletePostJobs
-{
-    public required List<int> Ids { get; set; }
 }
 
 public class AnswerAddedToPost
@@ -89,121 +60,4 @@ public class MarkPostAsRead
 {
     public int PostId { get; set; }
     public string UserName { get; set; }
-}
-
-[Tag(Tag.Tasks)]
-[Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
-public class DbWrites : IGet, IReturn<EmptyResponse>
-{
-    [Command<CreatePostVoteCommand>]
-    public Vote? CreatePostVote { get; set; }
-    
-    [Command<CreateCommentVoteCommand>]
-    public Vote? CreateCommentVote { get; set; }
-    
-    [Command<CreatePostCommand>]
-    public Post? CreatePost { get; set; }
-    
-    [Command<UpdatePostCommand>]
-    public Post? UpdatePost { get; set; }
-    
-    [Command<DeletePostsCommand>]
-    public DeletePosts? DeletePosts { get; set; }
-    
-    [Command<DeleteAnswersCommand>]
-    public DeleteAnswers? DeleteAnswers { get; set; }
-    
-    [Command<StartJobCommand>]
-    public StartJob? StartJob { get; set; }
-    
-    [Command<CreateAnswerCommand>]
-    public Post? CreateAnswer { get; set; }
-    
-    [Command<AnswerAddedToPostCommand>]
-    public AnswerAddedToPost? AnswerAddedToPost { get; set; }
-    
-    [Command<NewCommentCommand>]
-    public NewComment? NewComment { get; set; }
-    
-    [Command<DeleteCommentCommand>]
-    public DeleteComment? DeleteComment { get; set; }
-    
-    [Command<CompletePostJobsCommand>]
-    public CompletePostJobs? CompletePostJobs { get; set; }
-    
-    [Command<FailJobCommand>]
-    public FailJob? FailJob { get; set; }
-    
-    [Command<UpdateReputationsCommand>]
-    public UpdateReputations? UpdateReputations { get; set; }
-    
-    [Command<MarkAsReadCommand>]
-    public MarkAsRead? MarkAsRead { get; set; }
-    
-    [Command<CreateNotificationCommand>]
-    public Notification? CreateNotification { get; set; }
-    
-    [Command<CreateFlagCommand>]
-    public Flag? CreateFlag { get; set; }
-    
-    [Command<ImportQuestionCommand>]
-    public ImportQuestion? ImportQuestion { get; set; }
-    
-    [Command<MarkPostAsReadCommand>]
-    public MarkPostAsRead? MarkPostAsRead { get; set; }
-    
-    [Command<PostSubscriptionsCommand>]
-    public PostSubscriptions? PostSubscriptions { get; set; }
-    
-    [Command<TagSubscriptionsCommand>]
-    public TagSubscriptions? TagSubscriptions { get; set; }
-    
-    [Command<SaveGradeResultCommand>]
-    public StatTotals? SaveStartingUpVotes { get; set; }
-    
-    [Command<AppDbPeriodicTasksCommand>]
-    public PeriodicTasks? PeriodicTasks { get; set; } 
-}
-
-public class AiServerTasks
-{
-    [Command<CreateAnswerTasksCommand>]
-    public CreateAnswerTasks? CreateAnswerTasks { get; set; } 
-
-    [Command<CreateRankAnswerTaskCommand>]
-    public CreateRankAnswerTask? CreateRankAnswerTask { get; set; }
-    
-    [Command<CreateAnswerCommentTaskCommand>]
-    public CreateAnswerCommentTask? CreateAnswerCommentTask { get; set; }
-}
-
-public class RenderHome
-{
-    public string? Tab { get; set; }
-    public List<Post> Posts { get; set; }
-}
-
-public class RegenerateMeta
-{
-    public int? IfPostModified { get; set; }
-    public int? ForPost { get; set; }
-}
-
-public class RenderComponent : IReturnVoid
-{
-    public RegenerateMeta? RegenerateMeta { get; set; }
-    
-    public QuestionAndAnswers? Question { get; set; }
-    
-    public RenderHome? Home { get; set; }
-}
-
-[Tag(Tag.Tasks)]
-[Restrict(RequestAttributes.MessageQueue), ExcludeMetadata]
-public class SearchTasks
-{
-    public int? AddPostToIndex { get; set; }
-    public string? AddAnswerToIndex { get; set; }
-    public List<int>? DeletePosts { get; set; }
-    public List<string>? DeleteAnswers { get; set; }
 }

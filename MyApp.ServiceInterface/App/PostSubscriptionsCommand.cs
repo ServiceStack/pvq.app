@@ -5,10 +5,19 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-[Tag(Tags.Notifications)]
-public class PostSubscriptionsCommand(IDbConnection db) : IAsyncCommand<PostSubscriptions>
+public class PostSubscriptions
 {
-    public async Task ExecuteAsync(PostSubscriptions request)
+    public required string UserName { get; set; }
+    public List<int>? Subscriptions { get; set; }
+    public List<int>? Unsubscriptions { get; set; }
+}
+
+
+[Worker(Databases.App)]
+[Tag(Tags.Notifications)]
+public class PostSubscriptionsCommand(IDbConnection db) : AsyncCommand<PostSubscriptions>
+{
+    protected override async Task RunAsync(PostSubscriptions request, CancellationToken token)
     {
         var now = DateTime.UtcNow;
         if (request.Subscriptions is { Count: > 0 })
@@ -20,11 +29,12 @@ public class PostSubscriptionsCommand(IDbConnection db) : IAsyncCommand<PostSubs
                 CreatedDate = now,
                 AfterDate = now,
             });
-            await db.InsertAllAsync(subs);
+            await db.InsertAllAsync(subs, token: token);
         }
         if (request.Unsubscriptions is { Count: > 0 })
         {
-            await db.DeleteAsync<WatchPost>(x => x.UserName == request.UserName && request.Unsubscriptions.Contains(x.PostId));
+            await db.DeleteAsync<WatchPost>(
+                x => x.UserName == request.UserName && request.Unsubscriptions.Contains(x.PostId), token: token);
         }
     }
 }

@@ -7,21 +7,22 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
+[Worker(Databases.App)]
 [Tag(Tags.Questions)]
-public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConfig, IDbConnection db) : IAsyncCommand<Post>
+public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConfig, IDbConnection db) : AsyncCommand<Post>
 {
-    public async Task ExecuteAsync(Post post)
+    protected override async Task RunAsync(Post post, CancellationToken token)
     {
         var body = post.Body;
         post.Body = null;
         
         if (post.Id > 0)
         {
-            await db.InsertAsync(post);
+            await db.InsertAsync(post, token: token);
         }
         else
         {
-            post.Id = (int)await db.InsertAsync(post, selectIdentity: true);
+            post.Id = (int)await db.InsertAsync(post, selectIdentity: true, token: token);
         }
         
         var createdBy = post.CreatedBy;
@@ -40,7 +41,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
                 DownVotes = 0,
                 StartingUpVotes = 0,
                 CreatedBy = post.CreatedBy,
-            });
+            }, token: token);
         }
         catch (Exception e)
         {
@@ -50,7 +51,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
             {
                 PostId = post.Id,
                 CreatedBy = post.CreatedBy,
-            }, x => x.Id == $"{post.Id}");
+            }, x => x.Id == $"{post.Id}", token: token);
         }
 
         if (!string.IsNullOrEmpty(body))
@@ -61,7 +62,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
             if (userNameMentions.Count > 0)
             {
                 var existingUsers = await db.SelectAsync(db.From<ApplicationUser>()
-                    .Where(x => userNameMentions.Contains(x.UserName!)));
+                    .Where(x => userNameMentions.Contains(x.UserName!)), token: token);
 
                 foreach (var existingUser in existingUsers)
                 {
@@ -80,7 +81,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
                             CreatedDate = post.CreationDate,
                             Summary = cleanBody.GenerateNotificationSummary(startPos),
                             RefUserName = createdBy,
-                        });
+                        }, token: token);
                         appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
                     }
                 }
@@ -97,7 +98,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
                 PostId = post.Id,
                 Score = 1,
                 CreatedDate = DateTime.UtcNow,
-            });
+            }, token: token);
             appConfig.IncrUnreadAchievementsFor(post.CreatedBy!);
 
             // Setup auto-watch for new questions (Sending Emails for new Answers)
@@ -108,7 +109,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConf
                 CreatedDate = post.CreationDate,
                 // Email new answers 1hr after asking question
                 AfterDate = DateTime.UtcNow.Add(TimeSpan.FromHours(1)),
-            });
+            }, token: token);
         }
     }
 }

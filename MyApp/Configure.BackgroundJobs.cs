@@ -1,7 +1,6 @@
 using MyApp.Data;
 using MyApp.ServiceInterface.App;
 using MyApp.ServiceInterface.Recurring;
-using MyApp.ServiceModel;
 using ServiceStack.Jobs;
 
 [assembly: HostingStartup(typeof(MyApp.ConfigureBackgroundJobs))]
@@ -15,6 +14,7 @@ public class ConfigureBackgroundJobs : IHostingStartup
             services.AddPlugin(new CommandsFeature());
             services.AddPlugin(new BackgroundsJobFeature());
             services.AddHostedService<JobsHostedService>();
+            services.AddSingleton<WorkerAnswerNotifier>();
         }).ConfigureAppHost(afterAppHostInit:appHost => {
         
             var services = appHost.GetApplicationServices();
@@ -32,10 +32,7 @@ public class ConfigureBackgroundJobs : IHostingStartup
                     BodyText = "Test email from a Scheduled Tasks recurring command"
                 });
             
-            jobs.RecurringApi("DbWrites Hourly", Schedule.Hourly,
-                new DbWrites {
-                    PeriodicTasks = new PeriodicTasks { PeriodicFrequency = PeriodicFrequency.Hourly }
-                });
+            jobs.RecurringCommand<SendWatchedTagEmailsCommand>(Schedule.Hourly);
 
         });
 }

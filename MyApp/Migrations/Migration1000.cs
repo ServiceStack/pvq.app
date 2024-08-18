@@ -58,23 +58,6 @@ public class Migration1000 : MigrationBase
         public string? Response { get; set; }
     }
     
-    public class PostJob
-    {
-        [AutoIncrement]
-        public int Id { get; set; }
-        public int PostId { get; set; }
-        public string Model { get; set; }
-        public string Title { get; set; }
-        public string CreatedBy { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime? StartedDate { get; set; }
-        public string? Worker { get; set; }
-        public string? WorkerIp { get; set; }
-        public DateTime? CompletedDate { get; set; }
-        public string? Error { get; set; }
-        public int RetryCount { get; set; }
-    }
-    
     public class UserInfo
     {
         [PrimaryKey]
@@ -186,7 +169,6 @@ public class Migration1000 : MigrationBase
         Db.CreateTable<UserInfo>();
         Db.CreateTable<Vote>();
         Db.CreateTable<Job>();
-        Db.CreateTable<PostJob>();
         Db.CreateTable<Flag>();
         
         Db.ExecuteSql("INSERT INTO UserInfo (UserId, UserName) SELECT Id, UserName FROM AspNetUsers");
@@ -197,7 +179,6 @@ public class Migration1000 : MigrationBase
     {
         Db.DeleteAll<UserInfo>();
         
-        Db.DropTable<PostJob>();
         Db.DropTable<Job>();
         Db.DropTable<Vote>();
         Db.DropTable<UserInfo>();

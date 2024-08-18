@@ -7,12 +7,13 @@ using MyApp.ServiceModel;
 namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Answers)]
-public class AnswerAddedToPostCommand(IDbConnection db) : IAsyncCommand<AnswerAddedToPost>
+[Worker(Databases.App)]
+public class AnswerAddedToPostCommand(IDbConnection db) : AsyncCommand<AnswerAddedToPost>
 {
-    public async Task ExecuteAsync(AnswerAddedToPost request)
+    protected override async Task RunAsync(AnswerAddedToPost request, CancellationToken token)
     {
         await db.UpdateAddAsync(() => new Post {
             AnswerCount = 1,
-        }, x => x.Id == request.Id);
+        }, x => x.Id == request.Id, token:token);
     }
 }

@@ -1,14 +1,21 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using MyApp.Data;
+using MyApp.ServiceInterface.App;
 using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.IO;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 using SixLabors.ImageSharp.Formats.Png;
 
 namespace MyApp.ServiceInterface;
 
-public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator imageCreator, UserManager<ApplicationUser> userManager) : Service
+public class UserServices(
+    IBackgroundJobs jobs,
+    AppConfig appConfig, 
+    R2VirtualFiles r2, 
+    ImageCreator imageCreator, 
+    UserManager<ApplicationUser> userManager) : Service
 {
     private const string AppData = "/App_Data";
     
@@ -33,13 +40,13 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
                 ProfilePath = profilePath,
             }, x => x.UserName == userName);
             
-            PublishMessage(new DiskTasks {
+            jobs.RunCommand<DiskTasksCommand>(new DiskTasks {
                 SaveFile = new() {
                     FilePath = origPath,
                     Stream = originalMs,
                 }
             });
-            PublishMessage(new DiskTasks {
+            jobs.RunCommand<DiskTasksCommand>(new DiskTasks {
                 SaveFile = new() {
                     FilePath = profilePath,
                     Stream = resizedMs,
@@ -135,19 +142,15 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
 
         if (userName == refUserName)
             throw new ArgumentException("Can't vote on your own post", nameof(request.RefId));
-        
-        MessageProducer.Publish(new DbWrites
-        {
-            CreatePostVote = new()
-            {
-                RefId = request.RefId,
-                PostId = postId,
-                UserName = userName,
-                Score = score,
-                RefUserName = refUserName,
-            },
-            UpdateReputations = new(),
+
+        jobs.RunCommand<CreatePostVoteCommand>(new Vote {
+            RefId = request.RefId,
+            PostId = postId,
+            UserName = userName,
+            Score = score,
+            RefUserName = refUserName,
         });
+        jobs.RunCommand<UpdateReputationsCommand>();
     }
 
     public async Task Any(CommentVote request)
@@ -157,17 +160,13 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
         var postId = request.RefId.LeftPart('-').ToInt();
         var score = request.Up == true ? 1 : request.Down == true ? -1 : 0;
         
-        MessageProducer.Publish(new DbWrites
-        {
-            CreateCommentVote = new()
-            {
-                RefId = request.RefId,
-                PostId = postId,
-                UserName = userName,
-                Score = score,
-            },
-            UpdateReputations = new(),
+        jobs.RunCommand<CreateCommentVoteCommand>(new Vote {
+            RefId = request.RefId,
+            PostId = postId,
+            UserName = userName,
+            Score = score,
         });
+        jobs.RunCommand<UpdateReputationsCommand>();
     }
 
     public object Any(CreateAvatar request)
@@ -249,10 +248,8 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
     {
         request.UserName = Request.GetClaimsPrincipal().GetUserName()
             ?? throw new ArgumentNullException(nameof(MarkAsRead.UserName));
-        MessageProducer.Publish(new DbWrites
-        {
-            MarkAsRead = request, 
-        });
+
+        jobs.RunCommand<MarkAsReadCommand>(request);
         return new EmptyResponse();
     }
     
@@ -303,7 +300,7 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
             : null;
         
         var userName = Request.GetClaimsPrincipal().GetUserName();
-        MessageProducer.Publish(new AnalyticsTasks {
+        jobs.RunCommand<AnalyticsTasksCommand>(new AnalyticsTasks {
             CreatePostStat = new()
             {
                 PostId = postId,
@@ -327,17 +324,14 @@ public class UserServices(AppConfig appConfig, R2VirtualFiles r2, ImageCreator i
             return HttpError.NotFound("Does not exist");
 
         var userName = Request.GetClaimsPrincipal().GetUserName();
-        MessageProducer.Publish(new DbWrites {
-            CreateFlag = new()
-            {
-                PostId = postId,
-                RefId = request.RefId,
-                UserName = userName,
-                Type = request.Type,
-                Reason = request.Reason,
-                RemoteIp = Request?.RemoteIp,
-                CreatedDate = DateTime.UtcNow,
-            }
+        jobs.RunCommand<CreateFlagCommand>(new Flag {
+            PostId = postId,
+            RefId = request.RefId,
+            UserName = userName,
+            Type = request.Type,
+            Reason = request.Reason,
+            RemoteIp = Request?.RemoteIp,
+            CreatedDate = DateTime.UtcNow,
         });
         return new FlagContent();
     }

@@ -2,10 +2,12 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using MyApp.Data;
+using MyApp.ServiceInterface.AiServer;
 using MyApp.ServiceInterface.App;
 using ServiceStack;
 using MyApp.ServiceModel;
 using ServiceStack.IO;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 using ServiceStack.Text;
 
@@ -16,7 +18,8 @@ public class QuestionServices(ILogger<QuestionServices> log,
     QuestionsProvider questions, 
     RendererCache rendererCache, 
     WorkerAnswerNotifier answerNotifier,
-    ICommandExecutor executor) : Service
+    ICommandExecutor executor,
+    IBackgroundJobs jobs) : Service
 {
     private List<string> ValidateQuestionTags(List<string>? tags)
     {
@@ -109,20 +112,14 @@ public class QuestionServices(ILogger<QuestionServices> log,
 
         var post = createPost();
         var dbPost = createPost();
-        MessageProducer.Publish(new DbWrites
-        {
-            CreatePost = dbPost,
-        });
-        
-        MessageProducer.Publish(new AiServerTasks
-        {
-            CreateAnswerTasks = new() {
-                Post = post,
-                ModelUsers = appConfig.GetAnswerModelUsersFor(userName),
-            }
+
+        jobs.RunCommand<CreatePostCommand>(dbPost);
+        jobs.RunCommand<CreateAnswerTasksCommand>(new CreateAnswerTasks {
+            Post = post,
+            ModelUsers = appConfig.GetAnswerModelUsersFor(userName),
         });
 
-        MessageProducer.Publish(new DiskTasks
+        jobs.RunCommand<DiskTasksCommand>(new DiskTasks
         {
             SaveQuestion = post,
         });
@@ -139,12 +136,10 @@ public class QuestionServices(ILogger<QuestionServices> log,
     {
         await questions.DeleteQuestionFilesAsync(request.Id);
         rendererCache.DeleteCachedQuestionPostHtml(request.Id);
-        MessageProducer.Publish(new DbWrites
-        {
-            DeletePosts = new() { Ids = [request.Id] },
+        jobs.RunCommand<DeletePostsCommand>(new DeletePosts {
+            Ids = [request.Id]
         });
-        MessageProducer.Publish(new SearchTasks
-        {
+        jobs.RunCommand<SearchTasksCommand>(new SearchTasks {
             DeletePosts = [request.Id],
         });
 
@@ -162,11 +157,9 @@ public class QuestionServices(ILogger<QuestionServices> log,
         
         await questions.DeleteAnswerFileAsync(request.Id);
         rendererCache.DeleteCachedQuestionPostHtml(postId);
-        MessageProducer.Publish(new DbWrites
-        {
-            DeleteAnswers = new() { Ids = [request.Id] },
-        });
-        MessageProducer.Publish(new SearchTasks
+        
+        jobs.RunCommand<DeleteAnswersCommand>(new DeleteAnswers { Ids = [request.Id] });
+        jobs.RunCommand<SearchTasksCommand>(new SearchTasks
         {
             DeleteAnswers = [request.Id],
         });
@@ -194,40 +187,31 @@ public class QuestionServices(ILogger<QuestionServices> log,
             RefUrn = request.RefUrn,
             RefId = answerId
         };
-        
-        MessageProducer.Publish(new DbWrites {
-            CreateAnswer = answer,
-            AnswerAddedToPost = new() { Id = postId },
-        });
+
+        jobs.RunCommand<CreateAnswerCommand>(answer);
+        jobs.RunCommand<AnswerAddedToPostCommand>(new AnswerAddedToPost { Id = postId });
         
         rendererCache.DeleteCachedQuestionPostHtml(postId);
 
         await questions.SaveAnswerAsync(answer);
 
-        MessageProducer.Publish(new DbWrites
-        {
-            SaveStartingUpVotes = new()
-            {
-                Id = answerId,
-                PostId = postId,
-                StartingUpVotes = 0,
-                CreatedBy = userName,
-                LastUpdated = DateTime.UtcNow,
-            }
+        jobs.RunCommand<SaveGradeResultCommand>(new StatTotals {
+            Id = answerId,
+            PostId = postId,
+            StartingUpVotes = 0,
+            CreatedBy = userName,
+            LastUpdated = DateTime.UtcNow,
         });
         
         answerNotifier.NotifyNewAnswer(postId, answer.CreatedBy);
 
         var userId = Request.GetClaimsPrincipal().GetUserId();
-        MessageProducer.Publish(new AiServerTasks
-        {
-            CreateRankAnswerTask = new CreateRankAnswerTask {
-                AnswerId = answerId,
-                UserId = userId!,
-            } 
+        jobs.RunCommand<CreateAnswerTasksCommand>(new CreateRankAnswerTask {
+            AnswerId = answerId,
+            UserId = userId!,
         });
-        
-        MessageProducer.Publish(new SearchTasks {
+
+        jobs.RunCommand<SearchTasksCommand>(new SearchTasks {
             AddAnswerToIndex = answerId
         });
 
@@ -264,10 +248,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
         question.LastActivityDate = DateTime.UtcNow;
         question.LastEditDate = question.LastActivityDate;
 
-        MessageProducer.Publish(new DbWrites
-        {
-            UpdatePost = question,
-        });
+        jobs.RunCommand<UpdatePostCommand>(question);
         await questions.SaveQuestionEditAsync(question);
 
         return new UpdateQuestionResponse
@@ -310,13 +291,9 @@ public class QuestionServices(ILogger<QuestionServices> log,
 
             if (answerCreatorId != null)
             {
-                MessageProducer.Publish(new AiServerTasks
-                {
-                    CreateRankAnswerTask = new()
-                    {
-                        AnswerId = request.Id,
-                        UserId = answerCreatorId,
-                    }
+                jobs.RunCommand<CreateRankAnswerTaskCommand>(new CreateRankAnswerTask {
+                    AnswerId = request.Id,
+                    UserId = answerCreatorId,
                 });
             }
         }
@@ -435,14 +412,10 @@ public class QuestionServices(ILogger<QuestionServices> log,
         comments.Add(newComment);
 
         var lastUpdated = DateTime.UtcNow;
-        MessageProducer.Publish(new DbWrites
-        {
-            NewComment = new()
-            {
-                RefId = request.Id,
-                Comment = newComment,
-                LastUpdated = lastUpdated,
-            },
+        jobs.RunCommand<NewCommentCommand>(new NewComment {
+            RefId = request.Id,
+            Comment = newComment,
+            LastUpdated = lastUpdated,
         });
 
         await questions.SaveMetaAsync(postId, meta);
@@ -461,18 +434,15 @@ public class QuestionServices(ILogger<QuestionServices> log,
                 aiRef = Guid.NewGuid().ToString("N");
                 var createdById = GetUserId();
                 var model = modelCreator.Model ?? throw new ArgumentNullException(nameof(modelCreator.Model));
-                MessageProducer.Publish(new AiServerTasks
-                {
-                    CreateAnswerCommentTask = new()
-                    {
-                        AiRef = aiRef, 
-                        Model = model,
-                        Question = question,
-                        Answer = answer,
-                        UserName = newComment.CreatedBy,
-                        UserId = createdById,
-                        Comments = userConversation,
-                    }
+
+                jobs.RunCommand<CreateAnswerCommentTaskCommand>(new CreateAnswerCommentTask {
+                    AiRef = aiRef,
+                    Model = model,
+                    Question = question,
+                    Answer = answer,
+                    UserName = newComment.CreatedBy,
+                    UserId = createdById,
+                    Comments = userConversation,
                 });
             }
             else
@@ -510,10 +480,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
         if (userName != request.CreatedBy && !isModerator)
             throw HttpError.Forbidden("Only Moderators can delete other user's comments");
         
-        MessageProducer.Publish(new DbWrites
-        {
-            DeleteComment = request, 
-        });
+        jobs.RunCommand<DeleteCommentCommand>(request);
         
         var postId = question.Id;
         var meta = await questions.GetMetaAsync(postId);
@@ -568,10 +535,12 @@ public class QuestionServices(ILogger<QuestionServices> log,
     {
         var command = executor.Command<ImportQuestionCommand>();
         await executor.ExecuteAsync(command, request);
+        var result = command.Result;
+        // var result = await jobs.RunCommandAsync<ImportQuestionCommand>(request) as AskQuestion;
         return new ImportQuestionResponse
         {
-            Result = command.Result
-                ?? throw new Exception("Import failed")
+            Result = result 
+                     ?? throw new Exception("Import failed")
         };
     }
 

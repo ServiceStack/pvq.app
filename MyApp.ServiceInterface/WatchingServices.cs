@@ -1,31 +1,34 @@
 ﻿using MyApp.Data;
+using MyApp.ServiceInterface.App;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class WatchingServices : Service
+public class WatchingServices(IBackgroundJobs jobs) : Service
 {
     public object Any(WatchContent request)
     {
         var userName = Request.GetClaimsPrincipal().GetRequiredUserName();
         if (request.PostId == null && request.Tag == null)
             throw new ArgumentException("PostId or Tag is required", nameof(request.PostId));
-        
-        MessageProducer.Publish(new DbWrites
+
+        if (request.PostId != null)
         {
-            PostSubscriptions = request.PostId == null ? null : new()
-            {
+            jobs.RunCommand<PostSubscriptionsCommand>(new PostSubscriptions {
                 UserName = userName,
                 Subscriptions = [request.PostId.Value],
-            },
-            TagSubscriptions = request.Tag == null ? null : new()
-            {
+            });
+        }
+        if (request.Tag != null)
+        {
+            jobs.RunCommand<TagSubscriptionsCommand>(new TagSubscriptions {
                 UserName = userName,
                 Subscriptions = [request.Tag],
-            },
-        });
+            });
+        }
         return new EmptyResponse();
     }
 
@@ -35,19 +38,20 @@ public class WatchingServices : Service
         if (request.PostId == null && request.Tag == null)
             throw new ArgumentException("PostId or Tag is required", nameof(request.PostId));
 
-        MessageProducer.Publish(new DbWrites
+        if (request.PostId != null)
         {
-            PostSubscriptions = request.PostId == null ? null : new()
-            {
+            jobs.RunCommand<PostSubscriptionsCommand>(new PostSubscriptions {
                 UserName = userName,
                 Unsubscriptions = [request.PostId.Value],
-            },
-            TagSubscriptions = request.Tag == null ? null : new()
-            {
+            });
+        }
+        if (request.Tag != null)
+        {
+            jobs.RunCommand<TagSubscriptionsCommand>(new TagSubscriptions {
                 UserName = userName,
                 Unsubscriptions = [request.Tag],
-            },
-        });
+            });
+        }
         return new EmptyResponse();
     }
 
@@ -67,14 +71,10 @@ public class WatchingServices : Service
     public object Any(WatchTags request)
     {
         var userName = Request.GetClaimsPrincipal().GetRequiredUserName();
-        MessageProducer.Publish(new DbWrites
-        {
-            TagSubscriptions = new()
-            {
-                UserName = userName,
-                Subscriptions = request.Subscribe,
-                Unsubscriptions = request.Unsubscribe,
-            }
+        jobs.RunCommand<TagSubscriptionsCommand>(new TagSubscriptions {
+            UserName = userName,
+            Subscriptions = request.Subscribe,
+            Unsubscriptions = request.Unsubscribe,
         });
         return new EmptyResponse();
     }

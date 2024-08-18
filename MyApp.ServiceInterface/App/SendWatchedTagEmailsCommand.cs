@@ -1,44 +1,39 @@
-﻿using System.Data;
-using CreatorKit.ServiceInterface;
+﻿using CreatorKit.ServiceInterface;
 using CreatorKit.ServiceModel;
 using CreatorKit.ServiceModel.Types;
 using MyApp.ServiceModel;
 using ServiceStack;
-using ServiceStack.Messaging;
 using ServiceStack.OrmLite;
 using Microsoft.Extensions.Logging;
 using MyApp.Data;
+using MyApp.ServiceInterface.CreatorKit;
 using ServiceStack.Data;
+using ServiceStack.Jobs;
 using ServiceStack.Script;
 
 namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Database)]
-public class AppDbPeriodicTasksCommand(ILogger<AppDbPeriodicTasksCommand> log, 
-    AppConfig appConfig, IDbConnectionFactory dbFactory, IMessageProducer mq, EmailRenderer renderer) 
-    : IAsyncCommand<PeriodicTasks>
+[Worker(Databases.App)]
+public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> log, 
+    IBackgroundJobs jobs, IDbConnectionFactory dbFactory, EmailRenderer renderer) 
+    : AsyncCommand
 {
-    public async Task ExecuteAsync(PeriodicTasks request)
+    protected override async Task RunAsync(CancellationToken token)
     {
-        log.LogInformation("Executing {Type} {PeriodicFrequency} PeriodicTasks...", GetType().Name,
-            request.PeriodicFrequency);
-
-        await SendWatchedTagEmails();
-    }
-
-    private async Task SendWatchedTagEmails()
-    {
+        var job = Request.GetBackgroundJob();
         var yesterday = DateTime.UtcNow.AddDays(-1).Date;
         var day = yesterday.ToString("yyyy-MM-dd");
-        using var db = await dbFactory.OpenDbConnectionAsync();
-        if (await db.ExistsAsync(db.From<WatchPostMail>().Where(x => x.Date == day)))
+        using var db = await dbFactory.OpenDbConnectionAsync(token:token);
+        if (await db.ExistsAsync(db.From<WatchPostMail>().Where(x => x.Date == day), token:token))
             return;
 
         var newPosts = await db.SelectAsync(db.From<Post>().Where(x =>
-            x.CreationDate >= yesterday && x.CreationDate < yesterday.AddDays(1)));
+            x.CreationDate >= yesterday && x.CreationDate < yesterday.AddDays(1)), token:token);
         if (newPosts.Count == 0)
         {
             log.LogInformation("No new posts found for {Date}", day);
+            jobs.UpdateJobStatus(new(job, log:"No new posts"));
             return;
         }
 
@@ -48,23 +43,26 @@ public class AppDbPeriodicTasksCommand(ILogger<AppDbPeriodicTasksCommand> log,
             foreach (var tag in post.Tags)
             {
                 if (!tagGroups.TryGetValue(tag, out var posts))
-                    tagGroups[tag] = posts = new List<Post>();
+                    tagGroups[tag] = posts = [];
                 posts.Add(post);
             }
         }
 
         var uniqueTags = tagGroups.Keys.ToSet();
-        var watchTags = await db.SelectAsync(db.From<WatchTag>().Where(x => uniqueTags.Contains(x.Tag)));
+        var watchTags = await db.SelectAsync(db.From<WatchTag>()
+            .Where(x => uniqueTags.Contains(x.Tag)), token: token);
         if (watchTags.Count == 0)
         {
             log.LogInformation("No Tag Watchers found for {Date}", day);
+            jobs.UpdateJobStatus(new(job, log:"No Tag Watchers found"));
             return;
         }
         
         var uniqueUserNames = watchTags.Select(x => x.UserName).ToSet();
-        var users = await db.SelectAsync<ApplicationUser>(x => uniqueUserNames.Contains(x.UserName!));
+        var users = await db.SelectAsync<ApplicationUser>(
+            x => uniqueUserNames.Contains(x.UserName!), token: token);
 
-        using var dbCreatorKit = await dbFactory.OpenDbConnectionAsync(Databases.CreatorKit);
+        using var dbCreatorKit = await dbFactory.OpenDbConnectionAsync(Databases.CreatorKit, token:token);
 
         var mailRuns = 0;
         var orderedTags = uniqueTags.OrderBy(x => x).ToList();
@@ -88,10 +86,12 @@ public class AppDbPeriodicTasksCommand(ILogger<AppDbPeriodicTasksCommand> log,
                 PostIds = postIds,
                 CreatedDate = DateTime.UtcNow,
             };
-            watchPostMail.Id = (int)await db.InsertAsync(watchPostMail, selectIdentity: true);
+            watchPostMail.Id = (int)await db.InsertAsync(watchPostMail, selectIdentity: true, token:token);
             log.LogInformation(
                 "Created {Day} WatchPostMail {Id} for {Tag} with posts:{PostIds} for users:{UserNames}",
                 day, watchPostMail.Id, tag, postIds.Join(","), userNames.Join(","));
+            jobs.UpdateJobStatus(new(job, log:
+                $"Created {day} WatchPostMail {watchPostMail.Id} for {tag} with posts:{postIds.Join(",")} for users:{userNames.Join(",")}"));
             
             var layout = "tags";
             var template = "tagged-questions";
@@ -122,13 +122,13 @@ public class AppDbPeriodicTasksCommand(ILogger<AppDbPeriodicTasksCommand> log,
                 GeneratorArgs = args,
                 ExternalRef = externalRef,
             };
-            mailRun.Id = (int)await dbCreatorKit.InsertAsync(mailRun, selectIdentity: true);
+            mailRun.Id = (int)await dbCreatorKit.InsertAsync(mailRun, selectIdentity: true, token:token);
             mailRuns++;
 
             await db.UpdateOnlyAsync(() => new WatchPostMail
             {
                 MailRunId = mailRun.Id,
-            }, where: x => x.Id == watchPostMail.Id);
+            }, where: x => x.Id == watchPostMail.Id, token:token);
 
             var emails = 0;
             foreach (var tagWatcher in tagWatchers)
@@ -161,7 +161,7 @@ public class AppDbPeriodicTasksCommand(ILogger<AppDbPeriodicTasksCommand> log,
                     CreatedDate = DateTime.UtcNow,
                     ExternalRef = externalRef,
                 };
-                mailMessage.Id = (int)await dbCreatorKit.InsertAsync(mailMessage, selectIdentity: true);
+                mailMessage.Id = (int)await dbCreatorKit.InsertAsync(mailMessage, selectIdentity: true, token:token);
                 emails++;
             }
 
@@ -169,21 +169,18 @@ public class AppDbPeriodicTasksCommand(ILogger<AppDbPeriodicTasksCommand> log,
             await db.UpdateOnlyAsync(() => new WatchPostMail
             {
                 GeneratedDate = generatedDate,
-            }, where: x => x.Id == watchPostMail.Id);
+            }, where: x => x.Id == watchPostMail.Id, token: token);
             await dbCreatorKit.UpdateOnlyAsync(() => new MailRun
             {
                 EmailsCount = emails,
                 GeneratedDate = generatedDate,
-            }, where: x => x.Id == mailRun.Id);
+            }, where: x => x.Id == mailRun.Id, token: token);
 
             log.LogInformation("Generated {Count} in {Day} MailRun {Id} for {Tag}",
                 emails, day, mailRun.Id, tag);
-            
-            mq.Publish(new CreatorKitTasks
-            {
-                SendMailRun = new() {
-                    Id = mailRun.Id
-                }
+
+            jobs.EnqueueCommand<SendMailRunCommand>(new SendMailRun {
+                Id = mailRun.Id
             });
         }
 

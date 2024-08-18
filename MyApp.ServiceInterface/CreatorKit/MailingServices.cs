@@ -250,7 +250,7 @@ public class MailingServices(EmailProvider emailProvider, EmailRenderer renderer
                 where:x => x.Id == request.Id && x.SentDate == null);
         }
         
-        PublishMessage(new SendMessages {
+        PublishMessage(new ServiceModel.SendMessages {
             MailRunMessageIds = msgIdsToSend
         });
     }

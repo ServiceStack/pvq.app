@@ -1,5 +1,6 @@
 ﻿using ServiceStack;
 using ServiceStack.DataAnnotations;
+using ServiceStack.Jobs;
 
 namespace MyApp.ServiceModel;
 
@@ -12,6 +13,7 @@ public static class Stats
 public static class Databases
 {
     // Keep heavy writes of stats + analytics in separate DB
+    public const string App = Workers.AppDb;
     public const string Analytics = nameof(Analytics);
     public const string Search = nameof(Search);
     public const string CreatorKit = nameof(CreatorKit);

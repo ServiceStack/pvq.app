@@ -21,6 +21,12 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             // Configure ASP.NET Core IOC Dependencies
             context.Configuration.GetSection(nameof(AppConfig)).Bind(AppConfig.Instance);
             services.AddSingleton(AppConfig.Instance);
+            
+            var smtpConfig = context.Configuration.GetSection(nameof(SmtpConfig))?.Get<SmtpConfig>();
+            if (smtpConfig is not null)
+            {
+                services.AddSingleton(smtpConfig);
+            }
 
             services.AddSingleton<ImageCreator>();
             
@@ -73,13 +79,6 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         
         AppConfig.Instance.LoadTags(new FileInfo(Path.Combine(HostingEnvironment.WebRootPath, "data/tags.txt")));
         Log.Info($"Loaded {AppConfig.Instance.AllTags.Count} tags");
-
-        var incompleteJobs = db.Select(db.From<PostJob>().Where(x => x.CompletedDate == null));
-        if (incompleteJobs.Count > 0)
-        {
-            var modelWorkers = base.ApplicationServices.GetRequiredService<ModelWorkerQueue>();
-            incompleteJobs.ForEach(modelWorkers.Enqueue);
-        }
     }
     
     private string? ResolveGitBlobBaseUrl(IVirtualDirectory contentDir)

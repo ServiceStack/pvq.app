@@ -1,7 +1,8 @@
 ﻿@page "/"
+@using ServiceStack.Jobs
 @attribute [OutputCache(Duration = 60)]
 @inject RendererCache RendererCache
-@inject IMessageProducer MessageProducer
+@inject IBackgroundJobs Jobs
 @inject IDbConnectionFactory DbFactory
 @inject IWebHostEnvironment Env
 
@@ -54,12 +55,10 @@
         var q = db.From<Post>();
         q.OrderByView(Tab);
         Posts = await db.SelectAsync(q.Take(50));
-        
-        MessageProducer.Publish(new RenderComponent {
-            Home = new() {
-                Tab = Tab,
-                Posts = Posts,
-            }
+
+        Jobs.RunCommand<RenderHomeTabCommand>(new RenderHome {
+            Tab = Tab,
+            Posts = Posts,
         });
     }
 }

@@ -56,23 +56,6 @@ public class CreateAnswerTasks
     public List<string> ModelUsers { get; set; } = new();
 }
 
-public class CreateRankAnswerTask
-{
-    public string AnswerId { get; set; }
-    public string UserId { get; set; }
-}
-
-public class CreateAnswerCommentTask
-{
-    public string? AiRef { get; set; }
-    public string Model { get; set; }
-    public Post Question { get; set; }
-    public Post Answer { get; set; }
-    public string UserId { get; set; }
-    public string UserName { get; set; }
-    public List<Comment> Comments { get; set; }
-}
-
 public class CreateOpenAiChat : IReturn<CreateOpenAiChatResponse>
 {
     public string? RefId { get; set; }

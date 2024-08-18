@@ -1,6 +1,8 @@
 ﻿@using MyApp.Data
+@using MyApp.ServiceInterface.App
+@using ServiceStack.Jobs
 @inject IDbConnectionFactory DbFactory
-@inject IMessageProducer MessageProducer
+@inject IBackgroundJobs Jobs
 
 @if (Watching != null && HttpContext?.User.GetUserName() != null)
 {
@@ -60,25 +62,17 @@
         {
             if (PostId != null)
             {
-                MessageProducer.Publish(new DbWrites
-                {
-                    PostSubscriptions = new()
-                    {
-                        UserName = userName,
-                        Unsubscriptions = [PostId.Value]
-                    }
+                Jobs.RunCommand<PostSubscriptionsCommand>(new PostSubscriptions {
+                    UserName = userName,
+                    Unsubscriptions = [PostId.Value]
                 });
                 Watching = false;
             }
             else if (Tag != null)
             {
-                MessageProducer.Publish(new DbWrites
-                {
-                    TagSubscriptions = new()
-                    {
-                        UserName = userName,
-                        Unsubscriptions = [Tag]
-                    }
+                Jobs.RunCommand<TagSubscriptionsCommand>(new TagSubscriptions {
+                    UserName = userName,
+                    Unsubscriptions = [Tag]
                 });
                 Watching = false;
             }

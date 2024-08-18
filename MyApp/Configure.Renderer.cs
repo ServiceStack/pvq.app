@@ -62,6 +62,11 @@ public class RenderQuestionPostCommand(BlazorRenderer renderer, RendererCache ca
     }
 }
 
+public class RenderHome
+{
+    public string? Tab { get; set; }
+    public List<Post> Posts { get; set; }
+}
 [Tag(Tags.Renderer)]
 public class RenderHomeTabCommand(BlazorRenderer renderer, RendererCache cache) : IAsyncCommand<RenderHome>
 {
@@ -76,37 +81,8 @@ public class RenderHomeTabCommand(BlazorRenderer renderer, RendererCache cache) 
     }
 }
 
-public class RenderServices(
-    ILogger<RenderServices> log,
-    MarkdownQuestions markdown,
-    BlazorRenderer renderer, 
-    RendererCache cache,
-    ICommandExecutor executor) : Service
+public class RenderServices(MarkdownQuestions markdown) : Service
 {
-    public async Task Any(RenderComponent request)
-    {
-        // Runs at most once per minute per post from Question.razor page
-        // var oncePerMinute = Cache.Add($"Question:{Id}", Id, TimeSpan.FromMinutes(1));
-
-        if (request.RegenerateMeta != null)
-        {
-            var command = executor.Command<RegenerateMetaCommand>();
-            await executor.ExecuteAsync(command, request.RegenerateMeta);
-
-            // Result is used to determine if Question Post HTML needs to be regenerated
-            request.Question = command.Question;
-        }
-
-        if (request.Question != null)
-        {
-            log.LogInformation("Rendering Question Post HTML {Id}...", request.Question.Id);
-            await executor.ExecuteAsync(executor.Command<RenderQuestionPostCommand>(), request.Question);
-        }
-
-        if (request.Home != null)
-            await executor.ExecuteAsync(executor.Command<RenderHomeTabCommand>(), request.Home);
-    }
-    
     public object Any(PreviewMarkdown request)
     {
         var html = markdown.GenerateHtml(request.Markdown);

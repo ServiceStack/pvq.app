@@ -1,10 +1,14 @@
 ﻿@page "/questions/{Id:int}/{*Slug}"
 @attribute [OutputCache(Duration = 60)]
+@using MyApp.ServiceInterface
+@using MyApp.ServiceInterface.App
+@using MyApp.ServiceInterface.Renderers
 @using ServiceStack.Caching
+@using ServiceStack.Jobs
 @inject QuestionsProvider QuestionsProvider
 @inject RendererCache RendererCache
 @inject NavigationManager NavigationManager
-@inject IMessageProducer MessageProducer
+@inject IBackgroundJobs Jobs
 @inject MemoryCacheClient Cache
 @inject IWebHostEnvironment Env
 
@@ -74,19 +78,16 @@
 
     async Task load()
     {
-        MessageProducer.Publish(new AnalyticsTasks {
-            CreatePostStat = new PostStat { PostId = Id, Type = PostStatType.View}.WithRequest(HttpContext)
+        Jobs.RunCommand<AnalyticsTasksCommand>(new AnalyticsTasks {
+            CreatePostStat = new PostStat { PostId = Id, Type = PostStatType.View }.WithRequest(HttpContext)
         });
 
         var userName = HttpContext.GetUserName();
         if (userName != null)
         {
-            MessageProducer.Publish(new DbWrites {
-                MarkPostAsRead = new()
-                {
-                    PostId = Id,
-                    UserName = userName,
-                }
+            Jobs.RunCommand<MarkPostAsReadCommand>(new MarkPostAsRead {
+                PostId = Id,
+                UserName = userName,
             });
         }
         
@@ -118,10 +119,7 @@
 
             if (noCache)
             {
-                MessageProducer.Publish(new RenderComponent
-                {
-                    RegenerateMeta = new() { ForPost = Id }
-                });
+                Jobs.RunCommand<RegenerateMetaCommand>(new RegenerateMeta { ForPost = Id });
             }
             else
             {
@@ -129,10 +127,7 @@
                 var oncePerMinute = Cache.Add($"Question:{Id}", Id, TimeSpan.FromMinutes(1));
                 if (oncePerMinute)
                 {
-                    MessageProducer.Publish(new RenderComponent
-                    {
-                        RegenerateMeta = new() { IfPostModified = Id }
-                    });
+                    Jobs.RunCommand<RegenerateMetaCommand>(new RegenerateMeta { IfPostModified = Id });
                 }
             }
             return;
@@ -154,17 +149,7 @@
 
             if (noCache || !questionFiles.Files.Any(x => x.Name.EndsWith(".meta.json")))
             {
-                MessageProducer.Publish(new RenderComponent {
-                    RegenerateMeta = new() { ForPost = Id },
-                });
-            }
-            else
-            {
-                // Change to regenerating meta when post is modified
-                // MessageProducer.Publish(new RenderComponent {
-                //     RegenerateMeta = new() { IfPostModified = Id },
-                //     Question = question,
-                // });
+                Jobs.RunCommand<RegenerateMetaCommand>(new RegenerateMeta { ForPost = Id });
             }
         }
         else

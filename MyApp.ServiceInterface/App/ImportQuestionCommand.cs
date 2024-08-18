@@ -8,6 +8,7 @@ using ServiceStack.Text;
 namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Questions)]
+[Worker(Databases.App)]
 public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig appConfig) : IAsyncCommand<ImportQuestion>
 {
     static readonly Regex ValidTagCharsRegex = new("[^a-zA-Z0-9#+.]", RegexOptions.Compiled);
@@ -32,6 +33,7 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
 
     public async Task ExecuteAsync(ImportQuestion request)
     {
+        CancellationToken token = new();
         if (string.IsNullOrEmpty(request.Url))
             throw new ArgumentNullException(nameof(request.Url));
 
@@ -50,7 +52,7 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
             var url = request.Url.LeftPart('?');
             
             url += ".json?include_raw=true";
-            var json = await url.GetJsonFromUrlAsync();
+            var json = await url.GetJsonFromUrlAsync(token: token);
             var obj = (Dictionary<string, object>)JSON.parse(json);
 
             if (!(obj.TryGetValue("post_stream", out var oPostStream) &&
@@ -87,7 +89,7 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
                     var json = await apiUrl.GetJsonFromUrlAsync(requestFilter: c => {
                         c.AddHeader(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:83.0) Gecko/20100101 Firefox/83.0");
                         c.AddHeader(HttpHeaders.Accept, MimeTypes.Json);
-                    });
+                    }, token: token);
                     var obj = (Dictionary<string, object>)JSON.parse(json);
                     if (obj.TryGetValue("items", out var oItems) && oItems is List<object> items)
                     {
@@ -120,7 +122,7 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
                         c.AddHeader(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
                         c.AddHeader(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9");
                         c.AddHeader(HttpHeaders.CacheControl, "max-age=0");
-                    });
+                    }, token: token);
                     Result = CreateFromStackOverflowInlineEdit(html);
                 }
                 

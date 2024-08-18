@@ -92,16 +92,3 @@ public class GetWatchedTagsResponse
     public ResponseStatus? ResponseStatus { get; set; }
 }
 
-public class PostSubscriptions
-{
-    public required string UserName { get; set; }
-    public List<int>? Subscriptions { get; set; }
-    public List<int>? Unsubscriptions { get; set; }
-}
-
-public class TagSubscriptions
-{
-    public required string UserName { get; set; }
-    public List<string>? Subscriptions { get; set; }
-    public List<string>? Unsubscriptions { get; set; }
-}

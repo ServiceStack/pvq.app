@@ -2,19 +2,20 @@ using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
 using ServiceStack.IO;
+using ServiceStack.Jobs;
 
 namespace MyApp.ServiceInterface;
 
-public class CdnServices(R2VirtualFiles r2) : Service
+public class CdnServices(R2VirtualFiles r2, IBackgroundJobs jobs) : Service
 {
     public object Any(DeleteCdnFilesMq request)
     {
-        var msg = new DiskTasks
+        var arg = new DiskTasks
         {
             CdnDeleteFiles = request.Files
         };
-        PublishMessage(msg);
-        return msg;
+        jobs.RunCommand<DiskTasksCommand>(arg);
+        return arg;
     }
 
     public void Any(DeleteCdnFile request)

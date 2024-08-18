@@ -1,6 +1,7 @@
 ﻿using MyApp.Data;
 using ServiceStack;
 using ServiceStack.Host;
+using ServiceStack.Jobs;
 using ServiceStack.Web;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
@@ -37,14 +38,10 @@ public static class ImageUtils
 
         // Offload persistence of original image to background task
         originalMs.Position = 0;
-        using var mqClient = HostContext.AppHost.GetMessageProducer(ctx.Request);
-        mqClient.Publish(new DiskTasks
-        {
-            SaveFile = new()
-            {
-                FilePath = ctx.Location.ResolvePath(ctx),
-                Stream = originalMs,
-            }
+
+        HostContext.Resolve<IBackgroundJobs>().RunCommand<DiskTasksCommand>(new SaveFile {
+            FilePath = ctx.Location.ResolvePath(ctx),
+            Stream = originalMs,
         });
 
         return new HttpFile(ctx.File)

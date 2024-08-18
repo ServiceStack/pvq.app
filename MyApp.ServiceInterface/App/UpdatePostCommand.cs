@@ -5,10 +5,11 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Worker(Databases.App)]
 [Tag(Tags.Questions)]
-public class UpdatePostCommand(IDbConnection db) : IAsyncCommand<Post>
+public class UpdatePostCommand(IDbConnection db) : AsyncCommand<Post>
 {
-    public async Task ExecuteAsync(Post question)
+    protected override async Task RunAsync(Post question, CancellationToken token)
     {
         await db.UpdateOnlyAsync(() => new Post {
             Title = question.Title,
@@ -18,6 +19,6 @@ public class UpdatePostCommand(IDbConnection db) : IAsyncCommand<Post>
             ModifiedBy = question.ModifiedBy,
             LastActivityDate = question.LastActivityDate,
             LastEditDate = question.LastEditDate,
-        }, x => x.Id == question.Id);
+        }, x => x.Id == question.Id, token: token);
     }
 }

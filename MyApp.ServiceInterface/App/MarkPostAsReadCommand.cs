@@ -6,13 +6,14 @@ using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Worker(Databases.App)]
 [Tag(Tags.Notifications)]
-public class MarkPostAsReadCommand(AppConfig appConfig, IDbConnection db, QuestionsProvider questions) : IAsyncCommand<MarkPostAsRead>
+public class MarkPostAsReadCommand(AppConfig appConfig, IDbConnection db, QuestionsProvider questions) : AsyncCommand<MarkPostAsRead>
 {
-    public async Task ExecuteAsync(MarkPostAsRead request)
+    protected override async Task RunAsync(MarkPostAsRead request, CancellationToken token)
     {
         await db.UpdateOnlyAsync(() => new Notification { Read = true }, 
-            where:x => x.UserName == request.UserName && x.PostId == request.PostId);
+            where:x => x.UserName == request.UserName && x.PostId == request.PostId, token:token);
         await appConfig.ResetUnreadNotificationsForAsync(db, request.UserName);
     }
 }

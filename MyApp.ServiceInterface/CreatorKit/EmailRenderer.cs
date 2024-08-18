@@ -10,19 +10,20 @@ using ServiceStack.OrmLite;
 using ServiceStack.Script;
 using CreatorKit.ServiceModel;
 using CreatorKit.ServiceModel.Types;
+using ServiceStack.Jobs;
 using ServiceStack.Text;
 
 namespace CreatorKit.ServiceInterface;
 
-public class EmailRenderer(IVirtualFiles vfs, IMessageService mq)
+public class EmailRenderer(IVirtualFiles vfs, IBackgroundJobs jobs)
 {
     public static EmailRenderer Instance { get; private set; }
     public IVirtualFiles VirtualFiles { get; } = vfs;
-    public IMessageService MessageService { get; } = mq;
+    public IBackgroundJobs Jobs { get; } = jobs;
 
-    public static EmailRenderer Create(IVirtualFiles vfs, IMessageService mq)
+    public static EmailRenderer Create(IVirtualFiles vfs, IBackgroundJobs jobs)
     {
-        Instance = new(vfs, mq);
+        Instance = new(vfs, jobs);
         return Instance;
     }
     
@@ -70,14 +71,12 @@ public class EmailRenderer(IVirtualFiles vfs, IMessageService mq)
 
     public void SendMailMessage(int id)
     {
-        using var mqProducer = MessageService.CreateMessageProducer();
-        mqProducer.Publish(new SendMessages { MailMessageIds = [id] });
+        jobs.RunCommand<SendMessagesCommand>(new ServiceModel.SendMessages { MailMessageIds = [id] });
     }
 
     public void SendMailMessageRun(int id)
     {
-        using var mqProducer = MessageService.CreateMessageProducer();
-        mqProducer.Publish(new SendMessages { MailRunMessageIds = [id] });
+        jobs.RunCommand<SendMessagesCommand>(new ServiceModel.SendMessages { MailRunMessageIds = [id] });
     }
 
     public async Task<HttpResult> RenderToHtmlResultAsync(IDbConnection db, ScriptContext context, object request,

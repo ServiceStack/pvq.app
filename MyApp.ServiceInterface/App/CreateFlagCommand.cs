@@ -6,10 +6,11 @@ using MyApp.ServiceModel;
 namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Database)]
-public class CreateFlagCommand(IDbConnection db) : IAsyncCommand<Flag>
+[Worker(Databases.App)]
+public class CreateFlagCommand(IDbConnection db) : AsyncCommand<Flag>
 {
-    public async Task ExecuteAsync(Flag request)
+    protected override async Task RunAsync(Flag request, CancellationToken token)
     {
-        await db.InsertAsync(request);
+        await db.InsertAsync(request, token: token);
     }
 }

@@ -7,13 +7,14 @@ using MyApp.ServiceModel;
 namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Database)]
-public class DeleteCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<DeleteComment>
+[Worker(Databases.App)]
+public class DeleteCommentCommand(AppConfig appConfig, IDbConnection db) : AsyncCommand<DeleteComment>
 {
-    public async Task ExecuteAsync(DeleteComment request)
+    protected override async Task RunAsync(DeleteComment request, CancellationToken token)
     {
         var refId = $"{request.Id}-{request.Created}";
         var rowsAffected = await db.DeleteAsync(db.From<Notification>()
-            .Where(x => x.RefId == refId && x.RefUserName == request.CreatedBy));
+            .Where(x => x.RefId == refId && x.RefUserName == request.CreatedBy), token: token);
         if (rowsAffected > 0)
         {
             appConfig.ResetUsersUnreadNotifications(db);

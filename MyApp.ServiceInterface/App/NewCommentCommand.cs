@@ -6,19 +6,28 @@ using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
-[Tag(Tags.Database)]
-public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<NewComment>
+public class NewComment
 {
-    public async Task ExecuteAsync(NewComment request)
+    // Post or AnswerId
+    public string RefId { get; set; }
+    public Comment Comment { get; set; }
+    public DateTime LastUpdated { get; set; }
+}
+
+[Tag(Tags.Database)]
+[Worker(Databases.App)]
+public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : AsyncCommand<NewComment>
+{
+    protected override async Task RunAsync(NewComment request, CancellationToken token)
     {
         var refId = request.RefId;
         var postId = refId.LeftPart('-').ToInt();
-        var post = await db.SingleByIdAsync<Post>(postId);
+        var post = await db.SingleByIdAsync<Post>(postId, token: token);
         if (post != null)
         {
             var isAnswer = refId.IndexOf('-') > 0;
             var createdBy = isAnswer
-                ? (await db.SingleByIdAsync<StatTotals>(refId))?.CreatedBy
+                ? (await db.SingleByIdAsync<StatTotals>(refId, token: token))?.CreatedBy
                 : post.CreatedBy;
 
             var comment = request.Comment;
@@ -37,7 +46,7 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : IAsyncCo
                     CreatedDate = createdDate,
                     Summary = cleanBody.GenerateNotificationSummary(),
                     RefUserName = comment.CreatedBy,
-                });
+                }, token: token);
                 appConfig.IncrUnreadNotificationsFor(createdBy);
             }
 

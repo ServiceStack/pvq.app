@@ -1,13 +1,19 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using MyApp.Data;
+using MyApp.ServiceInterface.AiServer;
 using MyApp.ServiceInterface.Renderers;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
 
-public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserManager<ApplicationUser> userManager,
+public class AdminServices(
+    AppConfig appConfig, 
+    ICommandExecutor executor,
+    IBackgroundJobs jobs,
+    UserManager<ApplicationUser> userManager,
     QuestionsProvider questions)
     : Service
 {
@@ -50,12 +56,10 @@ public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserM
     public async Task<object?> Any(GenerateMeta request)
     {
         var regenerateMeta = executor.Command<RegenerateMetaCommand>();
-        await executor.ExecuteAsync(regenerateMeta, new RegenerateMeta
-        {
+        await executor.ExecuteAsync(regenerateMeta, new RegenerateMeta {
             ForPost = request.Id
         });
-        
-        return regenerateMeta.Question;
+        return regenerateMeta.Result;
     }
 
     public async Task<object> Any(AdminResetCommonPassword request)
@@ -122,13 +126,10 @@ public class AdminServices(AppConfig appConfig, ICommandExecutor executor, UserM
         
         if (answerCreator == null)
             throw HttpError.NotFound($"Answer Creator '{answer.CreatedBy}' not found");
-        
-        MessageProducer.Publish(new AiServerTasks
-        {
-            CreateRankAnswerTask = new CreateRankAnswerTask {
-                AnswerId = answer.RefId!,
-                UserId = answerCreator,
-            } 
+
+        jobs.RunCommand<CreateRankAnswerTaskCommand>(new CreateRankAnswerTask {
+            AnswerId = answer.RefId!,
+            UserId = answerCreator,
         });
 
         return answer;

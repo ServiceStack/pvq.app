@@ -8,6 +8,7 @@ using ServiceStack.Blazor;
 using MyApp.Components;
 using MyApp.Data;
 using MyApp.Components.Account;
+using MyApp.ServiceInterface;
 using ServiceStack.IO;
 
 var builder = WebApplication.CreateBuilder(args);

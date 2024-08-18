@@ -1,8 +1,9 @@
 ﻿@page "/questions"
+@using MyApp.ServiceInterface
+@using ServiceStack.Jobs
 @attribute [OutputCache(Duration = 60)]
 @inject IDbConnectionFactory DbFactory
-@inject IMessageProducer MessageProducer
-@inject NavigationManager NavigationManager
+@inject IBackgroundJobs Jobs
 
 <PageTitle>@Title</PageTitle>
 <div class="pt-12 pb-24 md:grid md:grid-cols-8 md:gap-x-8 max-w-screen-xl mx-auto">
@@ -109,8 +110,7 @@
 
             if (!string.IsNullOrEmpty(Q))
             {
-                MessageProducer.Publish(new AnalyticsTasks
-                {
+                Jobs.RunCommand<AnalyticsTasksCommand>(new AnalyticsTasks {
                     CreateSearchStat = new SearchStat { Query = Q, Type = SearchStatType.Search}.WithRequest(HttpContext)
                 });
 

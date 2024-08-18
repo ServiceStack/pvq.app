@@ -4,8 +4,10 @@ using Markdig.Helpers;
 using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceInterface.AiServer;
+using MyApp.ServiceInterface.App;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface;
@@ -15,7 +17,8 @@ public class AiServerServices(ILogger<AiServerServices> log,
     QuestionsProvider questions, 
     RendererCache rendererCache, 
     WorkerAnswerNotifier answerNotifier,
-    ICommandExecutor executor) : Service
+    ICommandExecutor executor,
+    IBackgroundJobs jobs) : Service
 {
     public async Task<object> Any(CreateAnswersForModels request)
     {
@@ -94,29 +97,23 @@ public class AiServerServices(ILogger<AiServerServices> log,
         
         await questions.SaveAnswerAsync(answer);
 
-        MessageProducer.Publish(new DbWrites
+        jobs.RunCommand<SaveGradeResultCommand>(new StatTotals
         {
-            SaveStartingUpVotes = new()
-            {
-                Id = answer.RefId!,
-                PostId = request.PostId,
-                StartingUpVotes = 0,
-                CreatedBy = modelUser.UserName,
-                LastUpdated = DateTime.UtcNow,
-            }
+            Id = answer.RefId!,
+            PostId = request.PostId,
+            StartingUpVotes = 0,
+            CreatedBy = modelUser.UserName,
+            LastUpdated = DateTime.UtcNow,
         });
 
-        await Db.NotifyQuestionAuthorIfRequiredAsync(MessageProducer, answer);
-        
-        MessageProducer.Publish(new AiServerTasks
-        {
-            CreateRankAnswerTask = new CreateRankAnswerTask {
-                AnswerId = answer.RefId!,
-                UserId = request.UserId,
-            } 
+        await Db.NotifyQuestionAuthorIfRequiredAsync(jobs, answer);
+
+        jobs.RunCommand<CreateRankAnswerTaskCommand>(new CreateRankAnswerTask {
+            AnswerId = answer.RefId!,
+            UserId = request.UserId,
         });
-        
-        MessageProducer.Publish(new SearchTasks {
+
+        jobs.RunCommand<SearchTasksCommand>(new SearchTasks {
             AddAnswerToIndex = answer.RefId
         });
     }
@@ -173,11 +170,8 @@ public class AiServerServices(ILogger<AiServerServices> log,
             meta.StatTotals.Add(statTotals);
 
             await questions.SaveMetaAsync(request.PostId, meta);
-            
-            MessageProducer.Publish(new DbWrites
-            {
-                SaveStartingUpVotes = statTotals 
-            });
+
+            jobs.RunCommand<SaveGradeResultCommand>(statTotals);
         }
         catch (Exception e)
         {
@@ -223,14 +217,10 @@ public class AiServerServices(ILogger<AiServerServices> log,
         };
         comments.Add(newComment);
 
-        MessageProducer.Publish(new DbWrites
-        {
-            NewComment = new()
-            {
-                RefId = request.AnswerId,
-                Comment = newComment,
-                LastUpdated = DateTime.UtcNow,
-            },
+        jobs.RunCommand<NewCommentCommand>(new NewComment {
+            RefId = request.AnswerId,
+            Comment = newComment,
+            LastUpdated = DateTime.UtcNow,
         });
 
         await questions.SaveMetaAsync(postId, meta);

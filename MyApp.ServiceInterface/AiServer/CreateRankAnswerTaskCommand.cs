@@ -4,8 +4,15 @@ using ServiceStack;
 
 namespace MyApp.ServiceInterface.AiServer;
 
+public class CreateRankAnswerTask
+{
+    public string AnswerId { get; set; }
+    public string UserId { get; set; }
+}
+
 [Tag(Tags.AI)]
-public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider questions) : IAsyncCommand<CreateRankAnswerTask>
+public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider questions) 
+    : IAsyncCommand<CreateRankAnswerTask>
 {
     //https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-a-tech-reviewer
     public const string SystemPrompt = 

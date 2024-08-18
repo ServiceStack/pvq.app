@@ -1,13 +1,15 @@
 ﻿using System.Data;
 using ServiceStack;
 using MyApp.Data;
+using MyApp.ServiceModel;
 
 namespace MyApp.ServiceInterface.App;
 
+[Worker(Databases.App)]
 [Tag(Tags.Notifications)]
-public class UpdateReputationsCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<UpdateReputations>
+public class UpdateReputationsCommand(AppConfig appConfig, IDbConnection db) : SyncCommand
 {
-    public async Task ExecuteAsync(UpdateReputations request)
+    protected override void Run()
     {
         // TODO improve
         appConfig.UpdateUsersReputation(db);

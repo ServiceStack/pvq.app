@@ -8,6 +8,7 @@ using ServiceStack.Text;
 using ServiceStack.Web;
 using MyApp.Data;
 using MyApp.ServiceModel;
+using ServiceStack.Jobs;
 
 [assembly: HostingStartup(typeof(MyApp.ConfigureCreatorKit))]
 
@@ -21,14 +22,11 @@ public class ConfigureCreatorKit : IHostingStartup
             AppData.Set(context.Configuration);
             services.AddSingleton(AppData.Instance);
             services.AddSingleton(c => EmailRenderer.Create(
-                c.GetRequiredService<IVirtualFiles>(), c.GetRequiredService<IMessageService>()));
+                c.GetRequiredService<IVirtualFiles>(), c.GetRequiredService<IBackgroundJobs>()));
             services.AddSingleton<EmailProvider>();
         })
         .ConfigureAppHost(appHost =>
         {
-            var mqService = appHost.Resolve<IMessageService>();
-            mqService.RegisterHandler<CreatorKitTasks>(appHost.ExecuteMessage);
-
             appHost.Config.AddRedirectParamsToQueryString = true;
             appHost.Config.AllowFileExtensions.Add("json");
             MarkdownConfig.Transformer = new MarkdigTransformer();

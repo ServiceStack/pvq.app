@@ -5,8 +5,19 @@ using ServiceStack;
 
 namespace MyApp.ServiceInterface.AiServer;
 
+public class CreateAnswerCommentTask
+{
+    public string? AiRef { get; set; }
+    public string Model { get; set; }
+    public Post Question { get; set; }
+    public Post Answer { get; set; }
+    public string UserId { get; set; }
+    public string UserName { get; set; }
+    public List<Comment> Comments { get; set; }
+}
+
 [Tag(Tags.AI)]
-public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand<CreateAnswerCommentTask>
+public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : AsyncCommand<CreateAnswerCommentTask>
 {
     public const string SystemPrompt = 
         """
@@ -18,7 +29,7 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : IAsyncCommand
         You should use your expertise to provide specific, concise answers to my follow up questions.
         """;
 
-    public async Task ExecuteAsync(CreateAnswerCommentTask request)
+    protected override async Task RunAsync(CreateAnswerCommentTask request, CancellationToken token)
     {
         var question = request.Question;
 

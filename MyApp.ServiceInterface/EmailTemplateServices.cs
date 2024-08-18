@@ -5,12 +5,15 @@ using CreatorKit.ServiceModel.Types;
 using Markdig;
 using MyApp.Data;
 using MyApp.ServiceModel;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 using ServiceStack.Script;
+using SendMessages = CreatorKit.ServiceInterface.SendMessages;
 
 namespace MyApp.ServiceInterface;
 
-public class EmailTemplateServices(AppConfig appConfig, QuestionsProvider questions, EmailRenderer renderer) : Service
+public class EmailTemplateServices(AppConfig appConfig, QuestionsProvider questions, EmailRenderer renderer, IBackgroundJobs jobs) 
+    : Service
 {
     static string GetUnsubscribeFooter(string postUrl) => $"""
        <p style="font-size:small;color:#666">
@@ -59,12 +62,8 @@ public class EmailTemplateServices(AppConfig appConfig, QuestionsProvider questi
             ExternalRef = EmailUtils.CreateRef(),
         }.FromRequest(request);
 
-        MessageProducer.Publish(new CreatorKitTasks
-        {
-            SendMessages = new()
-            {
-                Messages = [email]
-            },
+        jobs.RunCommand<SendMessagesCommand>(new SendMessages {
+            Messages = [email]
         });
 
         return new StringResponse
