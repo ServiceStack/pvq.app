@@ -5,7 +5,7 @@ using MyApp.Data;
 
 namespace MyApp.ServiceInterface.Recurring;
 
-public abstract class SendEmailCommand(ILogger<LogCommand> log, SmtpConfig config) : SyncCommand<SendEmail>
+public class SendEmailCommand(ILogger<SendEmailCommand> log, SmtpConfig config) : SyncCommand<SendEmail>
 {
     private static long count = 0;
     protected override void Run(SendEmail request)
