@@ -15,11 +15,14 @@ public class ConfigureBackgroundJobs : IHostingStartup
             services.AddPlugin(new CommandsFeature());
             services.AddPlugin(new BackgroundsJobFeature());
             services.AddHostedService<JobsHostedService>();
-        }).ConfigureAppHost(afterAppHostInit:appHost =>
-        {
-            var jobs = appHost.Resolve<IBackgroundJobs>();
+        }).ConfigureAppHost(afterAppHostInit:appHost => {
+        
+            var services = appHost.GetApplicationServices();
+            var jobs = services.GetRequiredService<IBackgroundJobs>();
             
-            jobs.RecurringCommand<LogCommand>("Every Minute", Schedule.EveryMinute);
+            jobs.RecurringCommand<LogCommand>("Every Minute", Schedule.EveryMinute, new() {
+                RunCommand = true // don't persist job
+            });
             
             jobs.RecurringCommand<SendEmailCommand>("Every 8 hours", Schedule.Interval(TimeSpan.FromHours(8)), 
                 new SendEmail
