@@ -9,7 +9,7 @@ namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Questions)]
 [Worker(Databases.App)]
-public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig appConfig) : IAsyncCommand<ImportQuestion>
+public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig appConfig) : AsyncCommand<ImportQuestion>
 {
     static readonly Regex ValidTagCharsRegex = new("[^a-zA-Z0-9#+.]", RegexOptions.Compiled);
     static readonly Regex SingleWhiteSpaceRegex = new(@"\s+", RegexOptions.Multiline | RegexOptions.Compiled);
@@ -31,9 +31,8 @@ public class ImportQuestionCommand(ILogger<ImportQuestionCommand> log, AppConfig
 
     public AskQuestion? Result { get; set; }
 
-    public async Task ExecuteAsync(ImportQuestion request)
+    protected override async Task RunAsync(ImportQuestion request, CancellationToken token)
     {
-        CancellationToken token = new();
         if (string.IsNullOrEmpty(request.Url))
             throw new ArgumentNullException(nameof(request.Url));
 
