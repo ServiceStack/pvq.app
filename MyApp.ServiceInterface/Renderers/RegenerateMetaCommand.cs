@@ -18,21 +18,20 @@ public class RegenerateMeta
 
 [Tag(Tags.Renderer)]
 public class RegenerateMetaCommand(
-    ILogger<RegenerateMetaCommand> log,
+    ILogger<RegenerateMetaCommand> logger,
+    IBackgroundJobs jobs,
     IDbConnectionFactory dbFactory,
     QuestionsProvider questions,
-    RendererCache cache,
-    IBackgroundJobs jobs)
-    : IAsyncCommand<RegenerateMeta, QuestionAndAnswers?>
+    RendererCache cache)
+    : AsyncCommandWithResult<RegenerateMeta, QuestionAndAnswers?>
 {
-    public QuestionAndAnswers? Result { get; set; }
-    public async Task ExecuteAsync(RegenerateMeta question)
+    protected override async Task<QuestionAndAnswers?> RunAsync(RegenerateMeta question, CancellationToken token)
     {
-        CancellationToken token = new();
         var id = question.IfPostModified.GetValueOrDefault(question.ForPost ?? 0);
         if (id < 0)
             throw new ArgumentNullException(nameof(id));
 
+        var log = Request.CreateJobLogger(jobs, logger);
         // Whether to rerender the Post HTML
         using var db = await dbFactory.OpenDbConnectionAsync(token: token);
         var localFiles = questions.GetLocalQuestionFiles(id);
@@ -47,7 +46,7 @@ public class RegenerateMetaCommand(
         if (regenerateMeta)
         {
             log.LogInformation("Regenerating Meta for Post {Id}...", id);
-            await RegenerateMeta(db, dbAnalytics, id, remoteFiles, dbStatTotals, allPostVotes, token);
+            await RegenerateMeta(log, db, dbAnalytics, id, remoteFiles, dbStatTotals, allPostVotes, token);
             jobs.RunCommand<UpdateReputationsCommand>();
         }
 
@@ -75,9 +74,14 @@ public class RegenerateMetaCommand(
 
         if (rerenderPostHtml)
         {
-            Result = await localFiles.GetQuestionAsync();
-            jobs.RunCommand("RenderQuestionPostCommand", question);
+            var result = await localFiles.GetQuestionAsync();
+            if (result != null)
+            {
+                jobs.RunCommand("RenderQuestionPostCommand", result);
+            }
+            return result;
         }
+        return null;
     }
 
     public async Task<bool> ShouldRegenerateMeta(
@@ -127,7 +131,7 @@ public class RegenerateMetaCommand(
         return recalculateMeta;
     }
 
-    public async Task RegenerateMeta(IDbConnection db, IDbConnection dbAnalytics, int id, QuestionFiles remoteFiles,
+    public async Task RegenerateMeta(JobLogger log, IDbConnection db, IDbConnection dbAnalytics, int id, QuestionFiles remoteFiles,
         List<StatTotals> dbStatTotals, List<Vote> allPostVotes, CancellationToken token)
     {
         var now = DateTime.Now;

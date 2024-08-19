@@ -1,6 +1,8 @@
-﻿using MyApp.Data;
+﻿using Microsoft.Extensions.Logging;
+using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 
 namespace MyApp.ServiceInterface.AiServer;
 
@@ -11,8 +13,9 @@ public class CreateRankAnswerTask
 }
 
 [Tag(Tags.AI)]
-public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider questions) 
-    : IAsyncCommand<CreateRankAnswerTask>
+public class CreateRankAnswerTaskCommand(ILogger<CreateRankAnswerTaskCommand> logger, IBackgroundJobs jobs, 
+    AppConfig appConfig, QuestionsProvider questions) 
+    : AsyncCommand<CreateRankAnswerTask>
 {
     //https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-a-tech-reviewer
     public const string SystemPrompt = 
@@ -22,8 +25,9 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
         Before giving a score, give a critique of the answer based on quality and relevance to the user's question. 
         """;
 
-    public async Task ExecuteAsync(CreateRankAnswerTask request)
+    protected override async Task RunAsync(CreateRankAnswerTask request, CancellationToken token)
     {
+        var log = Request.CreateJobLogger(jobs, logger);
         var postId = request.AnswerId.LeftPart('-').ToInt();
         var question = await questions.GetLocalQuestionFiles(postId).GetQuestionAsync();
         if (question == null)
@@ -75,16 +79,22 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
                       Use code fences, aka triple backticks, to encapsulate your JSON object.
                       """;
 
+        var replyTo = appConfig.BaseUrl.CombineWith("api", nameof(RankAnswerCallback).AddQueryParams(new() {
+            [nameof(RankAnswerCallback.PostId)] = postId,
+            [nameof(RankAnswerCallback.UserId)] = request.UserId,
+            [nameof(RankAnswerCallback.Grader)] = "mixtral",
+        }));
+        
+        var startedAt = DateTime.UtcNow;
+        log.LogInformation("Sending CreateOpenAiChat for Question {Id} Rank Answer, replyTo: {ReplyTo}", 
+            question.Id, replyTo);
+        
         var client = appConfig.CreateAiServerClient();
         var api = await client.ApiAsync(new CreateOpenAiChat {
             RefId = Guid.NewGuid().ToString("N"),
             Tag = "pvq",
             Provider = null,
-            ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(RankAnswerCallback).AddQueryParams(new() {
-                [nameof(RankAnswerCallback.PostId)] = postId,
-                [nameof(RankAnswerCallback.UserId)] = request.UserId,
-                [nameof(RankAnswerCallback.Grader)] = "mixtral",
-            })),
+            ReplyTo = replyTo,
             Request = new()
             {
                 Model = "mixtral",
@@ -98,6 +108,9 @@ public class CreateRankAnswerTaskCommand(AppConfig appConfig, QuestionsProvider 
             }
         });
 
+        log.LogInformation("Completed CreateOpenAiChat for Question {Id} Rank Answer in {Ms}: {Status}", 
+            question.Id, (int)(DateTime.UtcNow - startedAt).TotalMilliseconds, 
+            api.Error == null ? "OK" : $"{api.Error.ErrorCode}: {api.Error.Message}");
         api.ThrowIfError();
     }
 }

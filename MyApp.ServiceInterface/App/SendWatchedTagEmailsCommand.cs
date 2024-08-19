@@ -15,13 +15,14 @@ namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Database)]
 [Worker(Databases.App)]
-public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> log, 
+public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> logger, 
     IBackgroundJobs jobs, IDbConnectionFactory dbFactory, EmailRenderer renderer) 
     : AsyncCommand
 {
     protected override async Task RunAsync(CancellationToken token)
     {
-        var job = Request.GetBackgroundJob();
+        var log = Request.CreateJobLogger(jobs, logger);
+        //var job = Request.GetBackgroundJob();
         var yesterday = DateTime.UtcNow.AddDays(-1).Date;
         var day = yesterday.ToString("yyyy-MM-dd");
         using var db = await dbFactory.OpenDbConnectionAsync(token:token);
@@ -33,7 +34,6 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
         if (newPosts.Count == 0)
         {
             log.LogInformation("No new posts found for {Date}", day);
-            jobs.UpdateJobStatus(new(job, log:"No new posts"));
             return;
         }
 
@@ -54,7 +54,6 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
         if (watchTags.Count == 0)
         {
             log.LogInformation("No Tag Watchers found for {Date}", day);
-            jobs.UpdateJobStatus(new(job, log:"No Tag Watchers found"));
             return;
         }
         
@@ -87,11 +86,8 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
                 CreatedDate = DateTime.UtcNow,
             };
             watchPostMail.Id = (int)await db.InsertAsync(watchPostMail, selectIdentity: true, token:token);
-            log.LogInformation(
-                "Created {Day} WatchPostMail {Id} for {Tag} with posts:{PostIds} for users:{UserNames}",
+            log.LogInformation("Created {Day} WatchPostMail {Id} for {Tag} with posts:{PostIds} for users:{UserNames}",
                 day, watchPostMail.Id, tag, postIds.Join(","), userNames.Join(","));
-            jobs.UpdateJobStatus(new(job, log:
-                $"Created {day} WatchPostMail {watchPostMail.Id} for {tag} with posts:{postIds.Join(",")} for users:{userNames.Join(",")}"));
             
             var layout = "tags";
             var template = "tagged-questions";

@@ -1,7 +1,9 @@
 ﻿using AiServer.ServiceModel;
+using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 
 namespace MyApp.ServiceInterface.AiServer;
 
@@ -17,7 +19,8 @@ public class CreateAnswerCommentTask
 }
 
 [Tag(Tags.AI)]
-public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : AsyncCommand<CreateAnswerCommentTask>
+public class CreateAnswerCommentTaskCommand(ILogger<CreateAnswerCommentTaskCommand> logger, 
+    IBackgroundJobs jobs, AppConfig appConfig) : AsyncCommand<CreateAnswerCommentTask>
 {
     public const string SystemPrompt = 
         """
@@ -31,6 +34,7 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : AsyncCommand<
 
     protected override async Task RunAsync(CreateAnswerCommentTask request, CancellationToken token)
     {
+        var log = Request.CreateJobLogger(jobs, logger);
         var question = request.Question;
 
         request.AiRef ??= Guid.NewGuid().ToString("N");
@@ -81,19 +85,28 @@ public class CreateAnswerCommentTaskCommand(AppConfig appConfig) : AsyncCommand<
         });
 
         var client = appConfig.CreateAiServerClient();
+        var replyTo = appConfig.BaseUrl.CombineWith("api", nameof(AnswerCommentCallback).AddQueryParams(new()
+        {
+            [nameof(AnswerCommentCallback.AnswerId)] = request.Answer.RefId,
+            [nameof(AnswerCommentCallback.UserId)] = request.UserId,
+            [nameof(AnswerCommentCallback.AiRef)] = request.AiRef,
+        }));
         
+        var startedAt = DateTime.UtcNow;
+        log.LogInformation("Sending CreateOpenAiChat for Question {Id} Answer Comment for {Model}, replyTo: {ReplyTo}", 
+            question.Id, request.Model, replyTo);
+
         var api = await client.ApiAsync(new CreateOpenAiChat {
             RefId = request.AiRef,
             Tag = "pvq",
             Provider = null,
-            ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(AnswerCommentCallback).AddQueryParams(new() {
-                [nameof(AnswerCommentCallback.AnswerId)] = request.Answer.RefId,
-                [nameof(AnswerCommentCallback.UserId)] = request.UserId,
-                [nameof(AnswerCommentCallback.AiRef)] = request.AiRef,
-            })),
+            ReplyTo = replyTo,
             Request = openAiChat
         });
 
+        log.LogInformation("Completed CreateOpenAiChat for Question {Id} Answer Comment for {Model} in {Ms}: {Status}", 
+            question.Id, request.Model, (int)(DateTime.UtcNow - startedAt).TotalMilliseconds, 
+            api.Error == null ? "OK" : $"{api.Error.ErrorCode}: {api.Error.Message}");
         api.ThrowIfError();
     }
 }

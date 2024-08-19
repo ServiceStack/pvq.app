@@ -3,12 +3,13 @@ using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 
 namespace MyApp.ServiceInterface.AiServer;
 
 [Tag(Tags.AI)]
-public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log, 
-    AppConfig appConfig, QuestionsProvider questions) : IAsyncCommand<CreateAnswerTasks>
+public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> logger, IBackgroundJobs jobs, AppConfig appConfig) 
+    : AsyncCommand<CreateAnswerTasks>
 {
     //https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-an-it-expert
     //https://github.com/f/awesome-chatgpt-prompts?tab=readme-ov-file#act-as-a-developer-relations-consultant
@@ -40,12 +41,13 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
         return content;
     }
 
-    public async Task ExecuteAsync(CreateAnswerTasks request)
+    protected override async Task RunAsync(CreateAnswerTasks request, CancellationToken token)
     {
         var question = request.Post;
         if (question == null)
             throw new ArgumentNullException(nameof(request.Post));
         
+        var log = Request.CreateJobLogger(jobs, logger);
         if (request.ModelUsers == null || request.ModelUsers.Count == 0)
         {
             log.LogError("Missing ModelUsers for question {Id}", question.Id);
@@ -63,6 +65,7 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
         foreach (var userName in request.ModelUsers)
         {
             ApplicationUser? modelUser;
+            var startedAt = DateTime.UtcNow;
             try
             {
                 modelUser = appConfig.GetModelUser(userName);
@@ -72,7 +75,6 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
                     continue;
                 }
             
-                log.LogInformation("Creating Question {Id} OpenAiChat Model for {UserName} to AI Server", question.Id, userName);
                 var prompt = CreateQuestionPrompt(question);
                 var openAiChat = new OpenAiChat
                 {
@@ -84,19 +86,28 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> log,
                     Temperature = 0.7,
                     MaxTokens = 2048,
                 };
+                var replyTo = appConfig.BaseUrl.CombineWith("api", nameof(CreateAnswerCallback).AddQueryParams(new() {
+                    [nameof(CreateAnswerCallback.PostId)] = question.Id,
+                    [nameof(CreateAnswerCallback.UserId)] = modelUser.Id,
+                }));
+                
+                log.LogInformation("Sending CreateOpenAiChat for Question {Id} Answer for {UserName}, replyTo: {ReplyTo}", 
+                    question.Id, userName, replyTo);
                 var response = await client.PostAsync(new CreateOpenAiChat
                 {
                     Tag = "pvq",
-                    ReplyTo = appConfig.BaseUrl.CombineWith("api", nameof(CreateAnswerCallback).AddQueryParams(new() {
-                        [nameof(CreateAnswerCallback.PostId)] = question.Id,
-                        [nameof(CreateAnswerCallback.UserId)] = modelUser.Id,
-                    })),
+                    ReplyTo = replyTo,
                     Request = openAiChat
-                });
+                }, token);
+
+                log.LogInformation("Completed CreateOpenAiChat for Question {Id} Answer for {UserName} in {Ms}: OK", 
+                    question.Id, userName, (int)(DateTime.UtcNow - startedAt).TotalMilliseconds);
             }
             catch (Exception e)
             {
-                log.LogError(e, "Failed to Creating Question {Id} OpenAiChat Model for {UserName}", question.Id, userName);
+                log.LogError(e, "Completed CreateOpenAiChat for Question {Id} Answer for {UserName} in {Ms}: {Status}", 
+                    question.Id, userName, (int)(DateTime.UtcNow - startedAt).TotalMilliseconds, 
+                    $"{(e as WebServiceException)?.ErrorCode ?? e.GetType().Name}: {e.Message}");
             }
         }
     }

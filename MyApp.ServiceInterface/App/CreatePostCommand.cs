@@ -3,16 +3,18 @@ using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
 [Worker(Databases.App)]
 [Tag(Tags.Questions)]
-public class CreatePostCommand(ILogger<CreatePostCommand> log, AppConfig appConfig, IDbConnection db) : AsyncCommand<Post>
+public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJobs jobs, AppConfig appConfig, IDbConnection db) : AsyncCommand<Post>
 {
     protected override async Task RunAsync(Post post, CancellationToken token)
     {
+        var log = Request.CreateJobLogger(jobs, logger);
         var body = post.Body;
         post.Body = null;
         
