@@ -94,11 +94,11 @@ public class AdminServices(
             throw HttpError.NotFound("Post not found");
 
         var refId = $"{request.Id}";
-        await Db.SaveAsync(post);
-        var statTotal = await Db.SingleAsync(Db.From<StatTotals>().Where(x => x.Id == refId));
+        Db.Save(post);
+        var statTotal = Db.Single(Db.From<StatTotals>().Where(x => x.Id == refId));
         if (statTotal != null)
         {
-            await Db.InsertAsync(new StatTotals
+            Db.Insert(new StatTotals
             {
                 Id = refId,
                 PostId = post.Id,
@@ -121,7 +121,7 @@ public class AdminServices(
             throw HttpError.NotFound("Answer not found");
         
         var answerCreator = !string.IsNullOrEmpty(answer.CreatedBy)
-            ? await Db.ScalarAsync<string>(Db.From<ApplicationUser>().Where(x => x.UserName == answer.CreatedBy).Select(x => x.Id))
+            ? Db.Scalar<string>(Db.From<ApplicationUser>().Where(x => x.UserName == answer.CreatedBy).Select(x => x.Id))
             : null;
         
         if (answerCreator == null)

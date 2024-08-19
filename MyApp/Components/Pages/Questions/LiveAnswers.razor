@@ -191,7 +191,7 @@
         using var db = HostContext.AppHost.GetDbConnection();
 
         var userName = HttpContext!.User.GetUserName();
-        var actualAnswers = (await db.SelectAsync<StatTotals>(x => x.PostId == Id)).Where(x => x.Id.Contains('-')).ToList();
+        var actualAnswers = (db.Select<StatTotals>(x => x.PostId == Id)).Where(x => x.Id.Contains('-')).ToList();
         var expectedAnswers = AppConfig.GetAnswerModelUsersFor(userName);
         
         var questionFiles = await QuestionsProvider.GetQuestionAsync(Id);
@@ -214,7 +214,7 @@
                 
                 await AnswerNotifier.ListenForNewAnswersAsync(Id, TimeSpan.FromSeconds(5));
 
-                actualAnswers = (await db.SelectAsync<StatTotals>(x => x.PostId == Id)).Where(x => x.Id.Contains('-')).ToList();
+                actualAnswers = db.Select<StatTotals>(x => x.PostId == Id).Where(x => x.Id.Contains('-')).ToList();
                 pendingCount = expectedAnswers.Count - actualAnswers.Count;
                 if (pendingCount <= 0)
                     break;

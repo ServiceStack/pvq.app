@@ -7,11 +7,12 @@ namespace MyApp.ServiceInterface.App;
 
 [Worker(Databases.App)]
 [Tag(Tags.Questions)]
-public class UpdatePostCommand(IDbConnection db) : AsyncCommand<Post>
+public class UpdatePostCommand(IDbConnection db) : SyncCommand<Post>
 {
-    protected override async Task RunAsync(Post question, CancellationToken token)
+    protected override void Run(Post question)
     {
-        await db.UpdateOnlyAsync(() => new Post {
+        db.UpdateOnly(() => new Post
+        {
             Title = question.Title,
             Tags = question.Tags,
             Slug = question.Slug,
@@ -19,6 +20,6 @@ public class UpdatePostCommand(IDbConnection db) : AsyncCommand<Post>
             ModifiedBy = question.ModifiedBy,
             LastActivityDate = question.LastActivityDate,
             LastEditDate = question.LastEditDate,
-        }, x => x.Id == question.Id, token: token);
+        }, x => x.Id == question.Id);
     }
 }

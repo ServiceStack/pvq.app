@@ -22,7 +22,7 @@ public class LeaderboardServices : Service
     /// <param name="request"></param>
     public async Task<object> Any(CalculateLeaderBoard request)
     {
-        var statTotals = await Db.SelectAsync<StatTotals>();
+        var statTotals = Db.Select<StatTotals>();
         var modelsToExclude = request.ModelsToExclude?.Split(",").ToList() ?? [];
         // filter to answers only
         var answers = statTotals.Where(x => FilterSpecificModels(x, modelsToExclude)).ToList();
@@ -67,10 +67,10 @@ public class LeaderboardServices : Service
     public async Task<object> Any(CalculateTop1KLeaderboard request)
     {
         // Do the same for top 1000 questions
-        var topQuestions = await Db.SelectAsync(Db.From<Post>().OrderByDescending(x => x.Score).Limit(1000));
+        var topQuestions = Db.Select(Db.From<Post>().OrderByDescending(x => x.Score).Limit(1000));
         var postIds = topQuestions.Select(x => x.Id).ToList();
         
-        var statTotals = await Db.SelectAsync(Db.From<StatTotals>()
+        var statTotals = Db.Select(Db.From<StatTotals>()
             .Where(x => Sql.In(x.PostId,postIds)));
         
         // filter to answers only
@@ -219,7 +219,7 @@ public class LeaderboardServices : Service
 
     public async Task<object> Any(GetLeaderboardStatsByTag request)
     {
-        var allStatsForTag = await Db.SelectAsync<StatTotals>(@"SELECT st.*
+        var allStatsForTag = Db.Select<StatTotals>(@"SELECT st.*
                 FROM main.StatTotals st WHERE st.PostId in 
                     (SELECT Id 
                        FROM post p 

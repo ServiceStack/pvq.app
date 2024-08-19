@@ -70,7 +70,7 @@ public class EmailRenderersServices(EmailRenderer renderer) : Service
     {
         var context = renderer.CreateMailContext(layout:"tags", page:"tagged-questions");
 
-        var posts = await Db.SelectAsync(Db.From<Post>()
+        var posts = Db.Select(Db.From<Post>()
             .Where(x => x.CreationDate >= request.Date && x.CreationDate < request.Date.AddDays(1))
             .Where("replace(replace(tags,'[',','),']',',') LIKE '%,' || {0} || ',%'", request.Tag)
             .Limit(10));

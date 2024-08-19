@@ -21,7 +21,7 @@ public class SearchTasksCommand(ILogger<SearchTasksCommand> log, IDbConnectionFa
 {
     protected override async Task RunAsync(SearchTasks request, CancellationToken token)
     {
-        using var db = await dbFactory.OpenDbConnectionAsync(Databases.Search, token: token);
+        using var db = dbFactory.Open(Databases.Search);
         string QuotedValue(string? value) => db.GetDialectProvider().GetQuotedValue(value);
         var minDate = new DateTime(2008,08,1);
 
@@ -39,8 +39,8 @@ public class SearchTasksCommand(ILogger<SearchTasksCommand> log, IDbConnectionFa
             log.LogInformation("[SEARCH] Adding Question {PostId} '{Title}' to Search Index...", id, post.Title);
 
             var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
-            await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} WHERE rowid = {post.Id}", token: token);
-            await db.ExecuteNonQueryAsync($@"INSERT INTO {nameof(PostFts)} (
+            db.ExecuteNonQuery($"DELETE FROM {nameof(PostFts)} WHERE rowid = {post.Id}");
+            db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
                 rowid,
                 {nameof(PostFts.RefId)},
                 {nameof(PostFts.UserName)},
@@ -54,7 +54,7 @@ public class SearchTasksCommand(ILogger<SearchTasksCommand> log, IDbConnectionFa
                 {QuotedValue(post.Title + "\n\n" + post.Body)},
                 {QuotedValue(string.Join(',', post.Tags))},
                 {QuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
-            )", token: token);
+            )");
         }
         else if (request.AddAnswerToIndex != null)
         {
@@ -70,11 +70,11 @@ public class SearchTasksCommand(ILogger<SearchTasksCommand> log, IDbConnectionFa
             log.LogInformation("[SEARCH] Adding Answer '{RefId}' to Search Index...", answerId);
 
             var modifiedDate = post.LastEditDate ?? (post.CreationDate > minDate ? post.CreationDate : minDate);
-            await db.ExecuteNonQueryAsync($"DELETE FROM {nameof(PostFts)} where {nameof(PostFts.RefId)} = {QuotedValue(refId)}", token: token);
+            db.ExecuteNonQuery($"DELETE FROM {nameof(PostFts)} where {nameof(PostFts.RefId)} = {QuotedValue(refId)}");
             
-            var nextId = await db.ScalarAsync<int>("SELECT MAX(rowid) FROM PostFts", token: token);
+            var nextId = db.Scalar<int>("SELECT MAX(rowid) FROM PostFts");
             nextId += 1;
-            await db.ExecuteNonQueryAsync($@"INSERT INTO {nameof(PostFts)} (
+            db.ExecuteNonQuery($@"INSERT INTO {nameof(PostFts)} (
                 rowid,
                 {nameof(PostFts.RefId)},
                 {nameof(PostFts.UserName)},
@@ -86,7 +86,7 @@ public class SearchTasksCommand(ILogger<SearchTasksCommand> log, IDbConnectionFa
                 {QuotedValue(post.CreatedBy)},
                 {QuotedValue(post.Body)},
                 {QuotedValue(modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"))}
-            )", token: token);
+            )");
         }
         
         if (request.DeletePosts != null)
@@ -94,7 +94,7 @@ public class SearchTasksCommand(ILogger<SearchTasksCommand> log, IDbConnectionFa
             foreach (var id in request.DeletePosts)
             {
                 log.LogInformation("[SEARCH] Deleting Post '{PostId}' from Search Index...", id);
-                await db.ExecuteNonQueryAsync($"DELETE FROM PostFts where RefId = '{id}' or RefId LIKE '{id}-%'", token: token);
+                db.ExecuteNonQuery($"DELETE FROM PostFts where RefId = '{id}' or RefId LIKE '{id}-%'");
             }
         }
         
@@ -103,7 +103,7 @@ public class SearchTasksCommand(ILogger<SearchTasksCommand> log, IDbConnectionFa
             foreach (var refId in request.DeleteAnswers)
             {
                 log.LogInformation("[SEARCH] Deleting Answer '{PostId}' from Search Index...", refId);
-                await db.ExecuteNonQueryAsync($"DELETE FROM PostFts where RefId = @refId or RefId = @refId", new { refId }, token: token);
+                db.ExecuteNonQuery($"DELETE FROM PostFts where RefId = @refId or RefId = @refId", new { refId });
             }
         }
     }

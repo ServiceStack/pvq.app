@@ -63,8 +63,8 @@ public class QuestionServices(ILogger<QuestionServices> log,
             .OrderBy("rank")
             .Limit(10);
         
-        var results = await dbSearch.SelectAsync(q);
-        var posts = await Db.PopulatePostsAsync(results);
+        var results = dbSearch.Select(q);
+        var posts = Db.PopulatePosts(results);
 
         return new FindSimilarQuestionsResponse
         {
@@ -83,14 +83,14 @@ public class QuestionServices(ILogger<QuestionServices> log,
         var slug = request.Title.GenerateSlug(200);
         var summary = request.Body.GenerateSummary();
 
-        var existingPost = await Db.SingleAsync(Db.From<Post>().Where(x => x.Title == title));
+        var existingPost = Db.Single(Db.From<Post>().Where(x => x.Title == title));
         if (existingPost != null)
             throw new ArgumentException($"Question with title '{title}' already used in question {existingPost.Id}", nameof(Post.Title));
 
         var refUrn = request.RefUrn;
         var postId = refUrn != null && refUrn.StartsWith("stackoverflow.com:")
                && int.TryParse(refUrn.LastRightPart(':'), out var stackoverflowPostId)
-               && !await Db.ExistsAsync<Post>(x => x.Id == stackoverflowPostId)
+               && !Db.Exists<Post>(x => x.Id == stackoverflowPostId)
             ? stackoverflowPostId
             :  (int)appConfig.GetNextPostId();
             
@@ -226,7 +226,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
      */
     public async Task<object> Any(UpdateQuestion request)
     {
-        var question = await Db.SingleByIdAsync<Post>(request.Id);
+        var question = Db.SingleById<Post>(request.Id);
         if (question == null)
             throw HttpError.NotFound("Question does not exist");
         
@@ -234,7 +234,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
         var isModerator = Request.GetClaimsPrincipal().HasRole(Roles.Moderator);
         if (!isModerator && question.CreatedBy != userName)
         {
-            var userInfo = await Db.SingleAsync<UserInfo>(x => x.UserName == userName);
+            var userInfo = Db.Single<UserInfo>(x => x.UserName == userName);
             if (userInfo.Reputation < 10)
                 throw HttpError.Forbidden("You need at least 10 reputation to Edit other User's Questions.");
         }
@@ -273,7 +273,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
         var isModerator = Request.GetClaimsPrincipal().HasRole(Roles.Moderator);
         if (!isModerator && !answerFile.Name.Contains(userName))
         {
-            var userInfo = await Db.SingleAsync<UserInfo>(x => x.UserName == userName);
+            var userInfo = Db.Single<UserInfo>(x => x.UserName == userName);
             if (userInfo.Reputation < 100)
                 throw HttpError.Forbidden("You need at least 100 reputation to Edit other User's Answers.");
         }
@@ -286,7 +286,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
         {
             var createdBy = request.Id.RightPart('-');
             var answerCreatorId = !string.IsNullOrEmpty(createdBy)
-                ? await Db.ScalarAsync<string>(Db.From<ApplicationUser>().Where(x => x.UserName == createdBy).Select(x => x.Id))
+                ? Db.Scalar<string>(Db.From<ApplicationUser>().Where(x => x.UserName == createdBy).Select(x => x.Id))
                 : null;
 
             if (answerCreatorId != null)
@@ -301,9 +301,9 @@ public class QuestionServices(ILogger<QuestionServices> log,
         return new UpdateAnswerResponse();
     }
 
-    public async Task<object> Any(GetQuestion request)
+    public object Any(GetQuestion request)
     {
-        var question = await Db.SingleByIdAsync<Post>(request.Id);
+        var question = Db.SingleById<Post>(request.Id);
         if (question == null)
             throw HttpError.NotFound($"Question {request.Id} not found");
 
@@ -550,7 +550,7 @@ public class QuestionServices(ILogger<QuestionServices> log,
             throw new ArgumentNullException(nameof(request.Id));
         
         var lastUpdated = request.PostId != null
-            ? await Db.ScalarAsync<DateTime?>(Db.From<StatTotals>().Where(x => x.PostId == request.PostId)
+            ? Db.Scalar<DateTime?>(Db.From<StatTotals>().Where(x => x.PostId == request.PostId)
                 .Select(x => Sql.Max(x.LastUpdated)))
             : null;
 

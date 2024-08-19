@@ -8,12 +8,12 @@ namespace MyApp.ServiceInterface.App;
 
 [Worker(Databases.App)]
 [Tag(Tags.Notifications)]
-public class MarkPostAsReadCommand(AppConfig appConfig, IDbConnection db, QuestionsProvider questions) : AsyncCommand<MarkPostAsRead>
+public class MarkPostAsReadCommand(AppConfig appConfig, IDbConnection db) : SyncCommand<MarkPostAsRead>
 {
-    protected override async Task RunAsync(MarkPostAsRead request, CancellationToken token)
+    protected override void Run(MarkPostAsRead request)
     {
-        await db.UpdateOnlyAsync(() => new Notification { Read = true }, 
-            where:x => x.UserName == request.UserName && x.PostId == request.PostId, token:token);
-        await appConfig.ResetUnreadNotificationsForAsync(db, request.UserName);
+        db.UpdateOnly(() => new Notification { Read = true }, 
+            where:x => x.UserName == request.UserName && x.PostId == request.PostId);
+        appConfig.ResetUnreadNotificationsFor(db, request.UserName);
     }
 }

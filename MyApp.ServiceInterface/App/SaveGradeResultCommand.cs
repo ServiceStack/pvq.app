@@ -11,22 +11,22 @@ namespace MyApp.ServiceInterface.App;
 [Tag(Tags.Answers)]
 [Worker(Databases.App)]
 public class SaveGradeResultCommand(AppConfig appConfig, IDbConnection db, WorkerAnswerNotifier answerNotifier, IBackgroundJobs jobs) 
-    : AsyncCommand<StatTotals>
+    : SyncCommand<StatTotals>
 {
-    protected override async Task RunAsync(StatTotals request, CancellationToken token)
+    protected override void Run(StatTotals request)
     {
         var lastUpdated = request.LastUpdated ?? DateTime.UtcNow;
         appConfig.SetLastUpdated(request.Id, lastUpdated);
-        var updatedRow = await db.UpdateOnlyAsync(() => new StatTotals
+        var updatedRow = db.UpdateOnly(() => new StatTotals
         {
             StartingUpVotes = request.StartingUpVotes,
             CreatedBy = request.CreatedBy,
             LastUpdated = lastUpdated,
-        }, x => x.Id == request.Id, token: token);
+        }, x => x.Id == request.Id);
         
         if (updatedRow == 0)
         {
-            await db.InsertAsync(request, token:token);
+            db.Insert(request);
         }
 
         if (request.CreatedBy != null)

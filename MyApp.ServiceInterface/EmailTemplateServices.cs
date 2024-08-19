@@ -32,9 +32,9 @@ public class EmailTemplateServices(AppConfig appConfig, QuestionsProvider questi
 
         var answer = await questions.GetAnswerAsPostAsync(answerFile);
         var postId = answer.ParentId;
-        var post = await Db.SingleByIdAsync<Post>(postId);
+        var post = Db.SingleById<Post>(postId);
 
-        var user = await Db.SingleAsync(Db.From<ApplicationUser>().Where(x => x.UserName == request.UserName));
+        var user = Db.Single(Db.From<ApplicationUser>().Where(x => x.UserName == request.UserName));
         var requestArgs = request.ToObjectDictionary();
         var contactArgs = user.ToContactArgs();
         var args = requestArgs.Merge(contactArgs);

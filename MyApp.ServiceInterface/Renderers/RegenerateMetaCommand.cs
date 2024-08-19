@@ -33,13 +33,13 @@ public class RegenerateMetaCommand(
 
         var log = Request.CreateJobLogger(jobs, logger);
         // Whether to rerender the Post HTML
-        using var db = await dbFactory.OpenDbConnectionAsync(token: token);
+        using var db = dbFactory.Open();
         var localFiles = questions.GetLocalQuestionFiles(id);
         var remoteFiles = await questions.GetRemoteQuestionFilesAsync(id);
-        var dbStatTotals = await db.SelectAsync<StatTotals>(x => x.PostId == id, token:token);
+        var dbStatTotals = db.Select<StatTotals>(x => x.PostId == id);
 
-        using var dbAnalytics = await dbFactory.OpenAsync(Databases.Analytics, token: token);
-        var allPostVotes = await db.SelectAsync<Vote>(x => x.PostId == id, token:token);
+        using var dbAnalytics = dbFactory.Open(Databases.Analytics);
+        var allPostVotes = db.Select<Vote>(x => x.PostId == id);
 
         var regenerateMeta = question.ForPost != null ||
             await ShouldRegenerateMeta(id, localFiles, remoteFiles, dbStatTotals, allPostVotes, token);
@@ -160,7 +160,7 @@ public class RegenerateMetaCommand(
             meta.Id = id;
         meta.ModifiedDate = now;
 
-        var dbPost = await db.SingleByIdAsync<Post>(id, token: token);
+        var dbPost = db.SingleById<Post>(id);
         if (dbPost == null)
         {
             log.LogWarning("Post {Id} not found", id);
@@ -168,8 +168,8 @@ public class RegenerateMetaCommand(
         }
         if (dbPost.AnswerCount != answerFiles.Count)
         {
-            await db.UpdateOnlyAsync(() => new Post { AnswerCount = answerFiles.Count }, 
-                x => x.Id == id, token: token);
+            db.UpdateOnly(() => new Post { AnswerCount = answerFiles.Count }, 
+                x => x.Id == id);
         }
 
         var totalPostViews = dbAnalytics.Count<PostStat>(x => x.PostId == id);
@@ -210,11 +210,11 @@ public class RegenerateMetaCommand(
             var dbStat = dbStatTotals.FirstOrDefault(x => x.Id == liveStat.Id);
             if (dbStat == null)
             {
-                await db.InsertAsync(liveStat, token:token);
+                db.Insert(liveStat);
             }
             else
             {
-                await db.UpdateOnlyAsync(() => new StatTotals
+                db.UpdateOnly(() => new StatTotals
                 {
                     Id = liveStat.Id,
                     PostId = liveStat.PostId,
@@ -224,11 +224,11 @@ public class RegenerateMetaCommand(
                     DownVotes = liveStat.DownVotes,
                     StartingUpVotes = liveStat.StartingUpVotes,
                     CreatedBy = liveStat.CreatedBy,
-                }, x => x.Id == liveStat.Id, token:token);
+                }, x => x.Id == liveStat.Id);
             }
         }
 
-        meta.StatTotals = await db.SelectAsync<StatTotals>(x => x.PostId == id, token:token);
+        meta.StatTotals = db.Select<StatTotals>(x => x.PostId == id);
         await questions.WriteMetaAsync(meta);
     }
 }

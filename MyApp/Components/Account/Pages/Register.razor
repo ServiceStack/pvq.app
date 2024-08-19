@@ -119,8 +119,8 @@
 
         var userId = await UserManager.GetUserIdAsync(user);
 
-        using var db = await DbFactory.OpenDbConnectionAsync();
-        await db.InsertAsync(new UserInfo
+        using var db = DbFactory.Open();
+        db.Insert(new UserInfo
         {
             UserId = userId,
             UserName = Input.UserName,

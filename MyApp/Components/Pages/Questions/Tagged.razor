@@ -79,7 +79,7 @@
     ResponseStatus? error;
     long? total;
 
-    async Task Load()
+    void Load()
     {
         try
         {
@@ -92,10 +92,10 @@
 
             if (Use == "db")
             {
-                using var db = await DbFactory.OpenAsync();
+                using var db = DbFactory.Open();
                 var q = db.From<Post>()
                     .WhereContainsTag(selectedTag);
-                posts = await db.SelectAsync(q
+                posts = db.Select(q
                     .OrderByView(Tab)
                     .Skip(Page > 1 ? (Page - 1) * PageSize : 0)
                     .Take(PageSize.ToPageSize()));
@@ -103,19 +103,19 @@
             }
             else //search
             {
-                using var dbSearch = await DbFactory.OpenAsync(Databases.Search);
+                using var dbSearch = DbFactory.Open(Databases.Search);
                 var q = dbSearch.From<PostFts>();
                 q.WhereContainsTag(selectedTag);
                 q.OrderByView(Tab);
 
-                List<PostFts> postsFts = await dbSearch.SelectAsync(q
+                List<PostFts> postsFts = dbSearch.Select(q
                     .Select("RefId, substring(Body,0,400) as Body, ModifiedDate")
                     .Skip(Page > 1 ? (Page - 1) * PageSize : 0)
                     .Take(PageSize.ToPageSize()));
 
                 total = dbSearch.Count(q);
-                using var db = await DbFactory.OpenAsync();
-                posts = await db.PopulatePostsAsync(postsFts);
+                using var db = DbFactory.Open();
+                posts = db.PopulatePosts(postsFts);
             }
         }
         catch (Exception ex)
@@ -124,5 +124,5 @@
         }
     }
 
-    protected override Task OnInitializedAsync() => Load();
+    protected override void OnInitialized() => Load();
 }

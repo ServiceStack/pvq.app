@@ -40,7 +40,7 @@ public class AdditionalUserClaimsPrincipalFactory(
             claims.Add(new Claim(JwtClaimTypes.Picture, user.ProfilePath));
         }
         
-        var userId = await db.ScalarAsync<int>("SELECT ROWID FROM AspNetUsers WHERE Id = @Id", new { user.Id });
+        var userId = db.Scalar<int>("SELECT ROWID FROM AspNetUsers WHERE Id = @Id", new { user.Id });
         if (userId > 0)
             claims.Add(new Claim(JwtClaimTypes.Subject, $"{userId}"));
 

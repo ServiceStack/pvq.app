@@ -36,7 +36,7 @@ public class UserServices(
             await VirtualFiles.WriteFileAsync(AppData.CombineWith(origPath), originalMs);
             await VirtualFiles.WriteFileAsync(AppData.CombineWith(profilePath), resizedMs);
 
-            await Db.UpdateOnlyAsync(() => new ApplicationUser {
+            Db.UpdateOnly(() => new ApplicationUser {
                 ProfilePath = profilePath,
             }, x => x.UserName == userName);
             
@@ -104,12 +104,12 @@ public class UserServices(
         return new HttpResult(Svg.GetImage(Svg.Icons.Users), MimeTypes.ImageSvg);
     }
 
-    public async Task<object> Any(UserPostData request)
+    public object Any(UserPostData request)
     {
         var userName = Request.GetClaimsPrincipal().Identity!.Name!;
-        var allUserPostVotes = await Db.SelectAsync<Vote>(x => x.PostId == request.PostId && x.UserName == userName);
+        var allUserPostVotes = Db.Select<Vote>(x => x.PostId == request.PostId && x.UserName == userName);
 
-        var watchingPost = await Db.ExistsAsync(Db.From<WatchPost>()
+        var watchingPost = Db.Exists(Db.From<WatchPost>()
             .Where(x => x.PostId == request.PostId && x.UserName == userName && DateTime.UtcNow > x.AfterDate));
         var to = new UserPostDataResponse
         {
@@ -137,7 +137,7 @@ public class UserServices(
         
         var refUserName = request.RefId.IndexOf('-') >= 0
             ? request.RefId.RightPart('-')
-            : await Db.ScalarAsync<string?>(Db.From<Post>().Where(x => x.Id == postId)
+            : Db.Scalar<string?>(Db.From<Post>().Where(x => x.Id == postId)
                 .Select(x => x.CreatedBy));
 
         if (userName == refUserName)
@@ -215,7 +215,7 @@ public class UserServices(
     {
         var userName = Request.GetClaimsPrincipal().GetUserName();
 
-        var sumAchievements = await Db.SelectAsync<SumAchievement>(
+        var sumAchievements = Db.Select<SumAchievement>(
             @"SELECT A.PostId, A.RefId, Sum(A.Score) AS Score, Max(A.CreatedDate) AS CreatedDate, P.Title, p.Slug 
                 FROM Achievement A LEFT JOIN Post P on (A.PostId = P.Id)
                WHERE UserName = @userName
@@ -291,12 +291,12 @@ public class UserServices(
     public async Task<object> Any(ShareContent request)
     {
         var postId = request.RefId.LeftPart('-').ToInt();
-        var post = await Db.SingleByIdAsync<Post>(postId);
+        var post = Db.SingleById<Post>(postId);
         if (post == null)
             return HttpResult.Redirect("/404");
         
         string? refUserName = request.UserId != null 
-            ? await Db.ScalarAsync<string>("SELECT UserName FROM AspNetUsers WHERE ROWID = @UserId", new { request.UserId })
+            ? Db.Scalar<string>("SELECT UserName FROM AspNetUsers WHERE ROWID = @UserId", new { request.UserId })
             : null;
         
         var userName = Request.GetClaimsPrincipal().GetUserName();
@@ -319,7 +319,7 @@ public class UserServices(
     public async Task<object> Any(FlagContent request)
     {
         var postId = request.RefId.LeftPart('-').ToInt();
-        var post = await Db.SingleByIdAsync<Post>(postId);
+        var post = Db.SingleById<Post>(postId);
         if (post == null)
             return HttpError.NotFound("Does not exist");
 

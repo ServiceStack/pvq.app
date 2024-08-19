@@ -263,10 +263,10 @@ public class AppConfig
             "SELECT UserName, Count(*) AS Total FROM Notification WHERE Read = false GROUP BY UserName HAVING COUNT(*) > 0"));
     }
 
-    public async Task ResetUnreadNotificationsForAsync(IDbConnection db, string userName)
+    public void ResetUnreadNotificationsFor(IDbConnection db, string userName)
     {
         UsersUnreadNotifications[userName] =
-            (int)await db.CountAsync(db.From<Notification>().Where(x => x.UserName == userName && x.Read == false));
+            (int)db.Count(db.From<Notification>().Where(x => x.UserName == userName && x.Read == false));
     }
 
     public void ResetUsersUnreadAchievements(IDbConnection db)
@@ -275,11 +275,11 @@ public class AppConfig
             "SELECT UserName, Count(*) AS Total FROM Achievement WHERE Read = false GROUP BY UserName HAVING COUNT(*) > 0"));
     }
 
-    public async Task ResetUserQuestionsAsync(IDbConnection db, string userName)
+    public void ResetUserQuestions(IDbConnection db, string userName)
     {
-        var questionsCount = (int)await db.CountAsync<Post>(x => x.CreatedBy == userName);
+        var questionsCount = (int)db.Count<Post>(x => x.CreatedBy == userName);
         UsersQuestions[userName] = questionsCount;
-        await db.UpdateOnlyAsync(() => 
+        db.UpdateOnly(() => 
             new UserInfo { QuestionsCount = questionsCount }, x => x.UserName == userName);
     }
     

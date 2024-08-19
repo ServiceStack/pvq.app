@@ -62,8 +62,8 @@ public class WatchingServices(IBackgroundJobs jobs) : Service
             throw new ArgumentException("PostId or Tag is required", nameof(request.PostId));
 
         var watching = request.PostId != null
-            ? await Db.IsWatchingPostAsync(userName, request.PostId.Value)
-            : await Db.IsWatchingTagAsync(userName, request.Tag!);
+            ? Db.IsWatchingPost(userName, request.PostId.Value)
+            : Db.IsWatchingTag(userName, request.Tag!);
         
         return new BoolResponse { Result = watching };
     }

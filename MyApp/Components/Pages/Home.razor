@@ -54,7 +54,7 @@
         using var db = await DbFactory.OpenAsync();
         var q = db.From<Post>();
         q.OrderByView(Tab);
-        Posts = await db.SelectAsync(q.Take(50));
+        Posts = db.Select(q.Take(50));
 
         Jobs.RunCommand<RenderHomeTabCommand>(new RenderHome {
             Tab = Tab,

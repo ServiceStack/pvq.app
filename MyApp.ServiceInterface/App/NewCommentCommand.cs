@@ -16,18 +16,18 @@ public class NewComment
 
 [Tag(Tags.Database)]
 [Worker(Databases.App)]
-public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : AsyncCommand<NewComment>
+public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : SyncCommand<NewComment>
 {
-    protected override async Task RunAsync(NewComment request, CancellationToken token)
+    protected override void Run(NewComment request)
     {
         var refId = request.RefId;
         var postId = refId.LeftPart('-').ToInt();
-        var post = await db.SingleByIdAsync<Post>(postId, token: token);
+        var post = db.SingleById<Post>(postId);
         if (post != null)
         {
             var isAnswer = refId.IndexOf('-') > 0;
             var createdBy = isAnswer
-                ? (await db.SingleByIdAsync<StatTotals>(refId, token: token))?.CreatedBy
+                ? db.SingleById<StatTotals>(refId)?.CreatedBy
                 : post.CreatedBy;
 
             var comment = request.Comment;
@@ -37,7 +37,7 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : AsyncCom
 
             if (createdBy != null && createdBy != comment.CreatedBy && appConfig.IsHuman(createdBy))
             {
-                await db.InsertAsync(new Notification
+                db.Insert(new Notification
                 {
                     UserName = createdBy,
                     Type = NotificationType.NewComment,
@@ -46,13 +46,13 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : AsyncCom
                     CreatedDate = createdDate,
                     Summary = cleanBody.GenerateNotificationSummary(),
                     RefUserName = comment.CreatedBy,
-                }, token: token);
+                });
                 appConfig.IncrUnreadNotificationsFor(createdBy);
             }
 
             var lastUpdated = request.LastUpdated;
             appConfig.SetLastUpdated(request.RefId, lastUpdated);
-            await db.UpdateOnlyAsync(() => new StatTotals
+            db.UpdateOnly(() => new StatTotals
             {
                 LastUpdated = lastUpdated,
             }, where: x => x.Id == request.RefId);
@@ -62,7 +62,7 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : AsyncCom
                 .ToList();
             if (userNameMentions.Count > 0)
             {
-                var existingUsers = await db.SelectAsync(db.From<ApplicationUser>()
+                var existingUsers = db.Select(db.From<ApplicationUser>()
                     .Where(x => userNameMentions.Contains(x.UserName!)));
 
                 foreach (var existingUser in existingUsers)
@@ -73,7 +73,7 @@ public class NewCommentCommand(AppConfig appConfig, IDbConnection db) : AsyncCom
                     var startPos = Math.Max(0, firstMentionPos - 50);
                     if (appConfig.IsHuman(existingUser.UserName))
                     {
-                        await db.InsertAsync(new Notification
+                        db.Insert(new Notification
                         {
                             UserName = existingUser.UserName!,
                             Type = NotificationType.CommentMention,

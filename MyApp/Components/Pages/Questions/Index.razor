@@ -96,7 +96,7 @@
     ResponseStatus? error = null;
     long? total;
 
-    async Task Load()
+    void Load()
     {
         try
         {
@@ -116,8 +116,8 @@
 
                 if (int.TryParse(Q, out var postId))
                 {
-                    using var dbApp = await DbFactory.OpenAsync();
-                    var post = await dbApp.SingleByIdAsync<Post>(postId);
+                    using var dbApp = DbFactory.Open();
+                    var post = dbApp.SingleById<Post>(postId);
                     if (post != null)
                     {
                         HttpContext!.Response.Redirect($"/questions/{post.Id}/{post.Slug}", permanent:true);
@@ -125,7 +125,7 @@
                     }
                 }
 
-                using var dbSearch = await DbFactory.OpenAsync(Databases.Search);
+                using var dbSearch = DbFactory.Open(Databases.Search);
                 var q = dbSearch.From<PostFts>();
             
                 var search = Q.Trim();
@@ -141,21 +141,21 @@
 
                 q.OrderByView(Tab);
 
-                List<PostFts> postsFts = await dbSearch.SelectAsync(q
+                List<PostFts> postsFts = dbSearch.Select(q
                     .Select("RefId, substring(Body,0,400) as Body, ModifiedDate")
                     .Skip(skip)
                     .Take(take));
                 total = dbSearch.Count(q);
 
-                using var db = await DbFactory.OpenAsync();
-                posts = await db.PopulatePostsAsync(postsFts);
+                using var db = DbFactory.Open();
+                posts = db.PopulatePosts(postsFts);
             }
             else
             {
-                using var db = await DbFactory.OpenAsync();
+                using var db = DbFactory.Open();
                 var q = db.From<Post>();
             
-                posts = await db.SelectAsync(q
+                posts = db.Select(q
                     .OrderByView(Tab)
                     .Skip(skip)
                     .Take(take));
@@ -169,5 +169,5 @@
         }
     }
 
-    protected override Task OnInitializedAsync() => Load();
+    protected override void OnInitialized() => Load();
 }

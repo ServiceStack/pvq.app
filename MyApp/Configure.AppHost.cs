@@ -106,13 +106,13 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         var sw = Stopwatch.StartNew();
 
         using var db = await appHost.Resolve<IDbConnectionFactory>().OpenDbConnectionAsync();
-        var feature = await CreateSitemapAsync(log, db, baseUrl);
+        var feature = CreateSitemap(log, db, baseUrl);
         await feature.RenderToAsync(distDir);
 
         log.LogInformation("Sitemap took {Elapsed} to prerender", sw.Elapsed.Humanize());
     }
 
-    async Task<SitemapFeature> CreateSitemapAsync(ILogger log, IDbConnection db, string baseUrl)
+    SitemapFeature CreateSitemap(ILogger log, IDbConnection db, string baseUrl)
     {
         var now = DateTime.UtcNow;
 
@@ -122,7 +122,7 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         DateTime ValidDate(DateTime date) =>
             date.Year < 2000 ? new DateTime(now.Year, date.Month, date.Day) : date;
 
-        var posts = await db.SelectAsync(db.From<Post>());
+        var posts = db.Select(db.From<Post>());
         var page = 1;
         var batches = posts.BatchesOf(200);
 
@@ -194,7 +194,6 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
 
         return to;
     }
-
     
 }
 

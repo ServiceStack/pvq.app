@@ -17,20 +17,20 @@ namespace MyApp.ServiceInterface.App;
 [Worker(Databases.App)]
 public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> logger, 
     IBackgroundJobs jobs, IDbConnectionFactory dbFactory, EmailRenderer renderer) 
-    : AsyncCommand
+    : SyncCommand
 {
-    protected override async Task RunAsync(CancellationToken token)
+    protected override void Run()
     {
         var log = Request.CreateJobLogger(jobs, logger);
         //var job = Request.GetBackgroundJob();
         var yesterday = DateTime.UtcNow.AddDays(-1).Date;
         var day = yesterday.ToString("yyyy-MM-dd");
-        using var db = await dbFactory.OpenDbConnectionAsync(token:token);
-        if (await db.ExistsAsync(db.From<WatchPostMail>().Where(x => x.Date == day), token:token))
+        using var db = dbFactory.Open();
+        if (db.Exists(db.From<WatchPostMail>().Where(x => x.Date == day)))
             return;
 
-        var newPosts = await db.SelectAsync(db.From<Post>().Where(x =>
-            x.CreationDate >= yesterday && x.CreationDate < yesterday.AddDays(1)), token:token);
+        var newPosts = db.Select(db.From<Post>().Where(x =>
+            x.CreationDate >= yesterday && x.CreationDate < yesterday.AddDays(1)));
         if (newPosts.Count == 0)
         {
             log.LogInformation("No new posts found for {Date}", day);
@@ -49,8 +49,8 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
         }
 
         var uniqueTags = tagGroups.Keys.ToSet();
-        var watchTags = await db.SelectAsync(db.From<WatchTag>()
-            .Where(x => uniqueTags.Contains(x.Tag)), token: token);
+        var watchTags = db.Select(db.From<WatchTag>()
+            .Where(x => uniqueTags.Contains(x.Tag)));
         if (watchTags.Count == 0)
         {
             log.LogInformation("No Tag Watchers found for {Date}", day);
@@ -58,10 +58,10 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
         }
         
         var uniqueUserNames = watchTags.Select(x => x.UserName).ToSet();
-        var users = await db.SelectAsync<ApplicationUser>(
-            x => uniqueUserNames.Contains(x.UserName!), token: token);
+        var users = db.Select<ApplicationUser>(
+            x => uniqueUserNames.Contains(x.UserName!));
 
-        using var dbCreatorKit = await dbFactory.OpenDbConnectionAsync(Databases.CreatorKit, token:token);
+        using var dbCreatorKit = dbFactory.Open(Databases.CreatorKit);
 
         var mailRuns = 0;
         var orderedTags = uniqueTags.OrderBy(x => x).ToList();
@@ -85,7 +85,7 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
                 PostIds = postIds,
                 CreatedDate = DateTime.UtcNow,
             };
-            watchPostMail.Id = (int)await db.InsertAsync(watchPostMail, selectIdentity: true, token:token);
+            watchPostMail.Id = (int)db.Insert(watchPostMail, selectIdentity: true);
             log.LogInformation("Created {Day} WatchPostMail {Id} for {Tag} with posts:{PostIds} for users:{UserNames}",
                 day, watchPostMail.Id, tag, postIds.Join(","), userNames.Join(","));
             
@@ -99,11 +99,11 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
                 ["date"] = monthDay,
                 ["posts"] = posts,
             };
-            var html = await new PageResult(context.GetPage("content"))
+            var html = new PageResult(context.GetPage("content"))
             {
                 Layout = "layout",
                 Args = args,
-            }.RenderToStringAsync();
+            }.RenderScript();
 
             args.Remove("model");
             
@@ -118,13 +118,13 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
                 GeneratorArgs = args,
                 ExternalRef = externalRef,
             };
-            mailRun.Id = (int)await dbCreatorKit.InsertAsync(mailRun, selectIdentity: true, token:token);
+            mailRun.Id = (int)dbCreatorKit.Insert(mailRun, selectIdentity: true);
             mailRuns++;
 
-            await db.UpdateOnlyAsync(() => new WatchPostMail
+            db.UpdateOnly(() => new WatchPostMail
             {
                 MailRunId = mailRun.Id,
-            }, where: x => x.Id == watchPostMail.Id, token:token);
+            }, where: x => x.Id == watchPostMail.Id);
 
             var emails = 0;
             foreach (var tagWatcher in tagWatchers)
@@ -144,7 +144,7 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
                     BodyHtml = html,
                 };
 
-                var contact = await dbCreatorKit.GetOrCreateContact(user);
+                var contact = dbCreatorKit.GetOrCreateContact(user);
 
                 var mailMessage = new MailMessageRun
                 {
@@ -157,20 +157,20 @@ public class SendWatchedTagEmailsCommand(ILogger<SendWatchedTagEmailsCommand> lo
                     CreatedDate = DateTime.UtcNow,
                     ExternalRef = externalRef,
                 };
-                mailMessage.Id = (int)await dbCreatorKit.InsertAsync(mailMessage, selectIdentity: true, token:token);
+                mailMessage.Id = (int)dbCreatorKit.Insert(mailMessage, selectIdentity: true);
                 emails++;
             }
 
             var generatedDate = DateTime.UtcNow;
-            await db.UpdateOnlyAsync(() => new WatchPostMail
+            db.UpdateOnly(() => new WatchPostMail
             {
                 GeneratedDate = generatedDate,
-            }, where: x => x.Id == watchPostMail.Id, token: token);
-            await dbCreatorKit.UpdateOnlyAsync(() => new MailRun
+            }, where: x => x.Id == watchPostMail.Id);
+            dbCreatorKit.UpdateOnly(() => new MailRun
             {
                 EmailsCount = emails,
                 GeneratedDate = generatedDate,
-            }, where: x => x.Id == mailRun.Id, token: token);
+            }, where: x => x.Id == mailRun.Id);
 
             log.LogInformation("Generated {Count} in {Day} MailRun {Id} for {Tag}",
                 emails, day, mailRun.Id, tag);

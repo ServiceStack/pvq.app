@@ -9,18 +9,18 @@ namespace MyApp.ServiceInterface.App;
 [Worker(Databases.App)]
 [Tag(Tags.Database)]
 public class DeletePostsCommand(AppConfig appConfig, IDbConnection db) 
-    : AsyncCommand<DeletePosts>
+    : SyncCommand<DeletePosts>
 {
-    protected override async Task RunAsync(DeletePosts request, CancellationToken token)
+    protected override void Run(DeletePosts request)
     {
         foreach (var postId in request.Ids)
         {
-            await db.DeleteAsync<Vote>(x => x.PostId == postId, token: token);
-            await db.DeleteByIdAsync<Post>(postId, token: token);
-            await db.DeleteAsync<StatTotals>(x => x.PostId == postId, token: token);
-            await db.DeleteAsync<Notification>(x => x.PostId == postId, token: token);
-            await db.DeleteAsync<WatchPost>(x => x.PostId == postId, token: token);
-            await db.DeleteAsync<PostEmail>(x => x.PostId == postId, token: token);
+            db.Delete<Vote>(x => x.PostId == postId);
+            db.DeleteById<Post>(postId);
+            db.Delete<StatTotals>(x => x.PostId == postId);
+            db.Delete<Notification>(x => x.PostId == postId);
+            db.Delete<WatchPost>(x => x.PostId == postId);
+            db.Delete<PostEmail>(x => x.PostId == postId);
             appConfig.ResetInitialPostId(db);
         }
     }

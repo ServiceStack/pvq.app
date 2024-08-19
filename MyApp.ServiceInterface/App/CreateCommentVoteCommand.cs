@@ -7,6 +7,7 @@ using ServiceStack.OrmLite;
 namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Database)]
+[Worker(Databases.App)]
 public class CreateCommentVoteCommand(IDbConnection db, QuestionsProvider questions) : IAsyncCommand<Vote>
 {
     public async Task ExecuteAsync(Vote vote)
@@ -16,7 +17,7 @@ public class CreateCommentVoteCommand(IDbConnection db, QuestionsProvider questi
         if (string.IsNullOrEmpty(vote.UserName))
             throw new ArgumentNullException(nameof(vote.UserName));
 
-        var rowsDeleted = await db.DeleteAsync<Vote>(new { vote.RefId, vote.UserName });
+        var rowsDeleted = db.Delete<Vote>(new { vote.RefId, vote.UserName });
 
         var meta = await questions.GetMetaAsync(vote.PostId);
         var created = vote.RefId.LastRightPart('-').ToLong();
@@ -30,9 +31,9 @@ public class CreateCommentVoteCommand(IDbConnection db, QuestionsProvider questi
                     throw new ArgumentException("Can't vote on your own comment", nameof(vote.RefId));
 
                 vote.RefUserName = comment.CreatedBy;
-                await db.InsertAsync(vote);
+                db.Insert(vote);
 
-                comment.UpVotes = (int) await db.CountAsync<Vote>(x => x.RefId == vote.RefId && x.Score > 0);
+                comment.UpVotes = (int) db.Count<Vote>(x => x.RefId == vote.RefId && x.Score > 0);
                 await questions.SaveMetaAsync(vote.PostId, meta);
             }
         }

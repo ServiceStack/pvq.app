@@ -8,9 +8,9 @@ namespace MyApp.ServiceInterface;
 
 public class ApiServices(IDbConnectionFactory dbFactory) : Service
 {
-    public async Task<object> Any(SearchPosts request)
+    public object Any(SearchPosts request)
     {
-        using var dbSearch = await dbFactory.OpenAsync(Databases.Search);
+        using var dbSearch = dbFactory.Open(Databases.Search);
 
         var skip = request.Skip;
         var take = Math.Min(request.Take ?? 25, 200);
@@ -31,14 +31,14 @@ public class ApiServices(IDbConnectionFactory dbFactory) : Service
 
             q.OrderByView(request.View);
 
-            List<PostFts> postsFts = await dbSearch.SelectAsync(q
+            List<PostFts> postsFts = dbSearch.Select(q
                 .Select("RefId, substring(Body,0,400) as Body, ModifiedDate")
                 .Skip(request.Skip)
                 .Take(take));
             var total = dbSearch.Count(q);
 
-            using var db = await dbFactory.OpenAsync();
-            var posts = await db.PopulatePostsAsync(postsFts);
+            using var db = dbFactory.Open();
+            var posts = db.PopulatePosts(postsFts);
 
             return new SearchPostsResponse
             {
@@ -48,10 +48,10 @@ public class ApiServices(IDbConnectionFactory dbFactory) : Service
         }
         else
         {
-            using var db = await dbFactory.OpenAsync();
+            using var db = dbFactory.Open();
             var q = db.From<Post>();
             
-            var posts = await db.SelectAsync(q
+            var posts = db.Select(q
                 .OrderByView(request.View)
                 .Skip(skip)
                 .Take(take));

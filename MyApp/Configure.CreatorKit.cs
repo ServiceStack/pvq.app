@@ -69,7 +69,7 @@ public class ActiveUserValidator : TypeValidator, IAuthTypeValidator
         // if (checkDb)
         // {
         //     using var db = HostContext.AppHost.GetDbConnection(request);
-        //     var user = await db.SingleByIdAsync<ApplicationUser>(userId);
+        //     var user = db.SingleById<ApplicationUser>(userId);
         //     if (user == null)
         //         throw new HttpError(ResolveStatusCode(), ResolveErrorCode(), "Your account no longer exists");
         //     

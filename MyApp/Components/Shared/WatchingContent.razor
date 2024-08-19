@@ -1,5 +1,4 @@
-﻿@using MyApp.Data
-@using MyApp.ServiceInterface.App
+﻿@using MyApp.ServiceInterface.App
 @using ServiceStack.Jobs
 @inject IDbConnectionFactory DbFactory
 @inject IBackgroundJobs Jobs
@@ -45,17 +44,17 @@
     string Type => PostId != null ? nameof(Post) : nameof(Tag);
     
     bool? Watching { get; set; }
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         var userName = HttpContext.GetUserName();
         if (userName == null)
             return;
 
-        using var db = await DbFactory.OpenAsync();
+        using var db = DbFactory.Open();
         Watching = PostId != null
-            ? await db.IsWatchingPostAsync(userName, PostId)
+            ? db.IsWatchingPost(userName, PostId)
             : Tag != null 
-                ? await db.IsWatchingTagAsync(userName, Tag)
+                ? db.IsWatchingTag(userName, Tag)
                 : null;
 
         if (Unsubscribe == true)

@@ -13,7 +13,7 @@ public class EmailServices(EmailRenderer renderer) : Service
     public async Task<object> Any(UpdateMailMessageDraft request)
     {
         using var db = HostContext.AppHost.GetDbConnection(Databases.CreatorKit);
-        var message = await db.SingleByIdAsync<MailMessage>(request.Id);
+        var message = db.SingleById<MailMessage>(request.Id);
         var renderRequestType = HostContext.Metadata.GetRequestType(message.Renderer);
         message.Layout = request.Layout;
         message.Template = request.Template;
@@ -36,7 +36,7 @@ public class EmailServices(EmailRenderer renderer) : Service
         else
             message.Message.BodyHtml = responseBody;
 
-        await db.UpdateAsync(message);
+        db.Update(message);
 
         if (request.Send == true)
         {
@@ -49,11 +49,11 @@ public class EmailServices(EmailRenderer renderer) : Service
     public async Task<object> Any(SimpleTextEmail request)
     {
         using var db = HostContext.AppHost.GetDbConnection(Databases.CreatorKit);
-        var contact = await db.GetOrCreateContact(request);
+        var contact = db.GetOrCreateContact(request);
         var viewRequest = request.ConvertTo<RenderSimpleText>().FromContact(contact);
         var bodyText = (string)await Gateway.SendAsync(typeof(string), viewRequest);
 
-        var email = await renderer.CreateMessageAsync(db, new MailMessage
+        var email = renderer.CreateMessage(db, new MailMessage
         {
             Draft = request.Draft ?? false,
             Message = new EmailMessage
@@ -70,11 +70,11 @@ public class EmailServices(EmailRenderer renderer) : Service
     public async Task<object> Any(CustomHtmlEmail request)
     {
         using var db = HostContext.AppHost.GetDbConnection(Databases.CreatorKit);
-        var contact = await db.GetOrCreateContact(request);
+        var contact = db.GetOrCreateContact(request);
         var viewRequest = request.ConvertTo<RenderCustomHtml>().FromContact(contact);
         var bodyHtml = (string)await Gateway.SendAsync(typeof(string), viewRequest);
 
-        var email = await renderer.CreateMessageAsync(db, new MailMessage
+        var email = renderer.CreateMessage(db, new MailMessage
         {
             Draft = request.Draft ?? false,
             Message = new EmailMessage
@@ -91,11 +91,11 @@ public class EmailServices(EmailRenderer renderer) : Service
     public async Task<object> Any(TagQuestionsEmail request)
     {
         using var db = HostContext.AppHost.GetDbConnection(Databases.CreatorKit);
-        var contact = await db.GetOrCreateContact(request);
+        var contact = db.GetOrCreateContact(request);
         var viewRequest = request.ConvertTo<RenderTagQuestionsEmail>().FromContact(contact);
         var bodyHtml = (string)await Gateway.SendAsync(typeof(string), viewRequest);
 
-        var email = await renderer.CreateMessageAsync(db, new MailMessage
+        var email = renderer.CreateMessage(db, new MailMessage
         {
             Draft = request.Draft ?? false,
             Message = new EmailMessage

@@ -20,22 +20,22 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
         
         if (post.Id > 0)
         {
-            await db.InsertAsync(post, token: token);
+            db.Insert(post);
         }
         else
         {
-            post.Id = (int)await db.InsertAsync(post, selectIdentity: true, token: token);
+            post.Id = (int)db.Insert(post, selectIdentity: true);
         }
         
         var createdBy = post.CreatedBy;
         if (createdBy != null && post.PostTypeId == 1)
         {
-            await appConfig.ResetUserQuestionsAsync(db, createdBy);
+            appConfig.ResetUserQuestions(db, createdBy);
         }
 
         try
         {
-            await db.InsertAsync(new StatTotals
+            db.Insert(new StatTotals
             {
                 Id = $"{post.Id}",
                 PostId = post.Id,
@@ -43,17 +43,17 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
                 DownVotes = 0,
                 StartingUpVotes = 0,
                 CreatedBy = post.CreatedBy,
-            }, token: token);
+            });
         }
         catch (Exception e)
         {
             log.LogWarning("Couldn't insert StatTotals for Post {PostId}: '{Message}', updating instead...", post.Id,
                 e.Message);
-            await db.UpdateOnlyAsync(() => new StatTotals
+            db.UpdateOnly(() => new StatTotals
             {
                 PostId = post.Id,
                 CreatedBy = post.CreatedBy,
-            }, x => x.Id == $"{post.Id}", token: token);
+            }, x => x.Id == $"{post.Id}");
         }
 
         if (!string.IsNullOrEmpty(body))
@@ -63,8 +63,8 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
                 .Where(x => x != createdBy && appConfig.IsHuman(x)).ToList();
             if (userNameMentions.Count > 0)
             {
-                var existingUsers = await db.SelectAsync(db.From<ApplicationUser>()
-                    .Where(x => userNameMentions.Contains(x.UserName!)), token: token);
+                var existingUsers = db.Select(db.From<ApplicationUser>()
+                    .Where(x => userNameMentions.Contains(x.UserName!)));
 
                 foreach (var existingUser in existingUsers)
                 {
@@ -74,7 +74,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
                     var startPos = Math.Max(0, firstMentionPos - 50);
                     if (appConfig.IsHuman(existingUser.UserName))
                     {
-                        await db.InsertAsync(new Notification
+                        db.Insert(new Notification
                         {
                             UserName = existingUser.UserName!,
                             Type = NotificationType.QuestionMention,
@@ -83,7 +83,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
                             CreatedDate = post.CreationDate,
                             Summary = cleanBody.GenerateNotificationSummary(startPos),
                             RefUserName = createdBy,
-                        }, token: token);
+                        });
                         appConfig.IncrUnreadNotificationsFor(existingUser.UserName!);
                     }
                 }
@@ -92,7 +92,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
 
         if (appConfig.IsHuman(post.CreatedBy))
         {
-            await db.InsertAsync(new Achievement
+            db.Insert(new Achievement
             {
                 UserName = post.CreatedBy!,
                 Type = AchievementType.NewQuestion,
@@ -100,18 +100,18 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
                 PostId = post.Id,
                 Score = 1,
                 CreatedDate = DateTime.UtcNow,
-            }, token: token);
+            });
             appConfig.IncrUnreadAchievementsFor(post.CreatedBy!);
 
             // Setup auto-watch for new questions (Sending Emails for new Answers)
-            await db.InsertAsync(new WatchPost
+            db.Insert(new WatchPost
             {
                 UserName = post.CreatedBy!,
                 PostId = post.Id,
                 CreatedDate = post.CreationDate,
                 // Email new answers 1hr after asking question
                 AfterDate = DateTime.UtcNow.Add(TimeSpan.FromHours(1)),
-            }, token: token);
+            });
         }
     }
 }

@@ -15,9 +15,9 @@ public class PostSubscriptions
 
 [Worker(Databases.App)]
 [Tag(Tags.Notifications)]
-public class PostSubscriptionsCommand(IDbConnection db) : AsyncCommand<PostSubscriptions>
+public class PostSubscriptionsCommand(IDbConnection db) : SyncCommand<PostSubscriptions>
 {
-    protected override async Task RunAsync(PostSubscriptions request, CancellationToken token)
+    protected override void Run(PostSubscriptions request)
     {
         var now = DateTime.UtcNow;
         if (request.Subscriptions is { Count: > 0 })
@@ -29,12 +29,12 @@ public class PostSubscriptionsCommand(IDbConnection db) : AsyncCommand<PostSubsc
                 CreatedDate = now,
                 AfterDate = now,
             });
-            await db.InsertAllAsync(subs, token: token);
+            db.InsertAll(subs);
         }
         if (request.Unsubscriptions is { Count: > 0 })
         {
-            await db.DeleteAsync<WatchPost>(
-                x => x.UserName == request.UserName && request.Unsubscriptions.Contains(x.PostId), token: token);
+            db.Delete<WatchPost>(
+                x => x.UserName == request.UserName && request.Unsubscriptions.Contains(x.PostId));
         }
     }
 }

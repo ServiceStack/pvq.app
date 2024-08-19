@@ -106,7 +106,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
             LastUpdated = DateTime.UtcNow,
         });
 
-        await Db.NotifyQuestionAuthorIfRequiredAsync(jobs, answer);
+        Db.NotifyQuestionAuthorIfRequired(jobs, answer);
 
         jobs.RunCommand<CreateRankAnswerTaskCommand>(new CreateRankAnswerTask {
             AnswerId = answer.RefId!,
@@ -120,7 +120,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
     
     public async Task Any(RankAnswerCallback request)
     {
-        var answerCreator = await AssertUserNameById(request.UserId);
+        var answerCreator = AssertUserNameById(request.UserId);
 
         var graderUser = appConfig.GetModelUser(request.Grader);
         if (graderUser?.UserName == null)
@@ -182,7 +182,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
 
     public async Task Any(AnswerCommentCallback request)
     {
-        var commentCreator = await AssertUserNameById(request.UserId);
+        var commentCreator = AssertUserNameById(request.UserId);
         var postId = request.AnswerId.LeftPart('-').ToInt();
         var modelUserName = request.AnswerId.RightPart('-');
 
@@ -226,10 +226,10 @@ public class AiServerServices(ILogger<AiServerServices> log,
         await questions.SaveMetaAsync(postId, meta);
     }
 
-    private async Task<string> AssertUserNameById(string userId)
+    private string AssertUserNameById(string userId)
     {
         var userName = appConfig.GetModelUserById(userId)?.UserName
-            ?? await Db.ScalarAsync<string?>(Db.From<ApplicationUser>().Where(x => x.Id == userId).Select(x => x.UserName));
+            ?? Db.Scalar<string?>(Db.From<ApplicationUser>().Where(x => x.Id == userId).Select(x => x.UserName));
         if (userName == null)
             throw HttpError.BadRequest("Invalid User Id: " + userId);
         return userName;

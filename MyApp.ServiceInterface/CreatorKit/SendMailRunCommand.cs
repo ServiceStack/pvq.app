@@ -13,32 +13,31 @@ namespace MyApp.ServiceInterface.CreatorKit;
 [Tag(Tags.CreatorKit)]
 [Worker(Databases.CreatorKit)]
 public class SendMailRunCommand(
-    ILogger<SendMailRunCommand> log,
+    ILogger<SendMailRunCommand> logger,
     IBackgroundJobs jobs,
     IDbConnectionFactory dbFactory,
     EmailProvider emailProvider)
-    : AsyncCommand<SendMailRun>
+    : SyncCommand<SendMailRun>
 {
-    protected override async Task RunAsync(SendMailRun request, CancellationToken token)
+    protected override void Run(SendMailRun request)
     {
+        var log = Request.CreateJobLogger(jobs, logger);
         var job = Request.GetBackgroundJob();
-        using var db = await dbFactory.OpenDbConnectionAsync(Databases.CreatorKit, token:token);
-        var msgIdsToSend = await db.ColumnAsync<int>(db.From<MailMessageRun>()
+        using var db = dbFactory.Open(Databases.CreatorKit);
+        var msgIdsToSend = db.Column<int>(db.From<MailMessageRun>()
             .Where(x => x.MailRunId == request.Id && x.CompletedDate == null && x.StartedDate == null)
-            .Select(x => x.Id), token: token);
+            .Select(x => x.Id));
 
         if (msgIdsToSend.Count == 0)
         {
             log.LogInformation("No remaining unsent Messages to send for MailRun {Id}", request.Id);
-            jobs.UpdateJobStatus(new(job, log:$"No remaining unsent Messages to send for MailRun {request.Id}"));
             return;
         }
         
-        await db.UpdateOnlyAsync(() => new MailRun { SentDate = DateTime.UtcNow }, 
-            where:x => x.Id == request.Id && x.SentDate == null, token: token);
+        db.UpdateOnly(() => new MailRun { SentDate = DateTime.UtcNow }, 
+            where:x => x.Id == request.Id && x.SentDate == null);
 
         log.LogInformation("Sending {Count} Messages for MailRun {Id}", msgIdsToSend.Count, request.Id);
-        jobs.UpdateJobStatus(new(job, progress:0.05, log:$"Sending {msgIdsToSend.Count} Messages for MailRun {request.Id}"));
 
         var i = 0;
         foreach (var msgId in msgIdsToSend)
@@ -48,45 +47,42 @@ public class SendMailRunCommand(
                 var progress = ++i / (double)msgIdsToSend.Count * 0.95 + 0.05;
                 jobs.UpdateJobStatus(new(job, progress:progress, log:$"Sending Message {msgId} for MailRun {request.Id}"));
 
-                var msg = await db.SingleByIdAsync<MailMessageRun>(msgId, token: token);
+                var msg = db.SingleById<MailMessageRun>(msgId);
                 if (msg.CompletedDate != null)
                 { 
                     log.LogWarning("MailMessageRun {Id} has already been sent", msg.Id);
-                    jobs.UpdateJobStatus(new(job, log:$"MailMessageRun {msg.Id} has already been sent"));
                     continue;
                 }
 
                 // ensure message is only sent once
-                if (await db.UpdateOnlyAsync(() => new MailMessageRun { StartedDate = DateTime.UtcNow },
-                        where: x => x.Id == request.Id && x.StartedDate == null, token: token) == 1)
+                if (db.UpdateOnly(() => new MailMessageRun { StartedDate = DateTime.UtcNow },
+                        where: x => x.Id == request.Id && x.StartedDate == null) == 1)
                 {
                     try
                     {
                         emailProvider.Send(msg.Message);
                         
-                        await db.UpdateOnlyAsync(() => new MailMessageRun { CompletedDate = DateTime.UtcNow },
-                            where: x => x.Id == request.Id, token: token);
+                        db.UpdateOnly(() => new MailMessageRun { CompletedDate = DateTime.UtcNow },
+                            where: x => x.Id == request.Id);
                     }
                     catch (Exception e)
                     {
                         var error = e.ToResponseStatus();
-                        await db.UpdateOnlyAsync(() => new MailMessageRun { Error = error },
-                            where: x => x.Id == request.Id, token: token);
+                        db.UpdateOnly(() => new MailMessageRun { Error = error },
+                            where: x => x.Id == request.Id);
                     }
                 }
             }
             catch (Exception e)
             {
                 var error = e.ToResponseStatus();
-                await db.UpdateOnlyAsync(() => new MailMessageRun
+                db.UpdateOnly(() => new MailMessageRun
                 {
                     Error = error
-                }, where: x => x.Id == msgId, token: token);
+                }, where: x => x.Id == msgId);
                 
                 log.LogError(e, "Error sending MailMessageRun {Id}: {Message}", msgId, e.Message);
-                jobs.UpdateJobStatus(new(job, log:$"Error sending MailMessageRun {msgId}: {e.Message}"));
             }
         }
     }
-
 }

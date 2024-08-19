@@ -8,11 +8,11 @@ namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Notifications)]
 [Worker(Databases.App)]
-public class CreateNotificationCommand(AppConfig appConfig, IDbConnection db) : AsyncCommand<Notification>
+public class CreateNotificationCommand(AppConfig appConfig, IDbConnection db) : SyncCommand<Notification>
 {
-    protected override async Task RunAsync(Notification request, CancellationToken token)
+    protected override void Run(Notification request)
     {
-        await db.InsertAsync(request, token: token);
+        db.Insert(request);
         appConfig.IncrUnreadNotificationsFor(request.UserName);
     }
 }

@@ -18,22 +18,22 @@ public class SendMessages
 [Tag(Tags.CreatorKit)]
 [Worker(Databases.CreatorKit)]
 public class SendMessagesCommand(IDbConnectionFactory dbFactory, EmailProvider emailProvider) 
-    : AsyncCommand<SendMessages>
+    : SyncCommand<SendMessages>
 {
-    protected override async Task RunAsync(SendMessages request, CancellationToken token)
+    protected override void Run(SendMessages request)
     {
-        using var db = await dbFactory.OpenDbConnectionAsync(Databases.CreatorKit, token: token);
+        using var db = dbFactory.Open(Databases.CreatorKit);
 
         foreach (var msg in request.Messages.Safe())
         {
             if (msg.CompletedDate != null)
                 throw new Exception($"Message {msg.Id} has already been sent");
 
-            msg.Id = (int) await db.InsertAsync(msg, selectIdentity:true, token: token);
+            msg.Id = (int) db.Insert(msg, selectIdentity:true);
 
             // ensure message is only sent once
-            if (await db.UpdateOnlyAsync(() => new MailMessage { StartedDate = DateTime.UtcNow, Draft = false },
-                    where: x => x.Id == msg.Id && (x.StartedDate == null), token: token) == 1)
+            if (db.UpdateOnly(() => new MailMessage { StartedDate = DateTime.UtcNow, Draft = false },
+                where: x => x.Id == msg.Id && x.StartedDate == null) == 1)
             {
                 try
                 {
@@ -42,13 +42,13 @@ public class SendMessagesCommand(IDbConnectionFactory dbFactory, EmailProvider e
                 catch (Exception e)
                 {
                     var error = e.ToResponseStatus();
-                    await db.UpdateOnlyAsync(() => new MailMessage { Error = error },
-                        where: x => x.Id == msg.Id, token: token);
+                    db.UpdateOnly(() => new MailMessage { Error = error },
+                        where: x => x.Id == msg.Id);
                     throw;
                 }
 
-                await db.UpdateOnlyAsync(() => new MailMessage { CompletedDate = DateTime.UtcNow },
-                    where: x => x.Id == msg.Id, token: token);
+                db.UpdateOnly(() => new MailMessage { CompletedDate = DateTime.UtcNow },
+                    where: x => x.Id == msg.Id);
             }
         }
     }

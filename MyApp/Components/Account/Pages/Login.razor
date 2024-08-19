@@ -97,8 +97,8 @@
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
-            using var db = await DbFactory.OpenDbConnectionAsync();
-            await db.UpdateOnlyAsync(() => new ApplicationUser
+            using var db = DbFactory.Open();
+            db.UpdateOnly(() => new ApplicationUser
             {
                 LastLoginIp = HttpContext.GetRemoteIp(),
                 LastLoginDate = DateTime.UtcNow,

@@ -64,13 +64,13 @@ public static class DbExtensions
         LastEditDate = x.ModifiedDate,
     };
 
-    public static async Task<List<Post>> PopulatePostsAsync(this IDbConnection db, List<PostFts> posts) =>
-        await db.PopulatePostsAsync(posts.Select(ToPost).ToList());
+    public static List<Post> PopulatePosts(this IDbConnection db, List<PostFts> posts) =>
+        db.PopulatePosts(posts.Select(ToPost).ToList());
     
-    public static async Task<List<Post>> PopulatePostsAsync(this IDbConnection db, List<Post> posts)
+    public static List<Post> PopulatePosts(this IDbConnection db, List<Post> posts)
     {
         var postIds = posts.Select(x => x.Id).ToSet();
-        var fullPosts = await db.SelectAsync(db.From<Post>().Where(x => postIds.Contains(x.Id)));
+        var fullPosts = db.Select(db.From<Post>().Where(x => postIds.Contains(x.Id)));
         var fullPostsMap = fullPosts.ToDictionary(x => x.Id);
 
         foreach (var post in posts)
@@ -92,16 +92,16 @@ public static class DbExtensions
         return posts;
     }
 
-    public static async Task<bool> IsWatchingPostAsync(this IDbConnection db, string userName, int? postId) => 
-        await db.ExistsAsync(db.From<WatchPost>().Where(x => x.UserName == userName && x.PostId == postId));
+    public static bool IsWatchingPost(this IDbConnection db, string userName, int? postId) => 
+        db.Exists(db.From<WatchPost>().Where(x => x.UserName == userName && x.PostId == postId));
 
-    public static async Task<bool> IsWatchingTagAsync(this IDbConnection db, string userName, string tag) => 
-        await db.ExistsAsync(db.From<WatchTag>().Where(x => x.UserName == userName && x.Tag == tag));
+    public static bool IsWatchingTag(this IDbConnection db, string userName, string tag) => 
+        db.Exists(db.From<WatchTag>().Where(x => x.UserName == userName && x.Tag == tag));
 
-    public static async Task NotifyQuestionAuthorIfRequiredAsync(this IDbConnection db, IBackgroundJobs jobs, Post answer)
+    public static void NotifyQuestionAuthorIfRequired(this IDbConnection db, IBackgroundJobs jobs, Post answer)
     {
         // Only add notifications for answers older than 1hr
-        var post = await db.SingleByIdAsync<Post>(answer.ParentId);
+        var post = db.SingleById<Post>(answer.ParentId);
         if (post?.CreatedBy != null && DateTime.UtcNow - post.CreationDate > TimeSpan.FromHours(1))
         {
             if (!string.IsNullOrEmpty(answer.Summary))
@@ -118,5 +118,4 @@ public static class DbExtensions
             }
         }
     }
-    
 }

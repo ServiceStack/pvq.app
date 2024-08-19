@@ -14,9 +14,9 @@ public class TagSubscriptions
 
 [Worker(Databases.App)]
 [Tag(Tags.Notifications)]
-public class TagSubscriptionsCommand(IDbConnection db) : AsyncCommand<TagSubscriptions>
+public class TagSubscriptionsCommand(IDbConnection db) : SyncCommand<TagSubscriptions>
 {
-    protected override async Task RunAsync(TagSubscriptions request, CancellationToken token)
+    protected override void Run(TagSubscriptions request)
     {
         var now = DateTime.UtcNow;
         if (request.Subscriptions is { Count: > 0 })
@@ -27,12 +27,12 @@ public class TagSubscriptionsCommand(IDbConnection db) : AsyncCommand<TagSubscri
                 Tag = x,
                 CreatedDate = now,
             });
-            await db.InsertAllAsync(subs, token: token);
+            db.InsertAll(subs);
         }
         if (request.Unsubscriptions is { Count: > 0 })
         {
-            await db.DeleteAsync<WatchTag>(
-                x => x.UserName == request.UserName && request.Unsubscriptions.Contains(x.Tag), token: token);
+            db.Delete<WatchTag>(
+                x => x.UserName == request.UserName && request.Unsubscriptions.Contains(x.Tag));
         }
     }
 }

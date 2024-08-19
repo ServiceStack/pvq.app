@@ -8,9 +8,9 @@ namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Answers)]
 [Worker(Databases.App)]
-public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsyncCommand<Post>
+public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : SyncCommand<Post>
 {
-    public async Task ExecuteAsync(Post answer)
+    protected override void Run(Post answer)
     {
         if (answer.ParentId == null)
             throw new ArgumentNullException(nameof(answer.ParentId));
@@ -19,9 +19,9 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsync
         
         var postId = answer.ParentId!.Value;
         var refId = $"{postId}-{answer.CreatedBy}";
-        if (!await db.ExistsAsync(db.From<StatTotals>().Where(x => x.Id == refId)))
+        if (!db.Exists(db.From<StatTotals>().Where(x => x.Id == refId)))
         {
-            await db.InsertAsync(new StatTotals
+            db.Insert(new StatTotals
             {
                 Id = refId,
                 PostId = postId,
@@ -34,13 +34,13 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsync
             });
         }
 
-        var post = await db.SingleByIdAsync<Post>(postId);
+        var post = db.SingleById<Post>(postId);
         if (post?.CreatedBy != null)
         {
             // Notify Post Author of new Answer
             if (post.CreatedBy != answer.CreatedBy && appConfig.IsHuman(post.CreatedBy))
             {
-                await db.InsertAsync(new Notification
+                db.Insert(new Notification
                 {
                     UserName = post.CreatedBy,
                     Type = NotificationType.NewAnswer,
@@ -61,7 +61,7 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsync
                     .Where(x => x != post.CreatedBy && x != answer.CreatedBy && appConfig.IsHuman(x)).ToList();
                 if (userNameMentions.Count > 0)
                 {
-                    var existingUsers = await db.SelectAsync(db.From<ApplicationUser>()
+                    var existingUsers = db.Select(db.From<ApplicationUser>()
                         .Where(x => userNameMentions.Contains(x.UserName!)));
 
                     foreach (var existingUser in existingUsers)
@@ -72,7 +72,7 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsync
                         var startPos = Math.Max(0, firstMentionPos - 50);
                         if (appConfig.IsHuman(existingUser.UserName))
                         {
-                            await db.InsertAsync(new Notification
+                            db.Insert(new Notification
                             {
                                 UserName = existingUser.UserName!,
                                 Type = NotificationType.AnswerMention,
@@ -91,7 +91,7 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : IAsync
 
         if (appConfig.IsHuman(answer.CreatedBy))
         {
-            await db.InsertAsync(new Achievement
+            db.Insert(new Achievement
             {
                 UserName = answer.CreatedBy,
                 Type = AchievementType.NewAnswer,

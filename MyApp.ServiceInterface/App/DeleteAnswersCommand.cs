@@ -8,17 +8,17 @@ namespace MyApp.ServiceInterface.App;
 
 [Worker(Databases.App)]
 [Tag(Tags.Answers)]
-public class DeleteAnswersCommand(IDbConnection db) : AsyncCommand<DeleteAnswers>
+public class DeleteAnswersCommand(IDbConnection db) : SyncCommand<DeleteAnswers>
 {
-    protected override async Task RunAsync(DeleteAnswers request, CancellationToken token)
+    protected override void Run(DeleteAnswers request)
     {
         foreach (var refId in request.Ids)
         {
-            await db.DeleteAsync<Vote>(x => x.RefId == refId, token: token);
-            await db.DeleteByIdAsync<Post>(refId, token: token);
-            await db.DeleteAsync<StatTotals>(x => x.Id == refId, token: token);
-            await db.DeleteAsync<Notification>(x => x.RefId == refId, token: token);
-            await db.DeleteAsync<PostEmail>(x => x.RefId == refId, token: token);
+            db.Delete<Vote>(x => x.RefId == refId);
+            db.DeleteById<Post>(refId);
+            db.Delete<StatTotals>(x => x.Id == refId);
+            db.Delete<Notification>(x => x.RefId == refId);
+            db.Delete<PostEmail>(x => x.RefId == refId);
         }
     }
 }

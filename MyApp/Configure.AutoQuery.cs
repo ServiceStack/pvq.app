@@ -19,6 +19,7 @@ public class ConfigureAutoQuery : IHostingStartup
             services.AddPlugin(new AutoQueryFeature {
                 MaxLimit = 1000,
                 //IncludeTotal = true,
+                UseDatabaseWriteLocks = true,
             });
         })
         .ConfigureAppHost(appHost => {
