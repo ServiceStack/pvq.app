@@ -254,7 +254,19 @@ public class QuestionServices(ILogger<QuestionServices> log,
         question.LastActivityDate = DateTime.UtcNow;
         question.LastEditDate = question.LastActivityDate;
 
-        jobs.RunCommand<UpdatePostCommand>(question);
+        lock (Workers.AppDb)
+        {
+            Db.UpdateOnly(() => new Post
+            {
+                Title = question.Title,
+                Tags = question.Tags,
+                Slug = question.Slug,
+                Summary = question.Summary,
+                ModifiedBy = question.ModifiedBy,
+                LastActivityDate = question.LastActivityDate,
+                LastEditDate = question.LastEditDate,
+            }, x => x.Id == question.Id);
+        }
         await questions.SaveQuestionEditAsync(question);
 
         return new UpdateQuestionResponse

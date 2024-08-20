@@ -316,7 +316,7 @@ public class UserServices(
         return HttpResult.Redirect($"/questions/{postId}/{post.Slug}" + (request.RefId.IndexOf('-') >= 0 ? $"#{request.RefId}" : ""));
     }
 
-    public async Task<object> Any(FlagContent request)
+    public object Any(FlagContent request)
     {
         var postId = request.RefId.LeftPart('-').ToInt();
         var post = Db.SingleById<Post>(postId);

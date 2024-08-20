@@ -12,7 +12,6 @@ public class PostSubscriptions
     public List<int>? Unsubscriptions { get; set; }
 }
 
-
 [Worker(Databases.App)]
 [Tag(Tags.Notifications)]
 public class PostSubscriptionsCommand(IDbConnection db) : SyncCommand<PostSubscriptions>
