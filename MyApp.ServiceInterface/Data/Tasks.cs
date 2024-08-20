@@ -50,12 +50,6 @@ public class DeleteAnswers
     public required List<string> Ids { get; set; }
 }
 
-public class AnswerAddedToPost
-{
-    public required int Id { get; set; }
-}
-public class UpdateReputations {}
-
 public class MarkPostAsRead
 {
     public int PostId { get; set; }
