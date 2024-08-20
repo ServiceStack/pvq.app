@@ -17,7 +17,6 @@ public class AiServerServices(ILogger<AiServerServices> log,
     QuestionsProvider questions, 
     RendererCache rendererCache, 
     WorkerAnswerNotifier answerNotifier,
-    ICommandExecutor executor,
     IBackgroundJobs jobs) : Service
 {
     public async Task<object> Any(CreateAnswersForModels request)

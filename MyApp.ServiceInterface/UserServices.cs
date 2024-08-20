@@ -324,15 +324,19 @@ public class UserServices(
             return HttpError.NotFound("Does not exist");
 
         var userName = Request.GetClaimsPrincipal().GetUserName();
-        jobs.RunCommand<CreateFlagCommand>(new Flag {
-            PostId = postId,
-            RefId = request.RefId,
-            UserName = userName,
-            Type = request.Type,
-            Reason = request.Reason,
-            RemoteIp = Request?.RemoteIp,
-            CreatedDate = DateTime.UtcNow,
-        });
+        lock (Locks.AppDb)
+        {
+            Db.Insert(new Flag
+            {
+                PostId = postId,
+                RefId = request.RefId,
+                UserName = userName,
+                Type = request.Type,
+                Reason = request.Reason,
+                RemoteIp = Request?.RemoteIp,
+                CreatedDate = DateTime.UtcNow,
+            });
+        }
         return new FlagContent();
     }
 }
