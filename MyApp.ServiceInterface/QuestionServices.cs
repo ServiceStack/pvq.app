@@ -189,7 +189,13 @@ public class QuestionServices(ILogger<QuestionServices> log,
         };
 
         jobs.RunCommand<CreateAnswerCommand>(answer);
-        jobs.RunCommand<AnswerAddedToPostCommand>(new AnswerAddedToPost { Id = postId });
+
+        lock (Locks.AppDb)
+        {
+            Db.UpdateAdd(() => new Post {
+                AnswerCount = 1,
+            }, x => x.Id == postId);
+        }
         
         rendererCache.DeleteCachedQuestionPostHtml(postId);
 
