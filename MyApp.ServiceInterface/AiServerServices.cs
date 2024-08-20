@@ -28,7 +28,6 @@ public class AiServerServices(ILogger<AiServerServices> log,
         if (request.PostIds.IsEmpty())
             throw new ArgumentNullException(nameof(request.PostIds));
         
-        var command = executor.Command<CreateAnswerTasksCommand>();
         var to = new CreateAnswersForModelsResponse();
 
         foreach (var postId in request.PostIds)
@@ -39,7 +38,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
                 to.Errors[postId] = "Missing QuestionFile";
                 continue;
             }
-            await command.ExecuteAsync(new CreateAnswerTasks
+            jobs.EnqueueCommand<CreateAnswerTasksCommand>(new CreateAnswerTasks
             {
                 Post = post,
                 ModelUsers = request.Models,
@@ -51,8 +50,6 @@ public class AiServerServices(ILogger<AiServerServices> log,
 
     public async Task<object> Any(CreateRankingTasks request)
     {
-        var command = executor.Command<CreateRankAnswerTaskCommand>();
-
         var to = new CreateRankingTasksResponse();
 
         var uniqueUserNames = request.AnswerIds.Select(x => x.RightPart('-')).ToSet();
@@ -71,7 +68,7 @@ public class AiServerServices(ILogger<AiServerServices> log,
                     to.Errors[id] = "Unknown User";
                     continue;
                 }
-                await command.ExecuteAsync(new CreateRankAnswerTask
+                jobs.EnqueueCommand<CreateRankAnswerTaskCommand>(new CreateRankAnswerTask
                 {
                     UserId = userId,
                     AnswerId = id,

@@ -55,11 +55,11 @@ public class AdminServices(
 
     public async Task<object?> Any(GenerateMeta request)
     {
-        var regenerateMeta = executor.Command<RegenerateMetaCommand>();
-        await executor.ExecuteAsync(regenerateMeta, new RegenerateMeta {
+        var regenerateMeta = (QuestionAndAnswers?) await jobs.RunCommandAsync<RegenerateMetaCommand>(new RegenerateMeta {
             ForPost = request.Id
         });
-        return regenerateMeta.Result;
+        
+        return regenerateMeta;
     }
 
     public async Task<object> Any(AdminResetCommonPassword request)

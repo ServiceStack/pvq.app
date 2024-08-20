@@ -536,7 +536,6 @@ public class QuestionServices(ILogger<QuestionServices> log,
         var command = executor.Command<ImportQuestionCommand>();
         await executor.ExecuteAsync(command, request);
         var result = command.Result;
-        // var result = await jobs.RunCommandAsync<ImportQuestionCommand>(request) as AskQuestion;
         return new ImportQuestionResponse
         {
             Result = result 
