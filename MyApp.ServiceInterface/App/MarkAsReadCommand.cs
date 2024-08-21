@@ -12,7 +12,7 @@ public class MarkAsReadCommand(AppConfig appConfig, IDbConnection db) : SyncComm
 {
     protected override void Run(MarkAsRead request)
     {
-        var userName = request.UserName;
+        var userName = Request.GetClaimsPrincipal().GetRequiredUserName();
         if (request.AllNotifications == true)
         {
             db.UpdateOnly(() => new Notification { Read = true }, x => x.UserName == userName);

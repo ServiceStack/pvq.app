@@ -33,7 +33,6 @@ public class ConfigureBackgroundJobs : IHostingStartup
                 });
             
             jobs.RecurringCommand<SendWatchedTagEmailsCommand>(Schedule.Hourly);
-
         });
 }
 

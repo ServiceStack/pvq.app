@@ -85,8 +85,6 @@ public class GetLatestAchievementsResponse
 [ValidateIsAuthenticated]
 public class MarkAsRead : IPost, IReturn<EmptyResponse>
 {
-    [IgnoreDataMember]
-    public string UserName { get; set; }
     public List<int>? NotificationIds { get; set; }
     public bool? AllNotifications { get; set; }
     public List<int>? AchievementIds { get; set; }

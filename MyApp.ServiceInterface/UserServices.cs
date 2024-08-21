@@ -244,12 +244,11 @@ public class UserServices(
         };
     }
 
-    public async Task<object> Any(MarkAsRead request)
+    public object Any(MarkAsRead request)
     {
-        request.UserName = Request.GetClaimsPrincipal().GetUserName()
-            ?? throw new ArgumentNullException(nameof(MarkAsRead.UserName));
-
-        jobs.RunCommand<MarkAsReadCommand>(request);
+        jobs.RunCommand<MarkAsReadCommand>(request, new() {
+            UserId = Request.GetClaimsPrincipal().GetUserId()
+        });
         return new EmptyResponse();
     }
     
