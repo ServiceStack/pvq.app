@@ -1,6 +1,8 @@
 ﻿using System.Data;
+using Microsoft.Extensions.Logging;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
@@ -14,7 +16,7 @@ public class PostSubscriptions
 
 [Worker(Databases.App)]
 [Tag(Tags.Notifications)]
-public class PostSubscriptionsCommand(IDbConnection db) : SyncCommand<PostSubscriptions>
+public class PostSubscriptionsCommand(ILogger<MarkAsReadCommand> log, IDbConnection db) : SyncCommand<PostSubscriptions>
 {
     protected override void Run(PostSubscriptions request)
     {
@@ -29,11 +31,13 @@ public class PostSubscriptionsCommand(IDbConnection db) : SyncCommand<PostSubscr
                 AfterDate = now,
             });
             db.InsertAll(subs);
+            log.LogInformation("Added watched post to {User} for questions {Ids}", request.UserName, string.Join(", ", subs.Select(x => x.PostId)));
         }
         if (request.Unsubscriptions is { Count: > 0 })
         {
             db.Delete<WatchPost>(
                 x => x.UserName == request.UserName && request.Unsubscriptions.Contains(x.PostId));
+            log.LogInformation("Deleted watched post from {User}", request.UserName);
         }
     }
 }

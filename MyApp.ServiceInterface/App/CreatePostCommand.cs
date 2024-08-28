@@ -74,6 +74,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
                     var startPos = Math.Max(0, firstMentionPos - 50);
                     if (appConfig.IsHuman(existingUser.UserName))
                     {
+                        log.LogInformation("Notify User Mention {User} for Question {PostId}", existingUser.UserName, post.Id);
                         db.Insert(new Notification
                         {
                             UserName = existingUser.UserName!,
@@ -103,7 +104,7 @@ public class CreatePostCommand(ILogger<CreatePostCommand> logger, IBackgroundJob
             });
             appConfig.IncrUnreadAchievementsFor(post.CreatedBy!);
 
-            // Setup auto-watch for new questions (Sending Emails for new Answers)
+            log.LogInformation("Setup auto-watch for new question {PostId} to {User}", post.Id, post.CreatedBy);
             db.Insert(new WatchPost
             {
                 UserName = post.CreatedBy!,

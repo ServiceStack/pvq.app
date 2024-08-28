@@ -222,8 +222,8 @@ public class Top1KQuestionTasks
         var apiCreate = await client.ApiAsync(new CreateAnswersForModels
         {
             Models = ["llama3.1-8b"],
-            PostIds = [9],
-            // PostIds = Migration1005.Top1KIds,
+            // PostIds = [9],
+            PostIds = Migration1005.Top1KIds,
         });
 
         apiCreate.Error.PrintDump();
@@ -235,8 +235,8 @@ public class Top1KQuestionTasks
     [Test]
     public async Task Find_answers_that_have_not_been_individually_graded()
     {
-        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
-        // var client = await TestUtils.CreateAuthenticatedDevClientAsync();
+        // var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        var client = await TestUtils.CreateAuthenticatedDevClientAsync();
         
         var api = await client.ApiAsync(new MissingGradedAnswersTop1K());
             

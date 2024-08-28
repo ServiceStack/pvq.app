@@ -1,14 +1,18 @@
 ﻿using System.Data;
+using Microsoft.Extensions.Logging;
 using MyApp.Data;
 using MyApp.ServiceModel;
 using ServiceStack;
+using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
 
 namespace MyApp.ServiceInterface.App;
 
 [Tag(Tags.Answers)]
 [Worker(Databases.App)]
-public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : SyncCommand<Post>
+public class CreateAnswerCommand(ILogger<CreateAnswerCommand> logger, 
+    IBackgroundJobs jobs, AppConfig appConfig, IDbConnection db) 
+    : SyncCommand<Post>
 {
     protected override void Run(Post answer)
     {
@@ -16,11 +20,13 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : SyncCo
             throw new ArgumentNullException(nameof(answer.ParentId));
         if (answer.CreatedBy == null)
             throw new ArgumentNullException(nameof(answer.CreatedBy));
-        
+
+        var log = Request.CreateJobLogger(jobs, logger);
         var postId = answer.ParentId!.Value;
         var refId = $"{postId}-{answer.CreatedBy}";
         if (!db.Exists(db.From<StatTotals>().Where(x => x.Id == refId)))
         {
+            log.LogInformation("Adding StatTotals {Id} for Post {PostId}", refId, postId);
             db.Insert(new StatTotals
             {
                 Id = refId,
@@ -40,6 +46,7 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : SyncCo
             // Notify Post Author of new Answer
             if (post.CreatedBy != answer.CreatedBy && appConfig.IsHuman(post.CreatedBy))
             {
+                log.LogInformation("Notify Post Author {User} of new Answer {Id} for Post {PostId}", post.CreatedBy, refId, postId);
                 db.Insert(new Notification
                 {
                     UserName = post.CreatedBy,
@@ -72,6 +79,7 @@ public class CreateAnswerCommand(AppConfig appConfig, IDbConnection db) : SyncCo
                         var startPos = Math.Max(0, firstMentionPos - 50);
                         if (appConfig.IsHuman(existingUser.UserName))
                         {
+                            log.LogInformation("Notify Post User Mention {User} for Answer {Id} in Post {PostId}", existingUser.UserName, refId, postId);
                             db.Insert(new Notification
                             {
                                 UserName = existingUser.UserName!,
