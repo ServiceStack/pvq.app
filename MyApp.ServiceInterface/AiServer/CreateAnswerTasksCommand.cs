@@ -86,10 +86,11 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> logger, 
                     Temperature = 0.7,
                     MaxTokens = 2048,
                 };
-                var replyTo = appConfig.BaseUrl.CombineWith("api", nameof(CreateAnswerCallback).AddQueryParams(new() {
-                    [nameof(CreateAnswerCallback.PostId)] = question.Id,
-                    [nameof(CreateAnswerCallback.UserId)] = modelUser.Id,
-                }));
+                var replyTo = appConfig.BaseUrl.CombineWith("api", nameof(CreateAnswerCallback)
+                    .AddQueryParams(new() {
+                        [nameof(CreateAnswerCallback.PostId)] = question.Id,
+                        [nameof(CreateAnswerCallback.UserId)] = modelUser.Id,
+                    }));
                 
                 log.LogInformation("Sending CreateOpenAiChat for Question {Id} Answer for {UserName}, replyTo: {ReplyTo}", 
                     question.Id, userName, replyTo);
