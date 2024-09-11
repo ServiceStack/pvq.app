@@ -27,6 +27,16 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
             {
                 services.AddSingleton(smtpConfig);
             }
+            else
+            {
+                services.AddSingleton<SmtpConfig>(c =>
+                {
+                    var loggerFactory = c.GetRequiredService<ILoggerFactory>();
+                    var logger = loggerFactory.CreateLogger(typeof(AppHost));
+                    logger.LogWarning("Email SmtpConfig missing, using empty one. Emails will not function.");
+                    return new SmtpConfig();
+                });
+            }
 
             services.AddSingleton<ImageCreator>();
             

@@ -99,13 +99,24 @@
     {
         // Only generate if missing, otherwise background task will update it.
         var gateway = GatewayFactory.GetServiceGateway(HttpContext.ToRequest());
-        if (!File.Exists("App_Data/leaderboard.json") || !File.Exists("App_Data/leaderboard-info.json"))
+        string[] allLeaderboardFiles = [ 
+            "App_Data/leaderboard.json", 
+            "App_Data/leaderboard-info.json",
+            "App_Data/leaderboard-top1000.json"
+        ];
+        if (!File.Exists(allLeaderboardFiles[0]) || !File.Exists(allLeaderboardFiles[1]))
         {
             await gateway.ApiAsync(new CalculateLeaderBoard());
         }
-        if (!File.Exists("App_Data/leaderboard-top1000.json"))
+        if (!File.Exists(allLeaderboardFiles[2]))
         {
             await gateway.ApiAsync(new CalculateTop1KLeaderboard());
+        }
+
+        var timeout = DateTime.UtcNow.AddSeconds(5);
+        while (allLeaderboardFiles.Any(x => !File.Exists(x)) && DateTime.UtcNow < timeout)
+        {
+            await Task.Delay(1000);
         }
 
         LeaderboardInfo = (await File.ReadAllTextAsync("App_Data/leaderboard-info.json")).FromJson<LeaderboardInfo>();

@@ -46,7 +46,7 @@ public class Migration1001 : MigrationBase
 
     public override void Down()
     {
-        Db.CreateTable<SearchStat>();
-        Db.CreateTable<PostStat>();
+        Db.DropTable<SearchStat>();
+        Db.DropTable<PostStat>();
     }
 }
