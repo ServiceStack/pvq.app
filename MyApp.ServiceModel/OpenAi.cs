@@ -56,7 +56,8 @@ public class CreateAnswerTasks
     public List<string> ModelUsers { get; set; } = new();
 }
 
-public class CreateOpenAiChat : IReturn<CreateOpenAiChatResponse>
+
+public class QueueOpenAiChatCompletion : IReturn<QueueOpenAiChatResponse>
 {
     public string? RefId { get; set; }
     public string? Provider { get; set; }
@@ -64,8 +65,7 @@ public class CreateOpenAiChat : IReturn<CreateOpenAiChatResponse>
     public string? Tag { get; set; }
     public OpenAiChat Request { get; set; }
 }
-
-public class CreateOpenAiChatResponse
+public class QueueOpenAiChatResponse
 {
     public long Id { get; set; }
     public string RefId { get; set; }

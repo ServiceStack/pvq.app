@@ -90,7 +90,7 @@ public class CreateRankAnswerTaskCommand(ILogger<CreateRankAnswerTaskCommand> lo
             question.Id, replyTo);
         
         var client = appConfig.CreateAiServerClient();
-        var api = await client.ApiAsync(new CreateOpenAiChat {
+        var api = await client.ApiAsync(new QueueOpenAiChatCompletion {
             RefId = Guid.NewGuid().ToString("N"),
             Tag = "pvq",
             Provider = null,

@@ -96,7 +96,7 @@ public class CreateAnswerCommentTaskCommand(ILogger<CreateAnswerCommentTaskComma
         log.LogInformation("Sending CreateOpenAiChat for Question {Id} Answer Comment for {Model}, replyTo: {ReplyTo}", 
             question.Id, request.Model, replyTo);
 
-        var api = await client.ApiAsync(new CreateOpenAiChat {
+        var api = await client.ApiAsync(new QueueOpenAiChatCompletion {
             RefId = request.AiRef,
             Tag = "pvq",
             Provider = null,
