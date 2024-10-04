@@ -94,7 +94,7 @@ public class CreateAnswerTasksCommand(ILogger<CreateAnswerTasksCommand> logger, 
                 
                 log.LogInformation("Sending CreateOpenAiChat for Question {Id} Answer for {UserName}, replyTo: {ReplyTo}", 
                     question.Id, userName, replyTo);
-                var response = await client.PostAsync(new CreateOpenAiChat
+                var response = await client.PostAsync(new QueueOpenAiChatCompletion()
                 {
                     Tag = "pvq",
                     ReplyTo = replyTo,

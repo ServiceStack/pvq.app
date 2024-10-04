@@ -1,6 +1,6 @@
 /* Options:
-Date: 2024-06-27 11:27:42
-Version: 8.31
+Date: 2024-10-04 17:29:14
+Version: 8.41
 Tip: To override a DTO option, remove "//" prefix before updating
 BaseUrl: https://localhost:5005
 
@@ -31,51 +31,154 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using ServiceStack;
 using ServiceStack.DataAnnotations;
+using System.IO;
 using AiServer.ServiceModel;
 using AiServer.ServiceModel.Types;
+using ServiceStack.Jobs;
+using AiServer.ServiceInterface;
+
+namespace AiServer.ServiceInterface
+{
+    public partial class CreateMediaTransform
+        : IReturn<CreateTransformResponse>
+    {
+        [Validate("NotNull")]
+        public virtual MediaTransformArgs Request { get; set; }
+
+        public virtual string Provider { get; set; }
+        public virtual string State { get; set; }
+        public virtual string ReplyTo { get; set; }
+        public virtual string RefId { get; set; }
+    }
+
+    public partial class CreateTransformResponse
+    {
+        public virtual long Id { get; set; }
+        public virtual string RefId { get; set; }
+    }
+
+    public partial class PopulateChatSummary
+        : IReturn<StringsResponse>, IGet
+    {
+    }
+
+}
 
 namespace AiServer.ServiceModel
 {
-    public partial class ApiModel
+    ///<summary>
+    ///Active Worker Models available in AI Server
+    ///</summary>
+    public partial class ActiveAiModels
+        : IReturn<StringsResponse>, IGet
     {
+    }
+
+    public partial class AdminAddModel
+        : IReturn<EmptyResponse>, IPost
+    {
+        public AdminAddModel()
+        {
+            ApiTypes = new Dictionary<string, Property>{};
+            ApiProviders = new Dictionary<string, ApiProviderModel>{};
+        }
+
+        [Validate("NotNull")]
+        public virtual AiModel Model { get; set; }
+
+        public virtual Dictionary<string, Property> ApiTypes { get; set; }
+        public virtual Dictionary<string, ApiProviderModel> ApiProviders { get; set; }
+    }
+
+    public partial class AdminData
+        : IReturn<AdminDataResponse>, IGet
+    {
+    }
+
+    public partial class AdminDataResponse
+    {
+        public AdminDataResponse()
+        {
+            PageStats = new List<PageStats>{};
+        }
+
+        public virtual List<PageStats> PageStats { get; set; }
+    }
+
+    public partial class AiModel
+    {
+        public AiModel()
+        {
+            Tags = new List<string>{};
+        }
+
         public virtual int Id { get; set; }
         public virtual string Name { get; set; }
-        public virtual string Parameters { get; set; }
-        public virtual int? ContextSize { get; set; }
+        public virtual List<string> Tags { get; set; }
+        public virtual string Latest { get; set; }
         public virtual string Website { get; set; }
-        public virtual string Developer { get; set; }
-        public virtual string Notes { get; set; }
+        public virtual string Description { get; set; }
+        public virtual string Icon { get; set; }
+    }
+
+    public enum AiProvider
+    {
+        OpenAiProvider,
+        GoogleAiProvider,
+    }
+
+    public partial class AiProviderFileOutput
+    {
+        public virtual string FileName { get; set; }
+        public virtual string Url { get; set; }
+    }
+
+    public partial class AiProviderTextOutput
+    {
+        public virtual string Text { get; set; }
+    }
+
+    public enum AiTaskType
+    {
+        TextToImage = 1,
+        ImageToImage = 2,
+        ImageUpscale = 3,
+        ImageWithMask = 4,
+        ImageToText = 5,
+        TextToAudio = 6,
+        TextToSpeech = 7,
+        SpeechToText = 8,
     }
 
     public partial class ApiProvider
     {
         public ApiProvider()
         {
-            TaskPaths = new Dictionary<TaskType, string>{};
             Models = new List<ApiProviderModel>{};
+            SelectedModels = new List<string>{};
         }
 
         public virtual int Id { get; set; }
         public virtual string Name { get; set; }
+        public virtual string ApiBaseUrl { get; set; }
         public virtual int ApiTypeId { get; set; }
+        public virtual string ApiKeyVar { get; set; }
         public virtual string ApiKey { get; set; }
         public virtual string ApiKeyHeader { get; set; }
-        public virtual string ApiBaseUrl { get; set; }
         public virtual string HeartbeatUrl { get; set; }
-        public virtual Dictionary<TaskType, string> TaskPaths { get; set; }
         public virtual int Concurrency { get; set; }
         public virtual int Priority { get; set; }
         public virtual bool Enabled { get; set; }
         public virtual DateTime? OfflineDate { get; set; }
         public virtual DateTime CreatedDate { get; set; }
-        public virtual ApiType ApiType { get; set; }
         public virtual List<ApiProviderModel> Models { get; set; }
+        public virtual ApiType ApiType { get; set; }
+        [Ignore]
+        public virtual List<string> SelectedModels { get; set; }
     }
 
     public partial class ApiProviderModel
     {
-        public virtual int Id { get; set; }
-        public virtual int ApiProviderId { get; set; }
         public virtual string Model { get; set; }
         public virtual string ApiModel { get; set; }
     }
@@ -84,18 +187,61 @@ namespace AiServer.ServiceModel
     {
         public ApiType()
         {
-            TaskPaths = new Dictionary<TaskType, string>{};
             ApiModels = new Dictionary<string, string>{};
         }
 
         public virtual int Id { get; set; }
+        public virtual AiProvider Provider { get; set; }
         public virtual string Name { get; set; }
         public virtual string Website { get; set; }
         public virtual string ApiBaseUrl { get; set; }
         public virtual string HeartbeatUrl { get; set; }
-        public virtual string OpenAiProvider { get; set; }
-        public virtual Dictionary<TaskType, string> TaskPaths { get; set; }
+        public virtual string Icon { get; set; }
         public virtual Dictionary<string, string> ApiModels { get; set; }
+    }
+
+    ///<summary>
+    ///Output object for generated artifacts
+    ///</summary>
+    public partial class ArtifactOutput
+    {
+        ///<summary>
+        ///URL to access the generated image
+        ///</summary>
+        [ApiMember(Description="URL to access the generated image")]
+        public virtual string Url { get; set; }
+
+        ///<summary>
+        ///Filename of the generated image
+        ///</summary>
+        [ApiMember(Description="Filename of the generated image")]
+        public virtual string FileName { get; set; }
+
+        ///<summary>
+        ///Provider used for image generation
+        ///</summary>
+        [ApiMember(Description="Provider used for image generation")]
+        public virtual string Provider { get; set; }
+    }
+
+    [DataContract]
+    public enum AudioFormat
+    {
+        [EnumMember(Value="mp3")]
+        MP3,
+        [EnumMember(Value="wav")]
+        WAV,
+        [EnumMember(Value="flac")]
+        FLAC,
+        [EnumMember(Value="ogg")]
+        OGG,
+    }
+
+    public partial class CancelWorker
+        : IReturn<EmptyResponse>
+    {
+        [Validate("NotEmpty")]
+        public virtual string Worker { get; set; }
     }
 
     public partial class ChangeApiProviderStatus
@@ -112,50 +258,6 @@ namespace AiServer.ServiceModel
         public virtual string Model { get; set; }
         public virtual OpenAiChat Request { get; set; }
         public virtual string Prompt { get; set; }
-    }
-
-    public partial class ChatFailedTasks
-        : IReturn<EmptyResponse>, IPost
-    {
-        public ChatFailedTasks()
-        {
-            RequeueFailedTaskIds = new List<long>{};
-        }
-
-        public virtual bool? ResetErrorState { get; set; }
-        public virtual List<long> RequeueFailedTaskIds { get; set; }
-    }
-
-    public partial class ChatNotifyCompletedTasks
-        : IReturn<ChatNotifyCompletedTasksResponse>, IPost
-    {
-        public ChatNotifyCompletedTasks()
-        {
-            Ids = new List<int>{};
-        }
-
-        [Validate("NotEmpty")]
-        public virtual List<int> Ids { get; set; }
-    }
-
-    public partial class ChatNotifyCompletedTasksResponse
-    {
-        public ChatNotifyCompletedTasksResponse()
-        {
-            Errors = new Dictionary<long, string>{};
-            Results = new List<long>{};
-        }
-
-        public virtual Dictionary<long, string> Errors { get; set; }
-        public virtual List<long> Results { get; set; }
-        public virtual ResponseStatus ResponseStatus { get; set; }
-    }
-
-    public partial class ChatOperations
-        : IReturn<EmptyResponse>, IPost
-    {
-        public virtual bool? ResetTaskQueue { get; set; }
-        public virtual bool? RequeueIncompleteTasks { get; set; }
     }
 
     public partial class Choice
@@ -206,13 +308,112 @@ namespace AiServer.ServiceModel
         public virtual string Role { get; set; }
     }
 
-    public partial class CompleteOpenAiChat
-        : IReturn<EmptyResponse>, IPost
+    ///<summary>
+    ///Convert an audio file to a different format
+    ///</summary>
+    public partial class ConvertAudio
+        : IReturn<MediaTransformResponse>, IMediaTransform
     {
-        public virtual long Id { get; set; }
-        public virtual string Provider { get; set; }
-        public virtual int DurationMs { get; set; }
-        public virtual OpenAiChatResponse Response { get; set; }
+        ///<summary>
+        ///The desired output format for the converted audio
+        ///</summary>
+        [ApiMember(Description="The desired output format for the converted audio", ParameterType="query")]
+        [Required]
+        public virtual AudioFormat OutputFormat { get; set; }
+
+        [Required]
+        public virtual Stream Audio { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    ///<summary>
+    ///Convert an image to a different format
+    ///</summary>
+    public partial class ConvertImage
+        : IReturn<MediaTransformResponse>, IPost
+    {
+        ///<summary>
+        ///The image file to be converted
+        ///</summary>
+        [ApiMember(Description="The image file to be converted", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///The desired output format for the converted image
+        ///</summary>
+        [ApiMember(Description="The desired output format for the converted image", ParameterType="query")]
+        [Required]
+        public virtual ImageOutputFormat? OutputFormat { get; set; }
+    }
+
+    ///<summary>
+    ///Convert a video to a different format
+    ///</summary>
+    public partial class ConvertVideo
+        : IReturn<MediaTransformResponse>, IMediaTransform
+    {
+        ///<summary>
+        ///The desired output format for the converted video
+        ///</summary>
+        [ApiMember(Description="The desired output format for the converted video", ParameterType="query")]
+        [Required]
+        public virtual ConvertVideoOutputFormat OutputFormat { get; set; }
+
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    [DataContract]
+    public enum ConvertVideoOutputFormat
+    {
+        [EnumMember(Value="mp4")]
+        MP4,
+        [EnumMember(Value="avi")]
+        AVI,
+        [EnumMember(Value="mkv")]
+        MKV,
+        [EnumMember(Value="mov")]
+        MOV,
+        [EnumMember(Value="webm")]
+        WebM,
+        [EnumMember(Value="gif")]
+        GIF,
     }
 
     public partial class CreateApiKey
@@ -253,30 +454,42 @@ namespace AiServer.ServiceModel
     ///Different Models available for the API
     ///</summary>
     public partial class CreateApiModel
-        : IReturn<IdResponse>, ICreateDb<ApiModel>
+        : IReturn<IdResponse>, ICreateDb<AiModel>
     {
         public virtual string Name { get; set; }
-        public virtual string Parameters { get; set; }
         public virtual string Website { get; set; }
-        public virtual int? ContextSize { get; set; }
-        public virtual string Developer { get; set; }
-        public virtual string Notes { get; set; }
+        public virtual List<string> Tags { get; set; }
+        public virtual string Latest { get; set; }
+        public virtual string Description { get; set; }
+        public virtual string Icon { get; set; }
     }
 
     ///<summary>
-    ///Create an API Provider that can process AI Tasks
+    ///Add an API Provider to process AI Requests
     ///</summary>
     public partial class CreateApiProvider
         : IReturn<IdResponse>, ICreateDb<ApiProvider>
     {
         ///<summary>
+        ///The Type of this API Provider
+        ///</summary>
+        [Validate("GreaterThan(0)")]
+        public virtual int ApiTypeId { get; set; }
+
+        ///<summary>
+        ///The Base URL for the API Provider
+        ///</summary>
+        public virtual string ApiBaseUrl { get; set; }
+        ///<summary>
         ///The unique name for this API Provider
         ///</summary>
+        [Validate("NotEmpty")]
         public virtual string Name { get; set; }
+
         ///<summary>
-        ///The behavior for this API Provider
+        ///The API Key to use for this Provider
         ///</summary>
-        public virtual int ApiTypeId { get; set; }
+        public virtual string ApiKeyVar { get; set; }
         ///<summary>
         ///The API Key to use for this Provider
         ///</summary>
@@ -286,15 +499,11 @@ namespace AiServer.ServiceModel
         ///</summary>
         public virtual string ApiKeyHeader { get; set; }
         ///<summary>
-        ///The Base URL for the API Provider
-        ///</summary>
-        public virtual string ApiBaseUrl { get; set; }
-        ///<summary>
         ///The URL to check if the API Provider is still online
         ///</summary>
         public virtual string HeartbeatUrl { get; set; }
         ///<summary>
-        ///Override API Paths for different AI Tasks
+        ///Override API Paths for different AI Requests
         ///</summary>
         public virtual Dictionary<TaskType, string> TaskPaths { get; set; }
         ///<summary>
@@ -310,93 +519,304 @@ namespace AiServer.ServiceModel
         ///</summary>
         public virtual bool Enabled { get; set; }
         ///<summary>
-        ///The models this API Provider can process
+        ///The models this API Provider should process
         ///</summary>
         public virtual List<ApiProviderModel> Models { get; set; }
+        ///<summary>
+        ///The selected models this API Provider should process
+        ///</summary>
+        public virtual List<string> SelectedModels { get; set; }
+    }
+
+    [Route("/generate", "POST")]
+    public partial class CreateGeneration
+        : IReturn<CreateGenerationResponse>
+    {
+        [Validate("NotNull")]
+        public virtual GenerationArgs Request { get; set; }
+
+        public virtual string Provider { get; set; }
+        public virtual string State { get; set; }
+        public virtual string ReplyTo { get; set; }
+        public virtual string RefId { get; set; }
     }
 
     ///<summary>
-    ///Register a Model supported by an API Provider
+    ///Add an API Provider to Generation API Providers
     ///</summary>
-    public partial class CreateApiProviderModel
-        : IReturn<IdResponse>, ICreateDb<ApiProviderModel>
+    public partial class CreateGenerationApiProvider
+        : IReturn<IdResponse>, ICreateDb<GenerationApiProvider>
     {
         ///<summary>
-        ///The ApiProvider Id
+        ///The name of the API Provider
         ///</summary>
-        public virtual int ApiProviderId { get; set; }
+        public virtual string Name { get; set; }
         ///<summary>
-        ///Supported ApiModel Name
+        ///The API Key to use for this Provider
         ///</summary>
-        public virtual string Model { get; set; }
+        public virtual string ApiKey { get; set; }
         ///<summary>
-        ///Model to use when sending requests to the API Provider
+        ///Send the API Key in the Header instead of Authorization Bearer
         ///</summary>
-        public virtual string ApiModel { get; set; }
+        public virtual string ApiKeyHeader { get; set; }
+        ///<summary>
+        ///Base URL for the Generation Provider
+        ///</summary>
+        public virtual string ApiBaseUrl { get; set; }
+        ///<summary>
+        ///Url to check if the API is online
+        ///</summary>
+        public virtual string HeartbeatUrl { get; set; }
+        ///<summary>
+        ///How many requests should be made concurrently
+        ///</summary>
+        public virtual int Concurrency { get; set; }
+        ///<summary>
+        ///What priority to give this Provider to use for processing models
+        ///</summary>
+        public virtual int Priority { get; set; }
+        ///<summary>
+        ///Whether the Provider is enabled
+        ///</summary>
+        public virtual bool Enabled { get; set; }
+        ///<summary>
+        ///The date the Provider was last online
+        ///</summary>
+        public virtual DateTime? OfflineDate { get; set; }
+        ///<summary>
+        ///Models this API Provider should process
+        ///</summary>
+        public virtual List<string> Models { get; set; }
+        public virtual int? GenerationApiTypeId { get; set; }
     }
 
-    public partial class CreateOpenAiChat
-        : IReturn<CreateOpenAiChatResponse>, ICreateDb<OpenAiChatTask>
-    {
-        public virtual string RefId { get; set; }
-        public virtual string Provider { get; set; }
-        public virtual string ReplyTo { get; set; }
-        public virtual string Tag { get; set; }
-        public virtual OpenAiChat Request { get; set; }
-    }
-
-    public partial class CreateOpenAiChatResponse
+    public partial class CreateGenerationResponse
     {
         public virtual long Id { get; set; }
         public virtual string RefId { get; set; }
+    }
+
+    ///<summary>
+    ///Crop an image to a specified area
+    ///</summary>
+    public partial class CropImage
+        : IReturn<MediaTransformResponse>, IPost
+    {
+        ///<summary>
+        ///The X-coordinate of the top-left corner of the crop area
+        ///</summary>
+        [ApiMember(Description="The X-coordinate of the top-left corner of the crop area", ParameterType="query")]
+        public virtual int X { get; set; }
+
+        ///<summary>
+        ///The Y-coordinate of the top-left corner of the crop area
+        ///</summary>
+        [ApiMember(Description="The Y-coordinate of the top-left corner of the crop area", ParameterType="query")]
+        public virtual int Y { get; set; }
+
+        ///<summary>
+        ///The width of the crop area
+        ///</summary>
+        [ApiMember(Description="The width of the crop area", ParameterType="query")]
+        public virtual int Width { get; set; }
+
+        ///<summary>
+        ///The height of the crop area
+        ///</summary>
+        [ApiMember(Description="The height of the crop area", ParameterType="query")]
+        public virtual int Height { get; set; }
+
+        ///<summary>
+        ///The image file to be cropped
+        ///</summary>
+        [ApiMember(Description="The image file to be cropped", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+    }
+
+    ///<summary>
+    ///Crop a video to a specified area
+    ///</summary>
+    public partial class CropVideo
+        : IReturn<MediaTransformResponse>, IMediaTransform
+    {
+        ///<summary>
+        ///The X-coordinate of the top-left corner of the crop area
+        ///</summary>
+        [ApiMember(Description="The X-coordinate of the top-left corner of the crop area", ParameterType="query")]
+        [Validate("GreaterThan(0)")]
+        [Required]
+        public virtual int X { get; set; }
+
+        ///<summary>
+        ///The Y-coordinate of the top-left corner of the crop area
+        ///</summary>
+        [ApiMember(Description="The Y-coordinate of the top-left corner of the crop area", ParameterType="query")]
+        [Validate("GreaterThan(0)")]
+        [Required]
+        public virtual int Y { get; set; }
+
+        ///<summary>
+        ///The width of the crop area
+        ///</summary>
+        [ApiMember(Description="The width of the crop area", ParameterType="query")]
+        [Validate("GreaterThan(0)")]
+        [Required]
+        public virtual int Width { get; set; }
+
+        ///<summary>
+        ///The height of the crop area
+        ///</summary>
+        [ApiMember(Description="The height of the crop area", ParameterType="query")]
+        [Validate("GreaterThan(0)")]
+        [Required]
+        public virtual int Height { get; set; }
+
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    ///<summary>
+    ///Delete API Provider
+    ///</summary>
+    public partial class DeleteApiProvider
+        : IReturnVoid, IDeleteDb<ApiProvider>
+    {
+        public virtual int Id { get; set; }
+    }
+
+    [Route("/files/{**Path}")]
+    public partial class DeleteFile
+        : IReturn<EmptyResponse>, IDelete
+    {
+        [Validate("NotEmpty")]
+        public virtual string Path { get; set; }
+    }
+
+    public partial class DeleteFiles
+        : IReturn<DeleteFilesResponse>, IPost
+    {
+        public DeleteFiles()
+        {
+            Paths = new List<string>{};
+        }
+
+        public virtual List<string> Paths { get; set; }
+    }
+
+    public partial class DeleteFilesResponse
+    {
+        public DeleteFilesResponse()
+        {
+            Deleted = new List<string>{};
+            Missing = new List<string>{};
+            Failed = new List<string>{};
+        }
+
+        public virtual List<string> Deleted { get; set; }
+        public virtual List<string> Missing { get; set; }
+        public virtual List<string> Failed { get; set; }
         public virtual ResponseStatus ResponseStatus { get; set; }
     }
 
     ///<summary>
-    ///Delete a Model supported by the API Provider
+    ///Delete a Generation API Provider
     ///</summary>
-    public partial class DeleteApiProviderModel
-        : IReturn<IdResponse>, IDeleteDb<ApiProviderModel>
+    public partial class DeleteGenerationApiProvider
+        : IReturn<IdResponse>, IDeleteDb<GenerationApiProvider>
     {
+        public virtual int? Id { get; set; }
+        public virtual string Name { get; set; }
+    }
+
+    public partial class GenerationArgs
+    {
+        public virtual string Model { get; set; }
+        public virtual int? Steps { get; set; }
+        public virtual int? BatchSize { get; set; }
+        public virtual int? Seed { get; set; }
+        public virtual string PositivePrompt { get; set; }
+        public virtual string NegativePrompt { get; set; }
+        public virtual Stream ImageInput { get; set; }
+        public virtual Stream SpeechInput { get; set; }
+        public virtual Stream MaskInput { get; set; }
+        public virtual Stream AudioInput { get; set; }
+        public virtual ComfySampler? Sampler { get; set; }
+        public virtual string Scheduler { get; set; }
+        public virtual double? CfgScale { get; set; }
+        public virtual double? Denoise { get; set; }
+        public virtual string UpscaleModel { get; set; }
+        public virtual int? Width { get; set; }
+        public virtual int? Height { get; set; }
+        public virtual AiTaskType? TaskType { get; set; }
+        public virtual string Clip { get; set; }
+        public virtual double? SampleLength { get; set; }
+        public virtual ComfyMaskSource MaskChannel { get; set; }
+        public virtual string AspectRatio { get; set; }
+        public virtual double? Quality { get; set; }
+        public virtual string Voice { get; set; }
+        public virtual string Language { get; set; }
+    }
+
+    ///<summary>
+    ///Response object for generation requests
+    ///</summary>
+    public partial class GenerationResponse
+    {
+        public GenerationResponse()
+        {
+            Outputs = new List<ArtifactOutput>{};
+            TextOutputs = new List<TextOutput>{};
+        }
+
         ///<summary>
-        ///The ApiProviderModel Id
+        ///List of generated outputs
         ///</summary>
-        public virtual int Id { get; set; }
-    }
+        [ApiMember(Description="List of generated outputs")]
+        public virtual List<ArtifactOutput> Outputs { get; set; }
 
-    public partial class FetchOpenAiChatRequests
-        : IReturn<FetchOpenAiChatRequestsResponse>, IPost
-    {
-        public FetchOpenAiChatRequests()
-        {
-            Models = new string[]{};
-        }
+        ///<summary>
+        ///List of generated text outputs
+        ///</summary>
+        [ApiMember(Description="List of generated text outputs")]
+        public virtual List<TextOutput> TextOutputs { get; set; }
 
-        [Validate("NotEmpty")]
-        public virtual string[] Models { get; set; }
-
-        [Validate("NotEmpty")]
-        public virtual string Provider { get; set; }
-
-        public virtual string Worker { get; set; }
-        public virtual int? Take { get; set; }
-    }
-
-    public partial class FetchOpenAiChatRequestsResponse
-    {
-        public FetchOpenAiChatRequestsResponse()
-        {
-            Results = new OpenAiChatRequest[]{};
-        }
-
-        public virtual OpenAiChatRequest[] Results { get; set; }
+        ///<summary>
+        ///Detailed response status information
+        ///</summary>
+        [ApiMember(Description="Detailed response status information")]
         public virtual ResponseStatus ResponseStatus { get; set; }
     }
 
-    public partial class FirePeriodicTask
-        : IReturn<EmptyResponse>, IPost
+    public partial class GenerationResult
     {
-        public virtual PeriodicFrequency Frequency { get; set; }
+        public GenerationResult()
+        {
+            TextOutputs = new List<AiProviderTextOutput>{};
+            Outputs = new List<AiProviderFileOutput>{};
+        }
+
+        public virtual List<AiProviderTextOutput> TextOutputs { get; set; }
+        public virtual List<AiProviderFileOutput> Outputs { get; set; }
+        public virtual string Error { get; set; }
     }
 
     public partial class GetActiveProviders
@@ -415,19 +835,163 @@ namespace AiServer.ServiceModel
         public virtual ResponseStatus ResponseStatus { get; set; }
     }
 
-    public partial class GetApiWorkerStats
-        : IReturn<GetApiWorkerStatsResponse>, IGet
+    [Route("/artifacts/{**Path}")]
+    public partial class GetArtifact
+        : IReturn<byte[]>, IGet
+    {
+        [Validate("NotEmpty")]
+        public virtual string Path { get; set; }
+    }
+
+    public partial class GetComfyModelMappings
+        : IReturn<GetComfyModelMappingsResponse>
     {
     }
 
-    public partial class GetApiWorkerStatsResponse
+    public partial class GetComfyModelMappingsResponse
     {
-        public GetApiWorkerStatsResponse()
+        public GetComfyModelMappingsResponse()
         {
-            Results = new List<WorkerStats>{};
+            Models = new Dictionary<string, string>{};
         }
 
-        public virtual List<WorkerStats> Results { get; set; }
+        public virtual Dictionary<string, string> Models { get; set; }
+    }
+
+    public partial class GetComfyModels
+        : IReturn<GetComfyModelsResponse>
+    {
+        public virtual string ApiBaseUrl { get; set; }
+        public virtual string ApiKey { get; set; }
+    }
+
+    public partial class GetComfyModelsResponse
+    {
+        public GetComfyModelsResponse()
+        {
+            Results = new List<string>{};
+        }
+
+        public virtual List<string> Results { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    [Route("/generation/{Id}", "GET")]
+    [Route("/generation/ref/{RefId}", "GET")]
+    public partial class GetGeneration
+        : IReturn<GetGenerationResponse>
+    {
+        public virtual int? Id { get; set; }
+        public virtual string RefId { get; set; }
+    }
+
+    public partial class GetGenerationResponse
+    {
+        public GetGenerationResponse()
+        {
+            Outputs = new List<AiProviderFileOutput>{};
+            TextOutputs = new List<AiProviderTextOutput>{};
+        }
+
+        public virtual GenerationArgs Request { get; set; }
+        public virtual GenerationResult Result { get; set; }
+        public virtual List<AiProviderFileOutput> Outputs { get; set; }
+        public virtual List<AiProviderTextOutput> TextOutputs { get; set; }
+    }
+
+    ///<summary>
+    ///Get job status
+    ///</summary>
+    [Api(Description="Get job status")]
+    public partial class GetJobStatus
+        : IReturn<GetJobStatusResponse>
+    {
+        ///<summary>
+        ///Unique identifier of the background job
+        ///</summary>
+        [ApiMember(Description="Unique identifier of the background job", ParameterType="query")]
+        public virtual long? JobId { get; set; }
+
+        ///<summary>
+        ///Client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+    }
+
+    public partial class GetJobStatusResponse
+    {
+        public GetJobStatusResponse()
+        {
+            Outputs = new List<ArtifactOutput>{};
+            TextOutputs = new List<TextOutput>{};
+        }
+
+        ///<summary>
+        ///Unique identifier of the background job
+        ///</summary>
+        [ApiMember(Description="Unique identifier of the background job")]
+        public virtual long JobId { get; set; }
+
+        ///<summary>
+        ///Client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Client-provided identifier for the request")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Current state of the background job
+        ///</summary>
+        [ApiMember(Description="Current state of the background job")]
+        public virtual BackgroundJobState JobState { get; set; }
+
+        ///<summary>
+        ///Current status of the generation request
+        ///</summary>
+        [ApiMember(Description="Current status of the generation request")]
+        public virtual string Status { get; set; }
+
+        ///<summary>
+        ///List of generated outputs
+        ///</summary>
+        [ApiMember(Description="List of generated outputs")]
+        public virtual List<ArtifactOutput> Outputs { get; set; }
+
+        ///<summary>
+        ///List of generated text outputs
+        ///</summary>
+        [ApiMember(Description="List of generated text outputs")]
+        public virtual List<TextOutput> TextOutputs { get; set; }
+
+        ///<summary>
+        ///Detailed response status information
+        ///</summary>
+        [ApiMember(Description="Detailed response status information")]
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    [Route("/icons/models/{Model}", "GET")]
+    public partial class GetModelImage
+        : IReturn<byte[]>, IGet
+    {
+        public virtual string Model { get; set; }
+    }
+
+    public partial class GetOllamaModels
+        : IReturn<GetOllamaModelsResponse>, IGet
+    {
+        [Validate("NotEmpty")]
+        public virtual string ApiBaseUrl { get; set; }
+    }
+
+    public partial class GetOllamaModelsResponse
+    {
+        public GetOllamaModelsResponse()
+        {
+            Results = new List<OllamaModel>{};
+        }
+
+        public virtual List<OllamaModel> Results { get; set; }
         public virtual ResponseStatus ResponseStatus { get; set; }
     }
 
@@ -440,8 +1004,54 @@ namespace AiServer.ServiceModel
 
     public partial class GetOpenAiChatResponse
     {
-        public virtual OpenAiChatTask Result { get; set; }
+        public virtual BackgroundJobBase Result { get; set; }
         public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public partial class GetOpenAiChatStatus
+        : IReturn<GetOpenAiChatStatusResponse>, IGet
+    {
+        public virtual long JobId { get; set; }
+        public virtual string RefId { get; set; }
+    }
+
+    public partial class GetOpenAiChatStatusResponse
+    {
+        ///<summary>
+        ///Unique identifier of the background job
+        ///</summary>
+        [ApiMember(Description="Unique identifier of the background job")]
+        public virtual long JobId { get; set; }
+
+        ///<summary>
+        ///Client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Client-provided identifier for the request")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Current state of the background job
+        ///</summary>
+        [ApiMember(Description="Current state of the background job")]
+        public virtual BackgroundJobState JobState { get; set; }
+
+        ///<summary>
+        ///Current status of the generation request
+        ///</summary>
+        [ApiMember(Description="Current status of the generation request")]
+        public virtual string Status { get; set; }
+
+        ///<summary>
+        ///Detailed response status information
+        ///</summary>
+        [ApiMember(Description="Detailed response status information")]
+        public virtual ResponseStatus ResponseStatus { get; set; }
+
+        ///<summary>
+        ///Chat response
+        ///</summary>
+        [ApiMember(Description="Chat response")]
+        public virtual OpenAiChatResponse ChatResponse { get; set; }
     }
 
     public partial class GetSummaryStats
@@ -465,6 +1075,35 @@ namespace AiServer.ServiceModel
         public virtual List<SummaryStats> MonthStats { get; set; }
     }
 
+    [Route("/variants/{Variant}/{**Path}")]
+    public partial class GetVariant
+        : IReturn<byte[]>, IGet
+    {
+        [Validate("NotEmpty")]
+        public virtual string Variant { get; set; }
+
+        [Validate("NotEmpty")]
+        public virtual string Path { get; set; }
+    }
+
+    public partial class GetWorkerStats
+        : IReturn<GetWorkerStatsResponse>, IGet
+    {
+    }
+
+    public partial class GetWorkerStatsResponse
+    {
+        public GetWorkerStatsResponse()
+        {
+            Results = new List<WorkerStats>{};
+            QueueCounts = new Dictionary<string, int>{};
+        }
+
+        public virtual List<WorkerStats> Results { get; set; }
+        public virtual Dictionary<string, int> QueueCounts { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
     [Route("/hello/{Name}")]
     public partial class Hello
         : IReturn<HelloResponse>, IGet
@@ -475,6 +1114,441 @@ namespace AiServer.ServiceModel
     public partial class HelloResponse
     {
         public virtual string Result { get; set; }
+    }
+
+    public partial interface IGeneration
+    {
+        string RefId { get; set; }
+        string ReplyTo { get; set; }
+        string State { get; set; }
+        string Tag { get; set; }
+    }
+
+    [DataContract]
+    public enum ImageOutputFormat
+    {
+        [EnumMember(Value="jpg")]
+        Jpg,
+        [EnumMember(Value="png")]
+        Png,
+        [EnumMember(Value="gif")]
+        Gif,
+        [EnumMember(Value="bmp")]
+        Bmp,
+        [EnumMember(Value="tiff")]
+        Tiff,
+        [EnumMember(Value="webp")]
+        Webp,
+    }
+
+    ///<summary>
+    ///Generate image from another image
+    ///</summary>
+    [Api(Description="Generate image from another image")]
+    public partial class ImageToImage
+        : IReturn<GenerationResponse>, IGeneration
+    {
+        ///<summary>
+        ///The image to use as input
+        ///</summary>
+        [ApiMember(Description="The image to use as input", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Prompt describing the desired output
+        ///</summary>
+        [ApiMember(Description="Prompt describing the desired output", ParameterType="body")]
+        [Validate("NotEmpty")]
+        public virtual string PositivePrompt { get; set; }
+
+        ///<summary>
+        ///Negative prompt describing what should not be in the image
+        ///</summary>
+        [ApiMember(Description="Negative prompt describing what should not be in the image", ParameterType="body")]
+        public virtual string NegativePrompt { get; set; }
+
+        ///<summary>
+        ///Optional specific amount of denoise to apply
+        ///</summary>
+        [ApiMember(Description="Optional specific amount of denoise to apply", ParameterType="query")]
+        public virtual float? Denoise { get; set; }
+
+        ///<summary>
+        ///Number of images to generate in a single batch
+        ///</summary>
+        [ApiMember(Description="Number of images to generate in a single batch", ParameterType="query")]
+        public virtual int? BatchSize { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results in image generation
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results in image generation", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Convert image to text
+    ///</summary>
+    [Api(Description="Convert image to text")]
+    public partial class ImageToText
+        : IReturn<GenerationResponse>, IGeneration
+    {
+        ///<summary>
+        ///The image to convert to text
+        ///</summary>
+        [ApiMember(Description="The image to convert to text", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Upscale an image
+    ///</summary>
+    [Api(Description="Upscale an image")]
+    public partial class ImageUpscale
+        : IReturn<GenerationResponse>, IGeneration
+    {
+        ///<summary>
+        ///The image to upscale
+        ///</summary>
+        [ApiMember(Description="The image to upscale", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results in image generation
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results in image generation", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Generate image with masked area
+    ///</summary>
+    [Api(Description="Generate image with masked area")]
+    public partial class ImageWithMask
+        : IReturn<GenerationResponse>, IGeneration
+    {
+        ///<summary>
+        ///Prompt describing the desired output in the masked area
+        ///</summary>
+        [ApiMember(Description="Prompt describing the desired output in the masked area", ParameterType="body")]
+        [Validate("NotEmpty")]
+        public virtual string PositivePrompt { get; set; }
+
+        ///<summary>
+        ///Negative prompt describing what should not be in the masked area
+        ///</summary>
+        [ApiMember(Description="Negative prompt describing what should not be in the masked area", ParameterType="body")]
+        public virtual string NegativePrompt { get; set; }
+
+        ///<summary>
+        ///The image to use as input
+        ///</summary>
+        [ApiMember(Description="The image to use as input", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///The mask to use as input
+        ///</summary>
+        [ApiMember(Description="The mask to use as input", ParameterType="body")]
+        [Required]
+        public virtual Stream Mask { get; set; }
+
+        ///<summary>
+        ///Optional specific amount of denoise to apply
+        ///</summary>
+        [ApiMember(Description="Optional specific amount of denoise to apply", ParameterType="query")]
+        public virtual float? Denoise { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results in image generation
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results in image generation", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    public partial interface IMediaTransform
+    {
+        string RefId { get; set; }
+        string Tag { get; set; }
+        string ReplyTo { get; set; }
+    }
+
+    ///<summary>
+    ///Base class for queue generation requests
+    ///</summary>
+    public partial interface IQueueGeneration
+    {
+        string RefId { get; set; }
+        string ReplyTo { get; set; }
+        string Tag { get; set; }
+        string State { get; set; }
+    }
+
+    public partial interface IQueueMediaTransform
+    {
+        string RefId { get; set; }
+        string Tag { get; set; }
+        string ReplyTo { get; set; }
+    }
+
+    [DataContract]
+    public enum MediaOutputFormat
+    {
+        [EnumMember(Value="mp4")]
+        MP4,
+        [EnumMember(Value="avi")]
+        AVI,
+        [EnumMember(Value="mkv")]
+        MKV,
+        [EnumMember(Value="mov")]
+        MOV,
+        [EnumMember(Value="webm")]
+        WebM,
+        [EnumMember(Value="gif")]
+        GIF,
+        [EnumMember(Value="mp3")]
+        MP3,
+        [EnumMember(Value="wav")]
+        WAV,
+        [EnumMember(Value="flac")]
+        FLAC,
+    }
+
+    public partial class MediaTransformArgs
+    {
+        public virtual MediaTransformTaskType? TaskType { get; set; }
+        public virtual Stream VideoInput { get; set; }
+        public virtual Stream AudioInput { get; set; }
+        public virtual Stream ImageInput { get; set; }
+        public virtual Stream WatermarkInput { get; set; }
+        public virtual string VideoFileName { get; set; }
+        public virtual string AudioFileName { get; set; }
+        public virtual string ImageFileName { get; set; }
+        public virtual string WatermarkFileName { get; set; }
+        public virtual MediaOutputFormat? OutputFormat { get; set; }
+        public virtual ImageOutputFormat? ImageOutputFormat { get; set; }
+        public virtual int? ScaleWidth { get; set; }
+        public virtual int? ScaleHeight { get; set; }
+        public virtual int? CropX { get; set; }
+        public virtual int? CropY { get; set; }
+        public virtual int? CropWidth { get; set; }
+        public virtual int? CropHeight { get; set; }
+        public virtual float? CutStart { get; set; }
+        public virtual float? CutEnd { get; set; }
+        public virtual Stream WatermarkFile { get; set; }
+        public virtual string WatermarkPosition { get; set; }
+        public virtual string WatermarkScale { get; set; }
+        public virtual string AudioCodec { get; set; }
+        public virtual string VideoCodec { get; set; }
+        public virtual string AudioBitrate { get; set; }
+        public virtual int? AudioSampleRate { get; set; }
+    }
+
+    ///<summary>
+    ///Response object for transform requests
+    ///</summary>
+    public partial class MediaTransformResponse
+    {
+        public MediaTransformResponse()
+        {
+            Outputs = new List<ArtifactOutput>{};
+            TextOutputs = new List<TextOutput>{};
+        }
+
+        ///<summary>
+        ///List of generated outputs
+        ///</summary>
+        [ApiMember(Description="List of generated outputs")]
+        public virtual List<ArtifactOutput> Outputs { get; set; }
+
+        ///<summary>
+        ///List of generated text outputs
+        ///</summary>
+        [ApiMember(Description="List of generated text outputs")]
+        public virtual List<TextOutput> TextOutputs { get; set; }
+
+        ///<summary>
+        ///Detailed response status information
+        ///</summary>
+        [ApiMember(Description="Detailed response status information")]
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public enum MediaTransformTaskType
+    {
+        ImageScale,
+        VideoScale,
+        ImageConvert,
+        AudioConvert,
+        VideoConvert,
+        ImageCrop,
+        VideoCrop,
+        VideoCut,
+        AudioCut,
+        WatermarkImage,
+        WatermarkVideo,
+    }
+
+    public partial class MigrateArtifact
+        : IReturn<MigrateArtifactResponse>, IPost
+    {
+        public virtual string Path { get; set; }
+        public virtual DateTime? Date { get; set; }
+    }
+
+    public partial class MigrateArtifactResponse
+    {
+        public virtual string FilePath { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    [DataContract]
+    public partial class OllamaModel
+    {
+        [DataMember(Name="name")]
+        public virtual string Name { get; set; }
+
+        [DataMember(Name="model")]
+        public virtual string Model { get; set; }
+
+        [DataMember(Name="modified_at")]
+        public virtual DateTime ModifiedAt { get; set; }
+
+        [DataMember(Name="size")]
+        public virtual long Size { get; set; }
+
+        [DataMember(Name="digest")]
+        public virtual string Digest { get; set; }
+
+        [DataMember(Name="details")]
+        public virtual OllamaModelDetails Details { get; set; }
+    }
+
+    [DataContract]
+    public partial class OllamaModelDetails
+    {
+        public OllamaModelDetails()
+        {
+            Families = new List<string>{};
+        }
+
+        [DataMember(Name="parent_model")]
+        public virtual string ParentModel { get; set; }
+
+        [DataMember(Name="format")]
+        public virtual string Format { get; set; }
+
+        [DataMember(Name="family")]
+        public virtual string Family { get; set; }
+
+        [DataMember(Name="families")]
+        public virtual List<string> Families { get; set; }
+
+        [DataMember(Name="parameter_size")]
+        public virtual string ParameterSize { get; set; }
+
+        [DataMember(Name="quantization_level")]
+        public virtual string QuantizationLevel { get; set; }
     }
 
     ///<summary>
@@ -579,7 +1653,7 @@ namespace AiServer.ServiceModel
         ///An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
         ///</summary>
         [DataMember(Name="top_p")]
-        public virtual double TopP { get; set; }
+        public virtual double? TopP { get; set; }
 
         ///<summary>
         ///A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for. A max of 128 functions are supported.
@@ -592,6 +1666,18 @@ namespace AiServer.ServiceModel
         ///</summary>
         [DataMember(Name="user")]
         public virtual string User { get; set; }
+    }
+
+    ///<summary>
+    ///Given a list of messages comprising a conversation, the model will return a response.
+    ///</summary>
+    [Route("/v1/chat/completions", "POST")]
+    public partial class OpenAiChatCompletion
+        : OpenAiChat, IReturn<OpenAiChatResponse>, IPost
+    {
+        public virtual string RefId { get; set; }
+        public virtual string Provider { get; set; }
+        public virtual string Tag { get; set; }
     }
 
     [DataContract]
@@ -643,6 +1729,9 @@ namespace AiServer.ServiceModel
         ///</summary>
         [DataMember(Name="usage")]
         public virtual OpenAiUsage Usage { get; set; }
+
+        [DataMember(Name="responseStatus")]
+        public virtual ResponseStatus ResponseStatus { get; set; }
     }
 
     ///<summary>
@@ -738,27 +1827,22 @@ namespace AiServer.ServiceModel
         public virtual int TotalTokens { get; set; }
     }
 
+    public partial class PageStats
+    {
+        public virtual string Label { get; set; }
+        public virtual int Total { get; set; }
+    }
+
     ///<summary>
     ///Different Models available in AI Server
     ///</summary>
     public partial class QueryApiModels
-        : QueryDb<ApiModel>, IReturn<QueryResponse<ApiModel>>
+        : QueryDb<AiModel>, IReturn<QueryResponse<AiModel>>
     {
     }
 
     ///<summary>
-    ///View and API Provider Models
-    ///</summary>
-    public partial class QueryApiProviderModels
-        : QueryDb<ApiProviderModel>, IReturn<QueryResponse<ApiProviderModel>>
-    {
-        public virtual int? ApiProviderId { get; set; }
-        public virtual string Model { get; set; }
-        public virtual string ApiModel { get; set; }
-    }
-
-    ///<summary>
-    ///API Providers that can process AI Tasks
+    ///API Providers
     ///</summary>
     public partial class QueryApiProviders
         : QueryDb<ApiProvider>, IReturn<QueryResponse<ApiProvider>>
@@ -769,63 +1853,941 @@ namespace AiServer.ServiceModel
     ///<summary>
     ///The Type and behavior of different API Providers
     ///</summary>
-    public partial class QueryApiType
+    public partial class QueryApiTypes
         : QueryDb<ApiType>, IReturn<QueryResponse<ApiType>>
     {
     }
 
-    public partial class QueryCompletedChatTasks
-        : QueryDb<OpenAiChatCompleted>, IReturn<QueryResponse<OpenAiChatCompleted>>
-    {
-        public virtual string Db { get; set; }
-        public virtual int? Id { get; set; }
-        public virtual string RefId { get; set; }
-    }
-
-    public partial class QueryFailedChatTasks
-        : QueryDb<OpenAiChatFailed>, IReturn<QueryResponse<OpenAiChatFailed>>
-    {
-        public virtual string Db { get; set; }
-    }
-
-    public partial class QueryOpenAiChat
-        : QueryDb<OpenAiChatTask>, IReturn<QueryResponse<OpenAiChatTask>>
+    ///<summary>
+    ///Media Providers
+    ///</summary>
+    public partial class QueryGenerationApiProviders
+        : QueryDb<GenerationApiProvider>, IReturn<QueryResponse<GenerationApiProvider>>
     {
         public virtual int? Id { get; set; }
+        public virtual string Name { get; set; }
+    }
+
+    ///<summary>
+    ///Media Model Settings
+    ///</summary>
+    public partial class QueryGenerationModelSettings
+        : QueryDb<ProviderModelDefaults>, IReturn<QueryResponse<ProviderModelDefaults>>
+    {
+        public virtual string Id { get; set; }
+    }
+
+    ///<summary>
+    ///Convert an audio file to a different format
+    ///</summary>
+    public partial class QueueConvertAudio
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform
+    {
+        ///<summary>
+        ///The desired output format for the converted audio
+        ///</summary>
+        [ApiMember(Description="The desired output format for the converted audio", ParameterType="query")]
+        [Required]
+        public virtual AudioFormat OutputFormat { get; set; }
+
+        [Required]
+        public virtual Stream Audio { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
         public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
     }
 
-    public partial class QueryTaskSummary
-        : QueryDb<TaskSummary>, IReturn<QueryResponse<TaskSummary>>
+    ///<summary>
+    ///Convert an image to a different format
+    ///</summary>
+    public partial class QueueConvertImage
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform, IPost
     {
+        ///<summary>
+        ///The image file to be converted
+        ///</summary>
+        [ApiMember(Description="The image file to be converted", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///The desired output format for the converted image
+        ///</summary>
+        [ApiMember(Description="The desired output format for the converted image", ParameterType="query")]
+        [Required]
+        public virtual ImageOutputFormat? OutputFormat { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
     }
 
-    public partial class RerunCompletedTasks
-        : IReturn<RerunCompletedTasksResponse>, IPost
+    ///<summary>
+    ///Convert a video to a different format
+    ///</summary>
+    public partial class QueueConvertVideo
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform
     {
-        public RerunCompletedTasks()
-        {
-            Ids = new List<long>{};
-        }
+        ///<summary>
+        ///The desired output format for the converted video
+        ///</summary>
+        [ApiMember(Description="The desired output format for the converted video", ParameterType="query")]
+        [Required]
+        public virtual ConvertVideoOutputFormat OutputFormat { get; set; }
 
-        public virtual List<long> Ids { get; set; }
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
     }
 
-    public partial class RerunCompletedTasksResponse
+    ///<summary>
+    ///Crop an image to a specified area
+    ///</summary>
+    public partial class QueueCropImage
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform, IPost
     {
-        public RerunCompletedTasksResponse()
-        {
-            Errors = new Dictionary<long, string>{};
-            Results = new List<long>{};
-        }
+        ///<summary>
+        ///The X-coordinate of the top-left corner of the crop area
+        ///</summary>
+        [ApiMember(Description="The X-coordinate of the top-left corner of the crop area", ParameterType="query")]
+        public virtual int X { get; set; }
 
-        public virtual Dictionary<long, string> Errors { get; set; }
-        public virtual List<long> Results { get; set; }
+        ///<summary>
+        ///The Y-coordinate of the top-left corner of the crop area
+        ///</summary>
+        [ApiMember(Description="The Y-coordinate of the top-left corner of the crop area", ParameterType="query")]
+        public virtual int Y { get; set; }
+
+        ///<summary>
+        ///The width of the crop area
+        ///</summary>
+        [ApiMember(Description="The width of the crop area", ParameterType="query")]
+        public virtual int Width { get; set; }
+
+        ///<summary>
+        ///The height of the crop area
+        ///</summary>
+        [ApiMember(Description="The height of the crop area", ParameterType="query")]
+        public virtual int Height { get; set; }
+
+        ///<summary>
+        ///The image file to be cropped
+        ///</summary>
+        [ApiMember(Description="The image file to be cropped", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    ///<summary>
+    ///Crop a video to a specified area
+    ///</summary>
+    public partial class QueueCropVideo
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform
+    {
+        ///<summary>
+        ///The X-coordinate of the top-left corner of the crop area
+        ///</summary>
+        [ApiMember(Description="The X-coordinate of the top-left corner of the crop area", ParameterType="query")]
+        [Validate("GreaterThan(0)")]
+        [Required]
+        public virtual int X { get; set; }
+
+        ///<summary>
+        ///The Y-coordinate of the top-left corner of the crop area
+        ///</summary>
+        [ApiMember(Description="The Y-coordinate of the top-left corner of the crop area", ParameterType="query")]
+        [Validate("GreaterThan(0)")]
+        [Required]
+        public virtual int Y { get; set; }
+
+        ///<summary>
+        ///The width of the crop area
+        ///</summary>
+        [ApiMember(Description="The width of the crop area", ParameterType="query")]
+        [Validate("GreaterThan(0)")]
+        [Required]
+        public virtual int Width { get; set; }
+
+        ///<summary>
+        ///The height of the crop area
+        ///</summary>
+        [ApiMember(Description="The height of the crop area", ParameterType="query")]
+        [Validate("GreaterThan(0)")]
+        [Required]
+        public virtual int Height { get; set; }
+
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    public partial class QueueGenerationResponse
+    {
+        ///<summary>
+        ///Unique identifier of the background job
+        ///</summary>
+        [ApiMember(Description="Unique identifier of the background job")]
+        public virtual long JobId { get; set; }
+
+        ///<summary>
+        ///Client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Client-provided identifier for the request")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Current state of the background job
+        ///</summary>
+        [ApiMember(Description="Current state of the background job")]
+        public virtual BackgroundJobState JobState { get; set; }
+
+        ///<summary>
+        ///Current status of the generation request
+        ///</summary>
+        [ApiMember(Description="Current status of the generation request")]
+        public virtual string Status { get; set; }
+
+        ///<summary>
+        ///Detailed response status information
+        ///</summary>
+        [ApiMember(Description="Detailed response status information")]
         public virtual ResponseStatus ResponseStatus { get; set; }
     }
 
-    public partial class ResetActiveProviders
-        : IReturn<GetActiveProvidersResponse>, IGet
+    ///<summary>
+    ///Generate image from another image
+    ///</summary>
+    [Api(Description="Generate image from another image")]
+    public partial class QueueImageToImage
+        : IReturn<QueueGenerationResponse>, IQueueGeneration
+    {
+        ///<summary>
+        ///The image to use as input
+        ///</summary>
+        [ApiMember(Description="The image to use as input", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Prompt describing the desired output
+        ///</summary>
+        [ApiMember(Description="Prompt describing the desired output", ParameterType="body")]
+        [Validate("NotEmpty")]
+        public virtual string PositivePrompt { get; set; }
+
+        ///<summary>
+        ///Negative prompt describing what should not be in the image
+        ///</summary>
+        [ApiMember(Description="Negative prompt describing what should not be in the image", ParameterType="body")]
+        public virtual string NegativePrompt { get; set; }
+
+        ///<summary>
+        ///Optional specific amount of denoise to apply
+        ///</summary>
+        [ApiMember(Description="Optional specific amount of denoise to apply", ParameterType="query")]
+        public virtual float? Denoise { get; set; }
+
+        ///<summary>
+        ///Number of images to generate in a single batch
+        ///</summary>
+        [ApiMember(Description="Number of images to generate in a single batch", ParameterType="query")]
+        public virtual int? BatchSize { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results in image generation
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results in image generation", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    ///<summary>
+    ///Convert image to text
+    ///</summary>
+    [Api(Description="Convert image to text")]
+    public partial class QueueImageToText
+        : IReturn<QueueGenerationResponse>, IQueueGeneration
+    {
+        ///<summary>
+        ///The image to convert to text
+        ///</summary>
+        [ApiMember(Description="The image to convert to text", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Upscale an image
+    ///</summary>
+    [Api(Description="Upscale an image")]
+    public partial class QueueImageUpscale
+        : IReturn<QueueGenerationResponse>, IQueueGeneration
+    {
+        ///<summary>
+        ///The image to upscale
+        ///</summary>
+        [ApiMember(Description="The image to upscale", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results in image generation
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results in image generation", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Generate image with masked area
+    ///</summary>
+    [Api(Description="Generate image with masked area")]
+    public partial class QueueImageWithMask
+        : IReturn<QueueGenerationResponse>, IQueueGeneration
+    {
+        ///<summary>
+        ///Prompt describing the desired output in the masked area
+        ///</summary>
+        [ApiMember(Description="Prompt describing the desired output in the masked area", ParameterType="body")]
+        [Validate("NotEmpty")]
+        public virtual string PositivePrompt { get; set; }
+
+        ///<summary>
+        ///Negative prompt describing what should not be in the masked area
+        ///</summary>
+        [ApiMember(Description="Negative prompt describing what should not be in the masked area", ParameterType="body")]
+        public virtual string NegativePrompt { get; set; }
+
+        ///<summary>
+        ///The image to use as input
+        ///</summary>
+        [ApiMember(Description="The image to use as input", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///The mask to use as input
+        ///</summary>
+        [ApiMember(Description="The mask to use as input", ParameterType="body")]
+        [Required]
+        public virtual Stream Mask { get; set; }
+
+        ///<summary>
+        ///Optional specific amount of denoise to apply
+        ///</summary>
+        [ApiMember(Description="Optional specific amount of denoise to apply", ParameterType="query")]
+        public virtual float? Denoise { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results in image generation
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results in image generation", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Base class for queueable transformation requests
+    ///</summary>
+    public partial class QueueMediaTransformResponse
+    {
+        ///<summary>
+        ///Unique identifier of the background job
+        ///</summary>
+        [ApiMember(Description="Unique identifier of the background job")]
+        public virtual long JobId { get; set; }
+
+        ///<summary>
+        ///Client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Client-provided identifier for the request")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Current state of the background job
+        ///</summary>
+        [ApiMember(Description="Current state of the background job")]
+        public virtual BackgroundJobState JobState { get; set; }
+
+        ///<summary>
+        ///Current status of the transformation request
+        ///</summary>
+        [ApiMember(Description="Current status of the transformation request")]
+        public virtual string Status { get; set; }
+
+        ///<summary>
+        ///Detailed response status information
+        ///</summary>
+        [ApiMember(Description="Detailed response status information")]
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public partial class QueueOpenAiChatCompletion
+        : IReturn<QueueOpenAiChatResponse>
+    {
+        public virtual string RefId { get; set; }
+        public virtual string Provider { get; set; }
+        public virtual string ReplyTo { get; set; }
+        public virtual string Tag { get; set; }
+        public virtual OpenAiChat Request { get; set; }
+    }
+
+    public partial class QueueOpenAiChatResponse
+    {
+        public virtual long Id { get; set; }
+        public virtual string RefId { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    ///<summary>
+    ///Scale an image to a specified size
+    ///</summary>
+    public partial class QueueScaleImage
+        : IReturn<MediaTransformResponse>, IPost
+    {
+        ///<summary>
+        ///The image file to be scaled
+        ///</summary>
+        [ApiMember(Description="The image file to be scaled", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Desired width of the scaled image
+        ///</summary>
+        [ApiMember(Description="Desired width of the scaled image", ParameterType="query")]
+        public virtual int? Width { get; set; }
+
+        ///<summary>
+        ///Desired height of the scaled image
+        ///</summary>
+        [ApiMember(Description="Desired height of the scaled image", ParameterType="query")]
+        public virtual int? Height { get; set; }
+    }
+
+    ///<summary>
+    ///Scale video
+    ///</summary>
+    [Api(Description="Scale video")]
+    public partial class QueueScaleVideo
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform
+    {
+        ///<summary>
+        ///The video file to be scaled
+        ///</summary>
+        [ApiMember(Description="The video file to be scaled", ParameterType="body")]
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///Desired width of the scaled video
+        ///</summary>
+        [ApiMember(Description="Desired width of the scaled video", ParameterType="query")]
+        public virtual int? Width { get; set; }
+
+        ///<summary>
+        ///Desired height of the scaled video
+        ///</summary>
+        [ApiMember(Description="Desired height of the scaled video", ParameterType="query")]
+        public virtual int? Height { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    ///<summary>
+    ///Convert speech to text
+    ///</summary>
+    [Api(Description="Convert speech to text")]
+    public partial class QueueSpeechToText
+        : IReturn<QueueGenerationResponse>, IQueueGeneration
+    {
+        ///<summary>
+        ///The audio stream containing the speech to be transcribed
+        ///</summary>
+        [ApiMember(Description="The audio stream containing the speech to be transcribed", ParameterType="body")]
+        [Required]
+        public virtual Stream Speech { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Generate image from text description
+    ///</summary>
+    [Api(Description="Generate image from text description")]
+    public partial class QueueTextToImage
+        : IReturn<QueueGenerationResponse>, IQueueGeneration
+    {
+        ///<summary>
+        ///The main prompt describing the desired image
+        ///</summary>
+        [ApiMember(Description="The main prompt describing the desired image", ParameterType="body")]
+        [Validate("NotEmpty")]
+        public virtual string PositivePrompt { get; set; }
+
+        ///<summary>
+        ///Optional prompt specifying what should not be in the image
+        ///</summary>
+        [ApiMember(Description="Optional prompt specifying what should not be in the image", ParameterType="body")]
+        public virtual string NegativePrompt { get; set; }
+
+        ///<summary>
+        ///Desired width of the generated image
+        ///</summary>
+        [ApiMember(Description="Desired width of the generated image", ParameterType="query")]
+        public virtual int? Width { get; set; }
+
+        ///<summary>
+        ///Desired height of the generated image
+        ///</summary>
+        [ApiMember(Description="Desired height of the generated image", ParameterType="query")]
+        public virtual int? Height { get; set; }
+
+        ///<summary>
+        ///Number of images to generate in a single batch
+        ///</summary>
+        [ApiMember(Description="Number of images to generate in a single batch", ParameterType="query")]
+        public virtual int? BatchSize { get; set; }
+
+        ///<summary>
+        ///The AI model to use for image generation
+        ///</summary>
+        [ApiMember(Description="The AI model to use for image generation", ParameterType="query")]
+        public virtual string Model { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Convert text to speech
+    ///</summary>
+    [Api(Description="Convert text to speech")]
+    public partial class QueueTextToSpeech
+        : IReturn<QueueGenerationResponse>, IQueueGeneration
+    {
+        ///<summary>
+        ///The text to be converted to speech
+        ///</summary>
+        [ApiMember(Description="The text to be converted to speech", ParameterType="body")]
+        [Required]
+        public virtual string Text { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results in speech generation
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results in speech generation", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///The AI model to use for speech generation
+        ///</summary>
+        [ApiMember(Description="The AI model to use for speech generation", ParameterType="query")]
+        public virtual string Model { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Trim a video to a specified duration via start and end times
+    ///</summary>
+    public partial class QueueTrimVideo
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform
+    {
+        ///<summary>
+        ///The start time of the trimmed video (format: HH:MM:SS)
+        ///</summary>
+        [ApiMember(Description="The start time of the trimmed video (format: HH:MM:SS)", ParameterType="query")]
+        [Required]
+        public virtual string StartTime { get; set; }
+
+        ///<summary>
+        ///The end time of the trimmed video (format: HH:MM:SS)
+        ///</summary>
+        [ApiMember(Description="The end time of the trimmed video (format: HH:MM:SS)", ParameterType="query")]
+        public virtual string EndTime { get; set; }
+
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    ///<summary>
+    ///Add a watermark to an image
+    ///</summary>
+    public partial class QueueWatermarkImage
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform, IPost
+    {
+        ///<summary>
+        ///The image file to be watermarked
+        ///</summary>
+        [ApiMember(Description="The image file to be watermarked", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///The position of the watermark on the image
+        ///</summary>
+        [ApiMember(Description="The position of the watermark on the image", ParameterType="query")]
+        public virtual WatermarkPosition Position { get; set; }
+
+        ///<summary>
+        ///The opacity of the watermark (0.0 to 1.0)
+        ///</summary>
+        [ApiMember(Description="The opacity of the watermark (0.0 to 1.0)", ParameterType="query")]
+        public virtual float Opacity { get; set; }
+
+        ///<summary>
+        ///Scale of the watermark relative
+        ///</summary>
+        [ApiMember(Description="Scale of the watermark relative", ParameterType="query")]
+        public virtual float WatermarkScale { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    ///<summary>
+    ///Watermark video
+    ///</summary>
+    [Api(Description="Watermark video")]
+    public partial class QueueWatermarkVideo
+        : IReturn<QueueMediaTransformResponse>, IQueueMediaTransform
+    {
+        ///<summary>
+        ///The video file to be watermarked
+        ///</summary>
+        [ApiMember(Description="The video file to be watermarked", ParameterType="body")]
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///The image file to use as a watermark
+        ///</summary>
+        [ApiMember(Description="The image file to use as a watermark", ParameterType="body")]
+        [Required]
+        public virtual Stream Watermark { get; set; }
+
+        ///<summary>
+        ///Position of the watermark
+        ///</summary>
+        [ApiMember(Description="Position of the watermark", ParameterType="query")]
+        public virtual WatermarkPosition? Position { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    public partial class Reload
+        : IReturn<EmptyResponse>, IPost
     {
     }
 
@@ -837,71 +2799,262 @@ namespace AiServer.ServiceModel
         JsonObject,
     }
 
-    public partial class RestartWorkers
-        : IReturn<EmptyResponse>, IPost
+    ///<summary>
+    ///Scale an image to a specified size
+    ///</summary>
+    public partial class ScaleImage
+        : IReturn<MediaTransformResponse>, IPost
     {
+        ///<summary>
+        ///The image file to be scaled
+        ///</summary>
+        [ApiMember(Description="The image file to be scaled", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///Desired width of the scaled image
+        ///</summary>
+        [ApiMember(Description="Desired width of the scaled image", ParameterType="query")]
+        public virtual int? Width { get; set; }
+
+        ///<summary>
+        ///Desired height of the scaled image
+        ///</summary>
+        [ApiMember(Description="Desired height of the scaled image", ParameterType="query")]
+        public virtual int? Height { get; set; }
     }
 
-    public partial class StartWorkers
-        : IReturn<EmptyResponse>, IPost
+    ///<summary>
+    ///Scale video
+    ///</summary>
+    [Api(Description="Scale video")]
+    public partial class ScaleVideo
+        : IReturn<MediaTransformResponse>, IMediaTransform
     {
+        ///<summary>
+        ///The video file to be scaled
+        ///</summary>
+        [ApiMember(Description="The video file to be scaled", ParameterType="body")]
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///Desired width of the scaled video
+        ///</summary>
+        [ApiMember(Description="Desired width of the scaled video", ParameterType="query")]
+        public virtual int? Width { get; set; }
+
+        ///<summary>
+        ///Desired height of the scaled video
+        ///</summary>
+        [ApiMember(Description="Desired height of the scaled video", ParameterType="query")]
+        public virtual int? Height { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
     }
 
-    public partial class StopWorkers
-        : IReturn<EmptyResponse>, IPost
+    ///<summary>
+    ///Convert speech to text
+    ///</summary>
+    [Api(Description="Convert speech to text")]
+    public partial class SpeechToText
+        : IReturn<GenerationResponse>, IGeneration
     {
+        ///<summary>
+        ///The audio stream containing the speech to be transcribed
+        ///</summary>
+        [ApiMember(Description="The audio stream containing the speech to be transcribed", ParameterType="body")]
+        [Required]
+        public virtual Stream Speech { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
     }
 
     public partial class SummaryStats
     {
         public virtual string Name { get; set; }
-        public virtual int TotalTasks { get; set; }
+        public virtual int Total { get; set; }
         public virtual int TotalPromptTokens { get; set; }
         public virtual int TotalCompletionTokens { get; set; }
         public virtual double TotalMinutes { get; set; }
         public virtual double TokensPerSecond { get; set; }
     }
 
-    public partial class TaskBase
-    {
-        public virtual long Id { get; set; }
-        public virtual string Model { get; set; }
-        public virtual string Provider { get; set; }
-        public virtual string RefId { get; set; }
-        public virtual string Tag { get; set; }
-        public virtual string ReplyTo { get; set; }
-        public virtual DateTime CreatedDate { get; set; }
-        public virtual string CreatedBy { get; set; }
-        public virtual string Worker { get; set; }
-        public virtual string WorkerIp { get; set; }
-        public virtual string RequestId { get; set; }
-        public virtual DateTime? StartedDate { get; set; }
-        public virtual DateTime? CompletedDate { get; set; }
-        public virtual int DurationMs { get; set; }
-        public virtual int? RetryLimit { get; set; }
-        public virtual int Retries { get; set; }
-        public virtual DateTime? NotificationDate { get; set; }
-        public virtual string ErrorCode { get; set; }
-        public virtual ResponseStatus Error { get; set; }
-    }
-
-    public partial class TaskSummary
-    {
-        public virtual long Id { get; set; }
-        public virtual TaskType Type { get; set; }
-        public virtual string Model { get; set; }
-        public virtual string Provider { get; set; }
-        public virtual string RefId { get; set; }
-        public virtual string Tag { get; set; }
-        public virtual int PromptTokens { get; set; }
-        public virtual int CompletionTokens { get; set; }
-        public virtual int DurationMs { get; set; }
-        public virtual DateTime CreatedDate { get; set; }
-    }
-
     public enum TaskType
     {
         OpenAiChat = 1,
+        Comfy = 2,
+    }
+
+    ///<summary>
+    ///Output object for generated text
+    ///</summary>
+    public partial class TextOutput
+    {
+        ///<summary>
+        ///The generated text
+        ///</summary>
+        [ApiMember(Description="The generated text")]
+        public virtual string Text { get; set; }
+    }
+
+    ///<summary>
+    ///Generate image from text description
+    ///</summary>
+    [Api(Description="Generate image from text description")]
+    public partial class TextToImage
+        : IReturn<GenerationResponse>, IGeneration
+    {
+        ///<summary>
+        ///The main prompt describing the desired image
+        ///</summary>
+        [ApiMember(Description="The main prompt describing the desired image", ParameterType="body")]
+        [Validate("NotEmpty")]
+        public virtual string PositivePrompt { get; set; }
+
+        ///<summary>
+        ///Optional prompt specifying what should not be in the image
+        ///</summary>
+        [ApiMember(Description="Optional prompt specifying what should not be in the image", ParameterType="body")]
+        public virtual string NegativePrompt { get; set; }
+
+        ///<summary>
+        ///Desired width of the generated image
+        ///</summary>
+        [ApiMember(Description="Desired width of the generated image", ParameterType="query")]
+        public virtual int? Width { get; set; }
+
+        ///<summary>
+        ///Desired height of the generated image
+        ///</summary>
+        [ApiMember(Description="Desired height of the generated image", ParameterType="query")]
+        public virtual int? Height { get; set; }
+
+        ///<summary>
+        ///Number of images to generate in a single batch
+        ///</summary>
+        [ApiMember(Description="Number of images to generate in a single batch", ParameterType="query")]
+        public virtual int? BatchSize { get; set; }
+
+        ///<summary>
+        ///The AI model to use for image generation
+        ///</summary>
+        [ApiMember(Description="The AI model to use for image generation", ParameterType="query")]
+        public virtual string Model { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
+    }
+
+    ///<summary>
+    ///Convert text to speech
+    ///</summary>
+    [Api(Description="Convert text to speech")]
+    public partial class TextToSpeech
+        : IReturn<GenerationResponse>, IGeneration
+    {
+        ///<summary>
+        ///The text to be converted to speech
+        ///</summary>
+        [ApiMember(Description="The text to be converted to speech", ParameterType="body")]
+        [Required]
+        public virtual string Text { get; set; }
+
+        ///<summary>
+        ///Optional seed for reproducible results in speech generation
+        ///</summary>
+        [ApiMember(Description="Optional seed for reproducible results in speech generation", ParameterType="query")]
+        public virtual int? Seed { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+
+        ///<summary>
+        ///Optional state to associate with the request
+        ///</summary>
+        [ApiMember(Description="Optional state to associate with the request", ParameterType="query")]
+        public virtual string State { get; set; }
     }
 
     ///<summary>
@@ -929,40 +3082,715 @@ namespace AiServer.ServiceModel
         public virtual string Function { get; set; }
     }
 
+    ///<summary>
+    ///Trim a video to a specified duration via start and end times
+    ///</summary>
+    public partial class TrimVideo
+        : IReturn<MediaTransformResponse>, IMediaTransform
+    {
+        ///<summary>
+        ///The start time of the trimmed video (format: HH:MM:SS)
+        ///</summary>
+        [ApiMember(Description="The start time of the trimmed video (format: HH:MM:SS)", ParameterType="query")]
+        [Required]
+        public virtual string StartTime { get; set; }
+
+        ///<summary>
+        ///The end time of the trimmed video (format: HH:MM:SS)
+        ///</summary>
+        [ApiMember(Description="The end time of the trimmed video (format: HH:MM:SS)", ParameterType="query")]
+        public virtual string EndTime { get; set; }
+
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+    public partial class UpdateApiModel
+        : IReturn<IdResponse>, IPatchDb<AiModel>
+    {
+        public virtual string Name { get; set; }
+        public virtual string Website { get; set; }
+        public virtual List<string> Tags { get; set; }
+        public virtual string Latest { get; set; }
+        public virtual string Description { get; set; }
+        public virtual string Icon { get; set; }
+    }
+
     public partial class UpdateApiProvider
         : IReturn<IdResponse>, IPatchDb<ApiProvider>
     {
         public virtual int Id { get; set; }
-        public virtual string ApiKey { get; set; }
+        ///<summary>
+        ///The Type of this API Provider
+        ///</summary>
+        public virtual int? ApiTypeId { get; set; }
+        ///<summary>
+        ///The Base URL for the API Provider
+        ///</summary>
         public virtual string ApiBaseUrl { get; set; }
+        ///<summary>
+        ///The unique name for this API Provider
+        ///</summary>
+        public virtual string Name { get; set; }
+        ///<summary>
+        ///The API Key to use for this Provider
+        ///</summary>
+        public virtual string ApiKeyVar { get; set; }
+        ///<summary>
+        ///The API Key to use for this Provider
+        ///</summary>
+        public virtual string ApiKey { get; set; }
+        ///<summary>
+        ///Send the API Key in the Header instead of Authorization Bearer
+        ///</summary>
+        public virtual string ApiKeyHeader { get; set; }
+        ///<summary>
+        ///The URL to check if the API Provider is still online
+        ///</summary>
         public virtual string HeartbeatUrl { get; set; }
+        ///<summary>
+        ///Override API Paths for different AI Requests
+        ///</summary>
+        public virtual Dictionary<TaskType, string> TaskPaths { get; set; }
+        ///<summary>
+        ///How many requests should be made concurrently
+        ///</summary>
         public virtual int? Concurrency { get; set; }
+        ///<summary>
+        ///What priority to give this Provider to use for processing models
+        ///</summary>
         public virtual int? Priority { get; set; }
+        ///<summary>
+        ///Whether the Provider is enabled
+        ///</summary>
         public virtual bool? Enabled { get; set; }
+        ///<summary>
+        ///The models this API Provider should process
+        ///</summary>
+        public virtual List<ApiProviderModel> Models { get; set; }
+        ///<summary>
+        ///The selected models this API Provider should process
+        ///</summary>
+        public virtual List<string> SelectedModels { get; set; }
     }
 
     ///<summary>
-    ///Update the Model supported by the API Provider
+    ///Update a Generation API Provider
     ///</summary>
-    public partial class UpdateApiProviderModel
-        : IReturn<IdResponse>, IPatchDb<ApiProviderModel>
+    public partial class UpdateGenerationApiProvider
+        : IReturn<IdResponse>, IPatchDb<GenerationApiProvider>
     {
-        ///<summary>
-        ///The ApiProviderModel Id
-        ///</summary>
         public virtual int Id { get; set; }
         ///<summary>
-        ///The ApiProvider Id
+        ///The API Key to use for this Provider
         ///</summary>
-        public virtual int? ApiProviderId { get; set; }
+        public virtual string ApiKey { get; set; }
         ///<summary>
-        ///Supported ApiModel Name
+        ///Send the API Key in the Header instead of Authorization Bearer
         ///</summary>
-        public virtual string Model { get; set; }
+        public virtual string ApiKeyHeader { get; set; }
         ///<summary>
-        ///Model to use when sending requests to the API Provider
+        ///Override Base URL for the Generation Provider
         ///</summary>
-        public virtual string ApiModel { get; set; }
+        public virtual string ApiBaseUrl { get; set; }
+        ///<summary>
+        ///Url to check if the API is online
+        ///</summary>
+        public virtual string HeartbeatUrl { get; set; }
+        ///<summary>
+        ///How many requests should be made concurrently
+        ///</summary>
+        public virtual int? Concurrency { get; set; }
+        ///<summary>
+        ///What priority to give this Provider to use for processing models
+        ///</summary>
+        public virtual int? Priority { get; set; }
+        ///<summary>
+        ///Whether the Provider is enabled
+        ///</summary>
+        public virtual bool? Enabled { get; set; }
+        ///<summary>
+        ///The models this API Provider should process
+        ///</summary>
+        public virtual List<string> Models { get; set; }
+    }
+
+    public partial class WaitForOpenAiChat
+        : IReturn<GetOpenAiChatResponse>, IGet
+    {
+        public virtual int? Id { get; set; }
+        public virtual string RefId { get; set; }
+    }
+
+    ///<summary>
+    ///Add a watermark to an image
+    ///</summary>
+    public partial class WatermarkImage
+        : IReturn<MediaTransformResponse>, IPost
+    {
+        ///<summary>
+        ///The image file to be watermarked
+        ///</summary>
+        [ApiMember(Description="The image file to be watermarked", ParameterType="body")]
+        [Required]
+        public virtual Stream Image { get; set; }
+
+        ///<summary>
+        ///The position of the watermark on the image
+        ///</summary>
+        [ApiMember(Description="The position of the watermark on the image", ParameterType="query")]
+        public virtual WatermarkPosition Position { get; set; }
+
+        ///<summary>
+        ///Scale of the watermark relative
+        ///</summary>
+        [ApiMember(Description="Scale of the watermark relative", ParameterType="query")]
+        public virtual float WatermarkScale { get; set; }
+
+        ///<summary>
+        ///The opacity of the watermark (0.0 to 1.0)
+        ///</summary>
+        [ApiMember(Description="The opacity of the watermark (0.0 to 1.0)", ParameterType="query")]
+        public virtual float Opacity { get; set; }
+    }
+
+    public enum WatermarkPosition
+    {
+        TopLeft,
+        TopRight,
+        BottomLeft,
+        BottomRight,
+        Center,
+    }
+
+    ///<summary>
+    ///Watermark video
+    ///</summary>
+    [Api(Description="Watermark video")]
+    public partial class WatermarkVideo
+        : IReturn<MediaTransformResponse>, IMediaTransform
+    {
+        ///<summary>
+        ///The video file to be watermarked
+        ///</summary>
+        [ApiMember(Description="The video file to be watermarked", ParameterType="body")]
+        [Required]
+        public virtual Stream Video { get; set; }
+
+        ///<summary>
+        ///The image file to use as a watermark
+        ///</summary>
+        [ApiMember(Description="The image file to use as a watermark", ParameterType="body")]
+        [Required]
+        public virtual Stream Watermark { get; set; }
+
+        ///<summary>
+        ///Position of the watermark
+        ///</summary>
+        [ApiMember(Description="Position of the watermark", ParameterType="query")]
+        public virtual WatermarkPosition? Position { get; set; }
+
+        ///<summary>
+        ///Optional client-provided identifier for the request
+        ///</summary>
+        [ApiMember(Description="Optional client-provided identifier for the request", ParameterType="query")]
+        public virtual string RefId { get; set; }
+
+        ///<summary>
+        ///Optional queue or topic to reply to
+        ///</summary>
+        [ApiMember(Description="Optional queue or topic to reply to", ParameterType="query")]
+        public virtual string ReplyTo { get; set; }
+
+        ///<summary>
+        ///Tag to identify the request
+        ///</summary>
+        [ApiMember(Description="Tag to identify the request", ParameterType="query")]
+        public virtual string Tag { get; set; }
+    }
+
+}
+
+namespace AiServer.ServiceModel.Types
+{
+    public partial class AiProviderBase
+        : ApiProviderBase
+    {
+        public AiProviderBase()
+        {
+            Models = new List<string>{};
+        }
+
+        public virtual List<string> Models { get; set; }
+    }
+
+    public enum AiServiceProvider
+    {
+        Replicate,
+        Comfy,
+        OpenAi,
+    }
+
+    public partial class ApiProviderBase
+    {
+        public virtual int Id { get; set; }
+        public virtual string Name { get; set; }
+        public virtual string ApiKeyVar { get; set; }
+        public virtual string ApiKey { get; set; }
+        public virtual string ApiKeyHeader { get; set; }
+        public virtual string ApiBaseUrl { get; set; }
+        public virtual string HeartbeatUrl { get; set; }
+        public virtual int Concurrency { get; set; }
+        public virtual int Priority { get; set; }
+        public virtual bool Enabled { get; set; }
+        public virtual DateTime? OfflineDate { get; set; }
+        public virtual DateTime CreatedDate { get; set; }
+    }
+
+    public partial class ApiTypeBase
+    {
+        public ApiTypeBase()
+        {
+            ApiModels = new Dictionary<string, string>{};
+        }
+
+        public virtual int Id { get; set; }
+        public virtual string ApiBaseUrl { get; set; }
+        public virtual string ApiKeyHeader { get; set; }
+        public virtual string Name { get; set; }
+        public virtual string Website { get; set; }
+        public virtual string Icon { get; set; }
+        public virtual Dictionary<string, string> ApiModels { get; set; }
+        public virtual AiServiceProvider Provider { get; set; }
+    }
+
+    public enum ComfyMaskSource
+    {
+        red,
+        blue,
+        green,
+        alpha,
+    }
+
+    public enum ComfySampler
+    {
+        euler,
+        euler_cfg_pp,
+        euler_ancestral,
+        euler_ancestral_cfg_pp,
+        huen,
+        huenpp2,
+        dpm_2,
+        dpm_2_ancestral,
+        lms,
+        dpm_fast,
+        dpm_adaptive,
+        dpmpp_2s_ancestral,
+        dpmpp_sde,
+        dpmpp_sde_gpu,
+        dpmpp_2m,
+        dpmpp_2m_sde,
+        dpmpp_2m_sde_gpu,
+        dpmpp_3m_sde,
+        dpmpp_3m_sde_gpu,
+        ddpm,
+        lcm,
+        ddim,
+        uni_pc,
+        uni_pc_bh2,
+    }
+
+    public partial class GenerationApiProvider
+        : AiProviderBase
+    {
+        [References(typeof(AiServer.ServiceModel.Types.GenerationApiType))]
+        public virtual int GenerationApiTypeId { get; set; }
+
+        public virtual GenerationApiType Type { get; set; }
+    }
+
+    public partial class GenerationApiType
+        : ApiTypeBase
+    {
+    }
+
+    public enum ModelType
+    {
+        TextToImage,
+        TextEncoder,
+        ImageUpscale,
+        TextToSpeech,
+        TextToAudio,
+        SpeechToText,
+        ImageToText,
+        ImageToImage,
+        ImageWithMask,
+        VAE,
+    }
+
+    public partial class ProviderModelDefaults
+    {
+        public ProviderModelDefaults()
+        {
+            ApiModels = new Dictionary<string, string>{};
+        }
+
+        public virtual string Id { get; set; }
+        public virtual Dictionary<string, string> ApiModels { get; set; }
+        public virtual string Url { get; set; }
+        public virtual double? Quality { get; set; }
+        public virtual string AspectRatio { get; set; }
+        public virtual double? CfgScale { get; set; }
+        public virtual string Scheduler { get; set; }
+        public virtual ComfySampler? Sampler { get; set; }
+        public virtual int? Width { get; set; }
+        public virtual int? Height { get; set; }
+        public virtual int? Steps { get; set; }
+        public virtual string NegativePrompt { get; set; }
+        public virtual ModelType? ModelType { get; set; }
+    }
+
+    public partial class QueryGenerationApiTypes
+        : QueryDb<GenerationApiType>, IReturn<QueryResponse<GenerationApiType>>
+    {
+    }
+
+}
+
+namespace ServiceStack.Jobs
+{
+    public partial class AdminCancelJobs
+        : IReturn<AdminCancelJobsResponse>, IGet
+    {
+        public AdminCancelJobs()
+        {
+            Ids = new List<long>{};
+        }
+
+        public virtual List<long> Ids { get; set; }
+        public virtual string Worker { get; set; }
+    }
+
+    public partial class AdminCancelJobsResponse
+    {
+        public AdminCancelJobsResponse()
+        {
+            Results = new List<long>{};
+            Errors = new Dictionary<long, string>{};
+        }
+
+        public virtual List<long> Results { get; set; }
+        public virtual Dictionary<long, string> Errors { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public partial class AdminGetJob
+        : IReturn<AdminGetJobResponse>, IGet
+    {
+        public virtual long? Id { get; set; }
+        public virtual string RefId { get; set; }
+    }
+
+    public partial class AdminGetJobProgress
+        : IReturn<AdminGetJobProgressResponse>, IGet
+    {
+        [Validate("GreaterThan(0)")]
+        public virtual long Id { get; set; }
+
+        public virtual int? LogStart { get; set; }
+    }
+
+    public partial class AdminGetJobProgressResponse
+    {
+        public virtual BackgroundJobState State { get; set; }
+        public virtual double? Progress { get; set; }
+        public virtual string Status { get; set; }
+        public virtual string Logs { get; set; }
+        public virtual int? DurationMs { get; set; }
+        public virtual ResponseStatus Error { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public partial class AdminGetJobResponse
+    {
+        public virtual JobSummary Result { get; set; }
+        public virtual BackgroundJob Queued { get; set; }
+        public virtual CompletedJob Completed { get; set; }
+        public virtual FailedJob Failed { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public partial class AdminJobDashboard
+        : IReturn<AdminJobDashboardResponse>, IGet
+    {
+        public virtual DateTime? From { get; set; }
+        public virtual DateTime? To { get; set; }
+    }
+
+    public partial class AdminJobDashboardResponse
+    {
+        public AdminJobDashboardResponse()
+        {
+            Commands = new List<JobStatSummary>{};
+            Apis = new List<JobStatSummary>{};
+            Workers = new List<JobStatSummary>{};
+            Today = new List<HourSummary>{};
+        }
+
+        public virtual List<JobStatSummary> Commands { get; set; }
+        public virtual List<JobStatSummary> Apis { get; set; }
+        public virtual List<JobStatSummary> Workers { get; set; }
+        public virtual List<HourSummary> Today { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public partial class AdminJobInfo
+        : IReturn<AdminJobInfoResponse>, IGet
+    {
+        public virtual DateTime? Month { get; set; }
+    }
+
+    public partial class AdminJobInfoResponse
+    {
+        public AdminJobInfoResponse()
+        {
+            MonthDbs = new List<DateTime>{};
+            TableCounts = new Dictionary<string, int>{};
+        }
+
+        public virtual List<DateTime> MonthDbs { get; set; }
+        public virtual Dictionary<string, int> TableCounts { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public partial class AdminQueryBackgroundJobs
+        : QueryDb<BackgroundJob>, IReturn<QueryResponse<BackgroundJob>>
+    {
+        public virtual int? Id { get; set; }
+        public virtual string RefId { get; set; }
+    }
+
+    public partial class AdminQueryCompletedJobs
+        : QueryDb<CompletedJob>, IReturn<QueryResponse<CompletedJob>>
+    {
+        public virtual DateTime? Month { get; set; }
+    }
+
+    public partial class AdminQueryFailedJobs
+        : QueryDb<FailedJob>, IReturn<QueryResponse<FailedJob>>
+    {
+        public virtual DateTime? Month { get; set; }
+    }
+
+    public partial class AdminQueryJobSummary
+        : QueryDb<JobSummary>, IReturn<QueryResponse<JobSummary>>
+    {
+        public virtual int? Id { get; set; }
+        public virtual string RefId { get; set; }
+    }
+
+    public partial class AdminQueryScheduledTasks
+        : QueryDb<ScheduledTask>, IReturn<QueryResponse<ScheduledTask>>
+    {
+    }
+
+    public partial class AdminRequeueFailedJobs
+        : IReturn<AdminRequeueFailedJobsJobsResponse>
+    {
+        public AdminRequeueFailedJobs()
+        {
+            Ids = new List<long>{};
+        }
+
+        public virtual List<long> Ids { get; set; }
+    }
+
+    public partial class AdminRequeueFailedJobsJobsResponse
+    {
+        public AdminRequeueFailedJobsJobsResponse()
+        {
+            Results = new List<long>{};
+            Errors = new Dictionary<long, string>{};
+        }
+
+        public virtual List<long> Results { get; set; }
+        public virtual Dictionary<long, string> Errors { get; set; }
+        public virtual ResponseStatus ResponseStatus { get; set; }
+    }
+
+    public partial class BackgroundJob
+        : BackgroundJobBase
+    {
+        public virtual long Id { get; set; }
+    }
+
+    public partial class BackgroundJobBase
+        : IMeta
+    {
+        public BackgroundJobBase()
+        {
+            Args = new Dictionary<string, string>{};
+            Meta = new Dictionary<string, string>{};
+        }
+
+        public virtual long Id { get; set; }
+        public virtual long? ParentId { get; set; }
+        public virtual string RefId { get; set; }
+        public virtual string Worker { get; set; }
+        public virtual string Tag { get; set; }
+        public virtual string BatchId { get; set; }
+        public virtual string Callback { get; set; }
+        public virtual long? DependsOn { get; set; }
+        public virtual DateTime? RunAfter { get; set; }
+        public virtual DateTime CreatedDate { get; set; }
+        public virtual string CreatedBy { get; set; }
+        public virtual string RequestId { get; set; }
+        public virtual string RequestType { get; set; }
+        public virtual string Command { get; set; }
+        public virtual string Request { get; set; }
+        public virtual string RequestBody { get; set; }
+        public virtual string UserId { get; set; }
+        public virtual string Response { get; set; }
+        public virtual string ResponseBody { get; set; }
+        public virtual BackgroundJobState State { get; set; }
+        public virtual DateTime? StartedDate { get; set; }
+        public virtual DateTime? CompletedDate { get; set; }
+        public virtual DateTime? NotifiedDate { get; set; }
+        public virtual int? RetryLimit { get; set; }
+        public virtual int Attempts { get; set; }
+        public virtual int DurationMs { get; set; }
+        public virtual int? TimeoutSecs { get; set; }
+        public virtual double? Progress { get; set; }
+        public virtual string Status { get; set; }
+        public virtual string Logs { get; set; }
+        public virtual DateTime? LastActivityDate { get; set; }
+        public virtual string ReplyTo { get; set; }
+        public virtual string ErrorCode { get; set; }
+        public virtual ResponseStatus Error { get; set; }
+        public virtual Dictionary<string, string> Args { get; set; }
+        public virtual Dictionary<string, string> Meta { get; set; }
+    }
+
+    public partial class BackgroundJobOptions
+    {
+        public BackgroundJobOptions()
+        {
+            Args = new Dictionary<string, string>{};
+        }
+
+        public virtual string RefId { get; set; }
+        public virtual long? ParentId { get; set; }
+        public virtual string Worker { get; set; }
+        public virtual DateTime? RunAfter { get; set; }
+        public virtual string Callback { get; set; }
+        public virtual long? DependsOn { get; set; }
+        public virtual string UserId { get; set; }
+        public virtual int? RetryLimit { get; set; }
+        public virtual string ReplyTo { get; set; }
+        public virtual string Tag { get; set; }
+        public virtual string BatchId { get; set; }
+        public virtual string CreatedBy { get; set; }
+        public virtual int? TimeoutSecs { get; set; }
+        public virtual TimeSpan? Timeout { get; set; }
+        public virtual Dictionary<string, string> Args { get; set; }
+        public virtual bool? RunCommand { get; set; }
+    }
+
+    public enum BackgroundJobState
+    {
+        Queued,
+        Started,
+        Executed,
+        Completed,
+        Failed,
+        Cancelled,
+    }
+
+    public partial class CompletedJob
+        : BackgroundJobBase
+    {
+    }
+
+    public partial class FailedJob
+        : BackgroundJobBase
+    {
+    }
+
+    public partial class HourSummary
+    {
+        public virtual string Hour { get; set; }
+        public virtual int Total { get; set; }
+        public virtual int Completed { get; set; }
+        public virtual int Failed { get; set; }
+        public virtual int Cancelled { get; set; }
+    }
+
+    public partial class JobStatSummary
+    {
+        public virtual string Name { get; set; }
+        public virtual int Total { get; set; }
+        public virtual int Completed { get; set; }
+        public virtual int Retries { get; set; }
+        public virtual int Failed { get; set; }
+        public virtual int Cancelled { get; set; }
+    }
+
+    public partial class JobSummary
+    {
+        public virtual long Id { get; set; }
+        public virtual long? ParentId { get; set; }
+        public virtual string RefId { get; set; }
+        public virtual string Worker { get; set; }
+        public virtual string Tag { get; set; }
+        public virtual string BatchId { get; set; }
+        public virtual DateTime CreatedDate { get; set; }
+        public virtual string CreatedBy { get; set; }
+        public virtual string RequestType { get; set; }
+        public virtual string Command { get; set; }
+        public virtual string Request { get; set; }
+        public virtual string Response { get; set; }
+        public virtual string UserId { get; set; }
+        public virtual string Callback { get; set; }
+        public virtual DateTime? StartedDate { get; set; }
+        public virtual DateTime? CompletedDate { get; set; }
+        public virtual BackgroundJobState State { get; set; }
+        public virtual int DurationMs { get; set; }
+        public virtual int Attempts { get; set; }
+        public virtual string ErrorCode { get; set; }
+        public virtual string ErrorMessage { get; set; }
+    }
+
+    public partial class ScheduledTask
+    {
+        public virtual long Id { get; set; }
+        public virtual string Name { get; set; }
+        public virtual TimeSpan? Interval { get; set; }
+        public virtual string CronExpression { get; set; }
+        public virtual string RequestType { get; set; }
+        public virtual string Command { get; set; }
+        public virtual string Request { get; set; }
+        public virtual string RequestBody { get; set; }
+        public virtual BackgroundJobOptions Options { get; set; }
+        public virtual DateTime? LastRun { get; set; }
+        public virtual long? LastJobId { get; set; }
     }
 
     public partial class WorkerStats
@@ -973,46 +3801,8 @@ namespace AiServer.ServiceModel
         public virtual long Completed { get; set; }
         public virtual long Retries { get; set; }
         public virtual long Failed { get; set; }
-        public virtual DateTime? Offline { get; set; }
-        public virtual bool Running { get; set; }
-    }
-
-}
-
-namespace AiServer.ServiceModel.Types
-{
-    public partial class OpenAiChatCompleted
-        : OpenAiChatTask
-    {
-    }
-
-    public partial class OpenAiChatFailed
-        : OpenAiChatTask
-    {
-        public virtual DateTime FailedDate { get; set; }
-    }
-
-    public partial class OpenAiChatRequest
-    {
-        public virtual long Id { get; set; }
-        public virtual string Model { get; set; }
-        public virtual string Provider { get; set; }
-        public virtual OpenAiChat Request { get; set; }
-    }
-
-    public partial class OpenAiChatTask
-        : TaskBase
-    {
-        public virtual OpenAiChat Request { get; set; }
-        public virtual OpenAiChatResponse Response { get; set; }
-    }
-
-    public enum PeriodicFrequency
-    {
-        Minute,
-        Hourly,
-        Daily,
-        Monthly,
+        public virtual long? RunningJob { get; set; }
+        public virtual TimeSpan? RunningTime { get; set; }
     }
 
 }
