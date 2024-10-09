@@ -24,13 +24,13 @@ public class ConfigureBackgroundJobs : IHostingStartup
                 RunCommand = true // don't persist job
             });
             
-            jobs.RecurringCommand<SendEmailCommand>("Every 8 hours", Schedule.Interval(TimeSpan.FromHours(8)), 
-                new SendEmail
-                {
-                    To = "demis.bellot@gmail.com",
-                    Subject = "Hi from recurring command",
-                    BodyText = "Test email from a Scheduled Tasks recurring command"
-                });
+            // jobs.RecurringCommand<SendEmailCommand>("Every 8 hours", Schedule.Interval(TimeSpan.FromHours(8)), 
+            //     new SendEmail
+            //     {
+            //         To = "demis.bellot@gmail.com",
+            //         Subject = "Hi from recurring command",
+            //         BodyText = "Test email from a Scheduled Tasks recurring command"
+            //     });
             
             jobs.RecurringCommand<SendWatchedTagEmailsCommand>(Schedule.Hourly);
         });
