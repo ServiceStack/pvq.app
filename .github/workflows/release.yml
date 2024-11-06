@@ -51,7 +51,7 @@ jobs:
         
         # Temp test
       - name: Apply Production AppSettings
-        working-directory: ./BlazorDiffusion
+        working-directory: ./MyApp
         run: |
           cat <<EOF >> appsettings.json.patch
           ${{ secrets.APPSETTINGS_PATCH }}
