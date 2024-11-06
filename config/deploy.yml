@@ -2,7 +2,7 @@
 service: pvq-app
 
 # Name of the container image.
-image: servicestack/pvq-app
+image: servicestack/pvq.app
 
 env:
   clear:
