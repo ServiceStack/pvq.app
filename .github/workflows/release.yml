@@ -70,7 +70,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          dotnet publish --os linux --arch x64 -c Release -p:ContainerRepository=${{ env.image_repository_name }} -p:ContainerRegistry=ghcr.io -p:ContainerImageTags=latest -p:ContainerPort=80 -p:ContainerLabel_service=${{ env.repository_name }}
+          dotnet publish --os linux --arch x64 -c Release -p:ContainerRepository=${{ env.image_repository_name }} -p:ContainerRegistry=ghcr.io -p:ContainerImageTags=latest -p:ContainerPort=80
 
       - name: Set up SSH key
         uses: webfactory/ssh-agent@v0.9.0
