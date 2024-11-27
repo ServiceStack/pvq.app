@@ -48,12 +48,6 @@ jobs:
             echo "HAS_DEPLOY_ACTION=false" >> $GITHUB_ENV
           fi
 
-      # This step is for the deployment of the templates only, safe to delete
-      - name: Modify csproj for template deploy
-        if: env.HAS_DEPLOY_ACTION == 'true'
-        run: |
-          sed -i 's#<ContainerLabel Include="service" Value="my-app" />#<ContainerLabel Include="service" Value="${{ env.repository_name_lower }}" />#g' MyApp/MyApp.csproj
-
       - name: Check for Client directory and package.json
         id: check_client
         run: |
