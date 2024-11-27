@@ -51,6 +51,9 @@ jobs:
           username: ${{ env.KAMAL_REGISTRY_USERNAME }}
           password: ${{ env.KAMAL_REGISTRY_PASSWORD }}
 
+      - name: Pull latest
+        run: docker pull ghcr.io/${{ env.image_repository_name }}:latest || true
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
