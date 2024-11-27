@@ -16,6 +16,11 @@ env:
   DOCKER_BUILDKIT: 1
   KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
   KAMAL_REGISTRY_USERNAME: ${{ github.actor }}
+  REDDIT_CLIENT: ${{ secrets.REDDIT_CLIENT }}
+  REDDIT_SECRET: ${{ secrets.REDDIT_SECRET }}
+  R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+  R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+  R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
 
 jobs:
   release:
