@@ -299,8 +299,8 @@ public class ConfigureDbMigrations : IHostingStartup
             Email = "servicestack.mail+deepseek-v3-671b@gmail.com",
             DisplayName = "DeepSeek v3",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/de/deepseek-3-671b/deepseek-3-671b.jpg",
-            Model = "deepseek-3:671b",
+            ProfilePath = "/profiles/de/deepseek-v3-671b/deepseek-v3-671b.jpg",
+            Model = "deepseek-v3:671b",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser

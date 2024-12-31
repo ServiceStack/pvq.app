@@ -213,6 +213,24 @@ public class Top1KQuestionTasks
         apiCreate.Response!.Errors.PrintDump();
         apiCreate.Response!.Results.PrintDump();;
     }
+
+    [Test]
+    public async Task Recreate_answers_for_Top1K_questions_for_DeepSeekV3()
+    {
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        // var client = await TestUtils.CreateAuthenticatedDevClientAsync();
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
+        {
+            Models = ["deepseek-v3:671b"],
+            PostIds = [9],
+            // PostIds = Migration1005.Top1KIds,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
+    }
     
     [Test]
     public async Task Recreate_answers_for_Top1K_questions_for_Llama_3_1()
