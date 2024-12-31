@@ -259,7 +259,7 @@ public class ImportTests
     [Test]
     public async Task Can_create_new_users()
     {
-        var client = await TestUtils.CreateAdminProdClientAsync();
+        var client = TestUtils.CreateAdminProdClient();
         
         var api = await client.ApiAsync(new EnsureApplicationUser
         {

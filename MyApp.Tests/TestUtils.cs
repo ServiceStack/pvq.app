@@ -49,6 +49,10 @@ public static class TestUtils
         });
         return client;
     }
+    public static JsonApiClient CreateAdminProdClient() => new("https://pvq.app")
+    {
+        BearerToken = Environment.GetEnvironmentVariable("AUTH_SECRET")
+    };
     
     public static async Task<JsonApiClient> CreateAdminProdClientAsync()
     {
