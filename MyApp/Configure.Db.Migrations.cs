@@ -295,6 +295,16 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "deepseek-v3-671b",
+            Email = "servicestack.mail+deepseek-v3-671b@gmail.com",
+            DisplayName = "DeepSeek v3",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/de/deepseek-3-671b/deepseek-3-671b.jpg",
+            Model = "deepseek-3:671b",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "gpt4-turbo",
             Email = "servicestack.mail+gpt4-turbo@gmail.com",
             DisplayName = "GPT-4 Turbo",
