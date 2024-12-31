@@ -67,7 +67,7 @@ jobs:
         run: dotnet tool install -g x
 
       - name: Apply Production AppSettings
-        if: env.HAS_APPSETTINGS_PATCH == 'true'
+        if: ${{ env.HAS_APPSETTINGS_PATCH == 'true' }}
         working-directory: ./MyApp
         run: |
           cat <<EOF >> appsettings.json.patch
