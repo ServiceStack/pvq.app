@@ -92,7 +92,7 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         
         SetConfig(new HostConfig
         {
-            AdminAuthSecret = Environment.GetEnvironmentVariable("AUTH_SECRET"),
+            AdminAuthSecret = AppConfig.Instance.MasterPassword,
         });
     }
     
