@@ -89,6 +89,11 @@ public class AppHost() : AppHostBase("MyApp"), IHostingStartup
         
         AppConfig.Instance.LoadTags(new FileInfo(Path.Combine(HostingEnvironment.WebRootPath, "data/tags.txt")));
         Log.Info($"Loaded {AppConfig.Instance.AllTags.Count} tags");
+        
+        SetConfig(new HostConfig
+        {
+            AdminAuthSecret = Environment.GetEnvironmentVariable("AUTH_SECRET"),
+        });
     }
     
     private string? ResolveGitBlobBaseUrl(IVirtualDirectory contentDir)

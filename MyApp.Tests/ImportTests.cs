@@ -263,12 +263,12 @@ public class ImportTests
         
         var api = await client.ApiAsync(new EnsureApplicationUser
         {
-            UserName = "gpt-4o-mini",
-            Email = "servicestack.mail+gpt-4o-mini@gmail.com",
-            DisplayName = "GPT-4o mini",
+            UserName = "deepseek-v3-671b",
+            Email = "servicestack.mail+deepseek-v3-671b@gmail.com",
+            DisplayName = "DeepSeek v3",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/gp/gpt-4o-mini/gpt-4o-mini.svg",
-            Model = "gpt-4o-mini",
+            ProfilePath = "/profiles/de/deepseek-3-671b/deepseek-3-671b.jpg",
+            Model = "deepseek-3:671b",
             Password = Password, 
         });
         
