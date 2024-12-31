@@ -32,16 +32,6 @@ jobs:
           echo "repository_name=$(echo ${{ github.repository }} | cut -d '/' -f 2)" >> $GITHUB_ENV
           echo "repository_name_lower=$(echo ${{ github.repository }} | cut -d '/' -f 2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
           echo "org_name=$(echo ${{ github.repository }} | cut -d '/' -f 1)" >> $GITHUB_ENV
-          if [ -n "${{ secrets.APPSETTINGS_PATCH }}" ]; then
-            echo "HAS_APPSETTINGS_PATCH=true" >> $GITHUB_ENV
-          else
-            echo "HAS_APPSETTINGS_PATCH=false" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ secrets.KAMAL_DEPLOY_IP }}" ]; then
-            echo "HAS_DEPLOY_ACTION=true" >> $GITHUB_ENV
-          else
-            echo "HAS_DEPLOY_ACTION=false" >> $GITHUB_ENV
-          fi
 
       - name: Check for Client directory and package.json
         id: check_client
@@ -67,7 +57,9 @@ jobs:
         run: dotnet tool install -g x
 
       - name: Apply Production AppSettings
-        if: ${{ env.HAS_APPSETTINGS_PATCH == 'true' }}
+        env:
+          APPSETTINGS_PATCH: ${{ secrets.APPSETTINGS_PATCH }}      
+        if: env.APPSETTINGS_PATCH != null
         working-directory: ./MyApp
         run: |
           cat <<EOF >> appsettings.json.patch
