@@ -128,7 +128,9 @@ public class QuestionServices(ILogger<QuestionServices> log,
         {
             Id = post.Id,
             Slug = post.Slug,
-            RedirectTo = $"/answers/{post.Id}/{post.Slug}"
+            // Kamal proxy buffers prevents Blazor Streaming pages from working 
+            // RedirectTo = $"/answers/{post.Id}/{post.Slug}",
+            RedirectTo = $"/questions/{post.Id}/{post.Slug}",
         };
     }
 
