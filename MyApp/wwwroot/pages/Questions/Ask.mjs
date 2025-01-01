@@ -114,7 +114,14 @@ export default {
         function onSuccess(r) {
             localStorage.removeItem('ask')
             if (r.redirectTo) {
-                location.href = r.redirectTo
+                // When buffering is disabled question is redirected to static page instead of "live" answers page
+                if (r.redirectTo.startsWith('/questions/')) {
+                    setTimeout(() => {
+                        location.href = r.redirectTo
+                    }, 2000)
+                } else {
+                    location.href = r.redirectTo
+                }
             }
         }
         
