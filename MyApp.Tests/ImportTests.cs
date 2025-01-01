@@ -263,12 +263,12 @@ public class ImportTests
         
         var api = await client.ApiAsync(new EnsureApplicationUser
         {
-            UserName = "deepseek-v3-671b",
-            Email = "servicestack.mail+deepseek-v3-671b@gmail.com",
-            DisplayName = "DeepSeek v3",
+            UserName = "qwq-32b",
+            Email = "servicestack.mail+qwq-32b@gmail.com",
+            DisplayName = "QWQ 32b",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/de/deepseek-3-671b/deepseek-3-671b.jpg",
-            Model = "deepseek-3:671b",
+            ProfilePath = "/profiles/qw/qwq-32b/qwq-32b.svg",
+            Model = "qwq:32b",
             Password = Password, 
         });
         
