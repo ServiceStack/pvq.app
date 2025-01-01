@@ -32,7 +32,7 @@ public class LeaderboardServices(IBackgroundJobs jobs) : Service
             TagLeft = $"[{request.Tag},%",
             TagMiddle = $"%,{request.Tag},%",
         });
-        var modelsToExclude = request.ModelsToExclude?.Split(",").ToList() ?? new List<string>();
+        var modelsToExclude = request.ModelsToExclude?.Split(",").ToList() ?? [];
         // filter to answers only
         var answers = allStatsForTag.Where(x => LeaderboardUtils.FilterSpecificModels(x,modelsToExclude)).ToList();
         // Sum up votes by model, first group by UserName
