@@ -87,7 +87,7 @@ public class AppConfig
         ("gemma2-27b", -1),
         ("qwen2-72b", -1),
 
-        ("phi", 0),
+        ("phi4", 0),
         ("gemini-pro", 0),
         ("gemini-flash", 0),
         ("llama3.3-70b", 0),
