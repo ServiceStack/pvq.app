@@ -10,7 +10,7 @@ using MyApp.Data;
 using MyApp.Components.Account;
 using MyApp.ServiceInterface;
 
-Licensing.RegisterLicense("OSS GPL-3.0 2024 https://github.com/ServiceStack/pvq.app kWu7cqu+XspZIN0fhMQvrpwDHR5bkKpDSWPPCdYKCqq4NmqE0JgHbm+aP9ifgyFxORB0UId2vqDRmT1UrbaV+iX+j/BAV/zQemrWpVCzO5esI3unc8tmtf3DiSKpC6KyuJmotpIpikAPDQJfvYI8tnmds9/nEFOqBhZk1/IA7R4=");
+Licensing.RegisterLicense("OSS GPL-3.0 2025 https://github.com/ServiceStack/pvq.app CbLQUKq+w69fBoVgrPurLgEHNj4px3a5SA7JwppH9LS16zN08eNaaBVxxSY/2rM2MizveKsX5pQK+qntG2pH3eDzJ+1YRuHrsF7uKqgWfyfjMcbbhaYVaxJozpmzq0dExGdGqkt6NM1FTniBDDhisB1uhHsjM2wSC5nHJYckF08=");
 
 var builder = WebApplication.CreateBuilder(args);
 
