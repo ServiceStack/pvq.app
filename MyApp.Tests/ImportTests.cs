@@ -263,12 +263,12 @@ public class ImportTests
         
         var api = await client.ApiAsync(new EnsureApplicationUser
         {
-            UserName = "llama3.3-70b",
-            Email = "servicestack.mail+llama3.3-70b@gmail.com",
-            DisplayName = "Llama 3.3 70B",
+            UserName = "phi4",
+            Email = "servicestack.mail+phi4@gmail.com",
+            DisplayName = "Phi 4 14B",
             EmailConfirmed = true,
-            ProfilePath = "/profiles/ll/llama3-70b/llama3-70b.svg",
-            Model = "llama3.3:70b",
+            ProfilePath = "/profiles/ph/phi4/phi4.svg",
+            Model = "phi4",
             Password = Password, 
         });
         

@@ -87,11 +87,12 @@ public class AppConfig
         ("gemma2-27b", -1),
         ("qwen2-72b", -1),
 
-        ("mistral-nemo", 0),
+        ("phi", 0),
         ("gemini-pro", 0),
         ("gemini-flash", 0),
         ("llama3.3-70b", 0),
         ("mixtral", 3),
+        ("mistral-nemo", 4),
         ("qwen2.5-72b", 5),
         ("deepseek-v3-671b", 10),
         ("gpt-4o-mini", 15),
