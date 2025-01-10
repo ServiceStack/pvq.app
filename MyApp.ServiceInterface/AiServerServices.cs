@@ -343,7 +343,8 @@ public static class AiServerExtensions
             {
                 // Escape quotes, revert escaping JSON properties and try again
                 json = json.Replace("\"", "\\\"")
-                    .Replace("\\\"reason\\\"", "\"reason\"")
+                    .Replace("\\\"reason\\\": \\\"", "\"reason\": \"")
+                    .Replace("\\\",","\",")
                     .Replace("\\\"score\\\"", "\"score\"");
                 obj = (Dictionary<string, object>)JSON.parse(json);
             }
