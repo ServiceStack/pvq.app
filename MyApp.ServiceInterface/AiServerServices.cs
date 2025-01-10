@@ -334,7 +334,16 @@ public static class AiServerExtensions
 
         if (!string.IsNullOrEmpty(json))
         {
-            var obj = (Dictionary<string,object>)JSON.parse(json);
+            Dictionary<string, object>? obj = null;
+            try
+            {
+                obj = (Dictionary<string, object>)JSON.parse(json);
+            }
+            catch (Exception)
+            {
+                json = json.Replace("\"", "\\\"");
+                obj = (Dictionary<string, object>)JSON.parse(json);
+            }
             var reason = obj.TryGetValue("reason", out var oReason)
                 ? (string)oReason
                 : null;
