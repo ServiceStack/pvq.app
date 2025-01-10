@@ -38,6 +38,9 @@ public class Top1KQuestionTasks
 
         var allModels = AppConfig.ModelsForQuestions.Select(x => x.Model).ToList();
         allModels.Remove("deepseek-coder-33b");
+        
+        allModels.PrintDump();
+        
         foreach (var model in allModels)
         {
             await CreateMissing1KModelsForModelAsync(client, model);
@@ -47,7 +50,7 @@ public class Top1KQuestionTasks
     [Test]
     public async Task Create_missing_Top1K_Answers_for_Adhoc_Model()
     {
-        var model = "command-r-plus";
+        var model = "phi4";
 
         var client = await TestUtils.CreateAuthenticatedProdClientAsync();
         await CreateMissing1KModelsForModelAsync(client, model);
@@ -233,6 +236,24 @@ public class Top1KQuestionTasks
     }
     
     [Test]
+    public async Task Recreate_answers_for_Top1K_questions_for_Phi4()
+    {
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        // var client = await TestUtils.CreateAuthenticatedDevClientAsync();
+        var apiCreate = await client.ApiAsync(new CreateAnswersForModels
+        {
+            Models = ["phi4"],
+            // PostIds = [9],
+            PostIds = Migration1005.Top1KIds,
+        });
+
+        apiCreate.Error.PrintDump();
+        apiCreate.ThrowIfError();
+        apiCreate.Response!.Errors.PrintDump();
+        apiCreate.Response!.Results.PrintDump();;
+    }
+    
+    [Test]
     public async Task Recreate_answers_for_Top1K_questions_for_Llama_3_1()
     {
         var client = await TestUtils.CreateAuthenticatedProdClientAsync();
@@ -253,20 +274,22 @@ public class Top1KQuestionTasks
     [Test]
     public async Task Find_answers_that_have_not_been_individually_graded()
     {
-        // var client = await TestUtils.CreateAuthenticatedProdClientAsync();
-        var client = await TestUtils.CreateAuthenticatedDevClientAsync();
+        var client = await TestUtils.CreateAuthenticatedProdClientAsync();
+        // var client = await TestUtils.CreateAuthenticatedDevClientAsync();
         
         var api = await client.ApiAsync(new MissingGradedAnswersTop1K());
             
         api.Error.PrintDump();
         api.ThrowIfError();
-        api.Response.PrintDump();
 
         if (api.Response!.Results.Count == 0)
         {
             "No more ungraded answers".Print();
             return;
         }
+
+        api.Response!.Results.RemoveAll(x => !x.EndsWith("-phi4"));
+        api.Response.PrintDump();
 
         var apiCreate = await client.ApiAsync(new CreateRankingTasks
         {
