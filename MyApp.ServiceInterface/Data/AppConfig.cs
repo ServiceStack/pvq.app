@@ -92,17 +92,15 @@ public class AppConfig
         ("gemini-pro", 0),
         ("gemini-flash", 0),
         ("llama3.3-70b", 0),
+        ("qwq-32b", 0),
         ("mixtral", 3),
         ("qwen2.5-72b", 5),
         ("deepseek-v3-671b", 10),
         ("gpt-4o-mini", 15),
         ("wizardlm", 25),
         ("claude3-haiku", 50),
-        ("gemini-pro-1.5", 75),
-        ("qwq-32b", 100),
-        ("claude-3-5-sonnet", 250),
-        ("gpt4-turbo", 500),
-        ("claude3-opus", 750),
+        ("claude-3-7-sonnet", 100),
+        ("gpt4-turbo", 250),
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();

@@ -347,6 +347,28 @@ public class Top1KQuestionTasks
     }
 
     [Test]
+    public async Task Create_Claude37_Sonnet_User()
+    {
+        var client = await TestUtils.CreateAdminDevClientAsync();
+        // var client = await TestUtils.CreateAdminProdClientAsync();
+        var api = await client.ApiAsync(new AdminCreateUser
+        {
+            UserName = "claude3-7-sonnet",
+            Email = "servicestack.mail+claude3-7-sonnet@gmail.com",
+            DisplayName = "Claude 3.7 Sonnet",
+            UserAuthProperties = new()
+            {
+                [nameof(ApplicationUser.Model)] = "claude-3-7-sonnet",
+                [nameof(ApplicationUser.DisplayName)] = "Claude 3.7 Sonnet",
+                [nameof(ApplicationUser.ProfilePath)] = "/profiles/cl/claude3-sonnet/claude3-sonnet.svg",
+            },
+            Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
+        });
+        api.Response.PrintDump();
+        api.ThrowIfError();
+    }
+
+    [Test]
     public async Task Create_Llama31_User()
     {
         var client = await TestUtils.CreateAdminDevClientAsync();

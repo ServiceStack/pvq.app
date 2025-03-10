@@ -305,16 +305,6 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
-            UserName = "gemini-pro",
-            Email = "servicestack.mail+gemini-pro@gmail.com",
-            DisplayName = "Gemini Pro 1.0",
-            EmailConfirmed = true,
-            ProfilePath = "/profiles/ge/gemini-pro/gemini-pro.svg",
-            Model = "gemini-pro",
-        }, "p@55wOrd");
-
-        await EnsureUserAsync(new ApplicationUser
-        {
             UserName = "deepseek-coder2-236b",
             Email = "servicestack.mail+deepseek-coder2-236b@gmail.com",
             DisplayName = "DeepSeek Coder2 236B",
@@ -405,6 +395,16 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "claude3-7-sonnet",
+            Email = "servicestack.mail+claude3-7-sonnet@gmail.com",
+            DisplayName = "Claude 3.7 Sonnet",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/cl/claude3-sonnet/claude3-sonnet.svg",
+            Model = "claude-3-7-sonnet",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "claude3-opus",
             Email = "servicestack.mail+claude3-opus@gmail.com",
             DisplayName = "Claude 3 Opus",
@@ -447,10 +447,20 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "gemini-flash",
             Email = "servicestack.mail+gemini-flash@gmail.com",
-            DisplayName = "Gemini Flash 1.5",
+            DisplayName = "Gemini Flash 2.0",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemini-flash/gemini-flash.svg",
-            Model = "gemini-flash",
+            Model = "gemini-flash-2.0",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "gemini-pro",
+            Email = "servicestack.mail+gemini-pro@gmail.com",
+            DisplayName = "Gemini Pro 2.0",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ge/gemini-pro/gemini-pro.svg",
+            Model = "gemini-pro-2.0",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
