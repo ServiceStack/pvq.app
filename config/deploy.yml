@@ -7,8 +7,8 @@ image: servicestack/pvq.app
 env:
   clear:
     VIRTUAL_HOST: pvq.app
-    DEPLOY_API: pvq.app
     ASPNETCORE_FORWARDEDHEADERS_ENABLED: true
+    HTTPS_METHOD: noredirect
   secret:
     - REDDIT_CLIENT
     - REDDIT_SECRET
