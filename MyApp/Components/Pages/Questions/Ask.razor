@@ -74,15 +74,18 @@
                         @foreach (var model in AppConfig.GetActiveModelsForQuestionLevel(questionLevel))
                         {
                             var assistant = AppConfig.GetModelUser(model.Model)!;
-                            <li class="mb-2">
-                                <div class="flex items-center gap-x-4">
-                                    <img class="h-10 w-10" src="/avatar/@assistant.UserName" alt="">
-                                    <div>
-                                        <h3 class="text-base font-semibold leading-6 tracking-tight text-gray-900 dark:text-gray-100">@assistant.UserName</h3>
-                                        <p class="text-sm font-semibold leading-5 text-indigo-600 dark:text-indigo-300">@assistant.DisplayName</p>
+                            if (assistant != null)
+                            {
+                                <li class="mb-2">
+                                    <div class="flex items-center gap-x-4">
+                                        <img class="h-10 w-10" src="/avatar/@assistant.UserName" alt="">
+                                        <div>
+                                            <h3 class="text-base font-semibold leading-6 tracking-tight text-gray-900 dark:text-gray-100">@assistant.UserName</h3>
+                                            <p class="text-sm font-semibold leading-5 text-indigo-600 dark:text-indigo-300">@assistant.DisplayName</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
+                                </li>
+                            }
                         }
                     </ul>
                 }
