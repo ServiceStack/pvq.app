@@ -5,6 +5,7 @@
 @using MyApp.ServiceInterface.Renderers
 @using ServiceStack.Caching
 @using ServiceStack.Jobs
+@inject ILogger<Question> Log
 @inject QuestionsProvider QuestionsProvider
 @inject RendererCache RendererCache
 @inject NavigationManager NavigationManager
@@ -143,7 +144,14 @@
             var slug = question.Post.Slug.GenerateSlug(200);
             if (slug != Slug)
             {
-                NavigationManager.NavigateTo($"/questions/{Id}/{slug}");
+                try
+                {
+                    NavigationManager.NavigateTo($"/questions/{Id}/{slug}");
+                }
+                catch (Exception e)
+                {
+                    Log.LogError($"Error NavigateTo slug: /questions/{Id}/{slug}: {{Message}}", Id, slug, e.Message);
+                }
                 return;
             }
 
