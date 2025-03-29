@@ -1,6 +1,41 @@
 User-agent: Googlebot
-
-User-agent: *
 Allow: /
+User-agent: YandexBot
+Allow: /
+User-agent: Bingbot
+Allow: /
+User-agent: ahrefsbot
+Allow: /
+User-agent: Baidu Spider
+Allow: /
+User-agent: coccocbot
+Allow: /
+User-agent: yacybot
+Allow: /
+User-agent: oai-searchbot
+Allow: /
+
+User-agent: bytespider
+Disallow: /
+User-agent: gptbot
+Disallow: /
+User-agent: claudebot
+Disallow: /
+User-agent: amazonbot
+Disallow: /
+User-agent: imagesiftbot
+Disallow: /
+User-agent: mj12bot
+Disallow: /
+User-agent: semrushbot
+Disallow: /
+User-agent: dotbot
+Disallow: /
+User-agent: dataforseobot
+Disallow: /
+User-agent: WhatsApp Bot
+Disallow: /
+User-agent: *
+Disallow: /
 
 Sitemap: https://pvq.app/sitemap.xml

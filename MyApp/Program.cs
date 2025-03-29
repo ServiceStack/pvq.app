@@ -62,6 +62,33 @@ services.AddScoped(c => new HttpClient { BaseAddress = new Uri(baseUrl) });
 services.AddBlazorServerIdentityApiClient(baseUrl);
 services.AddLocalStorage();
 
+// Register the options in the dependency injection container
+services.Configure<UserAgentBlockingOptions>(options =>
+{
+    // Add user agents to block
+    options.BlockedUserAgents.AddRange([
+        "bytespider",
+        "gptbot",
+        "gptbot",
+        "claudebot",
+        "amazonbot",
+        "imagesiftbot",
+        "semrushbot",
+        "dotbot",
+        "semrushbot",
+        "dataforseobot",
+        "WhatsApp Bot",
+        "HeadlessChrome",
+        "PetalBot",
+    ]);
+    
+    // Optional: Customize the response status code
+    // options.BlockedStatusCode = StatusCodes.Status429TooManyRequests;
+    
+    // Optional: Customize the blocked message
+    options.BlockedMessage = "This bot is not allowed to access our website";
+});
+
 services.AddServiceStack(typeof(MyServices).Assembly);
 
 services.AddOutputCache(options =>
@@ -83,6 +110,9 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+// Add the middleware early in the pipeline (before routing and endpoints)
+app.UseUserAgentBlocking();
 
 //TODO: Remove after bing search no longer includes these links
 string[] redirectPosts = [
