@@ -65,8 +65,6 @@ public class AppConfig
     public HashSet<string> AllTags { get; set; } = [];
     public List<ApplicationUser> ModelUsers { get; set; } = [];
 
-    public static string[] DeprecatedModels = ["deepseek-coder","gemma-2b","qwen-4b","deepseek-coder-33b","deepseek-coder2-236b","mistral","llama3-8b","phi","codellama","llama3.1-8b","gemma2-27b","qwen2-72b","command-r","command-r-plus"];
-
     public static (string Model, int Questions)[] GetActiveModelsForQuestions(int questionsCount) =>
         ModelsForQuestions.Where(x => questionsCount >= x.Questions && !DeprecatedModels.Contains(x.Model)).ToArray();
 
@@ -102,6 +100,25 @@ public class AppConfig
         ("claude3-haiku", 50),
         ("claude-3-7-sonnet", 100),
         ("gpt4-turbo", 250),
+    ];
+
+    public static string[] DeprecatedModels = [
+        "deepseek-coder",
+        "gemma-2b",
+        "qwen-4b",
+        "deepseek-coder-33b",
+        "deepseek-coder2-236b",
+        "mistral",
+        "llama3-8b",
+        "phi",
+        "codellama",
+        "llama3.1-8b",
+        "gemma2-27b",
+        "qwen2-72b",
+        "command-r",
+        "command-r-plus",
+        "qwq-32b",
+        "qwen2.5-72b",
     ];
 
     public static int[] QuestionLevels = ModelsForQuestions.Select(x => x.Questions).Distinct().OrderBy(x => x).ToArray();
