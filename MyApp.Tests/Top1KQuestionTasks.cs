@@ -390,6 +390,69 @@ public class Top1KQuestionTasks
     }
 
     [Test]
+    public async Task Create_Llama4_109b_User()
+    {
+        var client = await TestUtils.CreateAdminDevClientAsync();
+        // var client = await TestUtils.CreateAdminProdClientAsync();
+        var api = await client.ApiAsync(new AdminCreateUser
+        {
+            UserName = "llama4-109b",
+            Email = "servicestack.mail+llama4-109b@gmail.com",
+            UserAuthProperties = new()
+            {
+                [nameof(ApplicationUser.Model)] = "llama4:109b",
+                [nameof(ApplicationUser.DisplayName)] = "Llama 4 Scout 109B",
+                [nameof(ApplicationUser.ProfilePath)] = "/profiles/ll/llama/llama.svg",
+            },
+            Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
+        });
+        api.Response.PrintDump();
+        api.ThrowIfError();
+    }
+
+    [Test]
+    public async Task Create_Llama4_400b_User()
+    {
+        // var client = await TestUtils.CreateAdminDevClientAsync();
+        var client = await TestUtils.CreateAdminProdClientAsync();
+        var api = await client.ApiAsync(new AdminCreateUser
+        {
+            UserName = "llama4-400b",
+            Email = "servicestack.mail+llama4-400b@gmail.com",
+            UserAuthProperties = new()
+            {
+                [nameof(ApplicationUser.Model)] = "llama4:400b",
+                [nameof(ApplicationUser.DisplayName)] = "Llama 4 Maverick 400B",
+                [nameof(ApplicationUser.ProfilePath)] = "/profiles/ll/llama/llama.svg",
+            },
+            Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
+        });
+        api.Response.PrintDump();
+        api.ThrowIfError();
+    }
+
+    [Test]
+    public async Task Create_Gemini3_27b_User()
+    {
+        // var client = await TestUtils.CreateAdminDevClientAsync();
+        var client = await TestUtils.CreateAdminProdClientAsync();
+        var api = await client.ApiAsync(new AdminCreateUser
+        {
+            UserName = "gemma3-27b",
+            Email = "servicestack.mail+gemma3-27b@gmail.com",
+            UserAuthProperties = new()
+            {
+                [nameof(ApplicationUser.Model)] = "gemma3:27b",
+                [nameof(ApplicationUser.DisplayName)] = "Gemma3 27B",
+                [nameof(ApplicationUser.ProfilePath)] = "/profiles/ge/gemma/gemma.svg",
+            },
+            Password = Environment.GetEnvironmentVariable("AUTH_SECRET"),
+        });
+        api.Response.PrintDump();
+        api.ThrowIfError();
+    }
+
+    [Test]
     public async Task Generate_top_10k_answers_for_gemini_flash()
     {
         var txt = await File.ReadAllTextAsync(TestUtils.GetHostDir().CombineWith("App_Data/top10k-10.txt"));

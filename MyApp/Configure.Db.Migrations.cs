@@ -245,6 +245,26 @@ public class ConfigureDbMigrations : IHostingStartup
 
         await EnsureUserAsync(new ApplicationUser
         {
+            UserName = "llama4-109b",
+            Email = "servicestack.mail+llama4-109b@gmail.com",
+            DisplayName = "Llama 4 Scout 109B",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ll/llama/llama.svg",
+            Model = "llama4:109b",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "llama4-400b",
+            Email = "servicestack.mail+llama4-109b@gmail.com",
+            DisplayName = "Llama 4 Maverick 400B",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ll/llama/llama.svg",
+            Model = "llama4:400b",
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
             UserName = "gemma",
             Email = "servicestack.mail+gemma@gmail.com",
             DisplayName = "Gemma 7B",
@@ -261,6 +281,16 @@ public class ConfigureDbMigrations : IHostingStartup
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemma2-27b/gemma2-27b.svg",
             Model = "gemma2:27b", //27B
+        }, "p@55wOrd");
+
+        await EnsureUserAsync(new ApplicationUser
+        {
+            UserName = "gemma3-27b",
+            Email = "servicestack.mail+gemma3-27b@gmail.com",
+            DisplayName = "Gemma3 27B",
+            EmailConfirmed = true,
+            ProfilePath = "/profiles/ge/gemma2-27b/gemma2-27b.svg",
+            Model = "gemma3:27b", //27B
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -457,10 +487,10 @@ public class ConfigureDbMigrations : IHostingStartup
         {
             UserName = "gemini-pro",
             Email = "servicestack.mail+gemini-pro@gmail.com",
-            DisplayName = "Gemini Pro 2.0",
+            DisplayName = "Gemini Pro 2.5",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemini-pro/gemini-pro.svg",
-            Model = "gemini-pro-2.0",
+            Model = "gemini-pro-2.5",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
