@@ -87,6 +87,7 @@ public class AppConfig
         ("gemma2-27b", -1),
         ("qwen2-72b", -1),
         ("qwq-32b", -1),
+        ("qwen2.5-72b", -1),
 
         // ("mistral-nemo", 0),
         ("phi4", 0),
@@ -94,8 +95,7 @@ public class AppConfig
         ("llama4-109b", 0),
         ("gemini-pro", 0),
         ("mixtral", 3),
-        ("qwen2.5-72b", 5),
-        ("llama4-400b", 7),
+        ("llama4-400b", 5),
         ("deepseek-v3-671b", 10),
         ("gpt-4o-mini", 15),
         ("wizardlm", 25),
