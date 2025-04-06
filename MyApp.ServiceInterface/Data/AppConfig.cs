@@ -89,6 +89,7 @@ public class AppConfig
 
         // ("mistral-nemo", 0),
         ("phi4", 0),
+        ("gemma3-27b", 0),
         ("gemini-flash", 0),
         ("llama4-109b", 0),
         ("gemini-pro", 0),
