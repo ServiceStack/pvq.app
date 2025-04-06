@@ -140,7 +140,7 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "Phi 4 14B",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ph/phi4/phi4.svg",
-            Model = "phi4",
+            Model = "phi4:14b",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser
@@ -490,7 +490,7 @@ public class ConfigureDbMigrations : IHostingStartup
             DisplayName = "Gemini Pro 2.5",
             EmailConfirmed = true,
             ProfilePath = "/profiles/ge/gemini-pro/gemini-pro.svg",
-            Model = "gemini-pro-2.5",
+            Model = "gemini-pro",
         }, "p@55wOrd");
 
         await EnsureUserAsync(new ApplicationUser

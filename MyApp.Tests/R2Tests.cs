@@ -59,12 +59,12 @@ public class R2Tests
             BucketName = "stackoverflow-shootout",
             Key = "test.txt",
             ContentBody = "test",
-            DisablePayloadSigning = true,
+            DisablePayloadSigning = false,
         };
 
-        s3.PutObject(request);
+        // s3.PutObject(request);
 
-        // await s3.PutObjectAsync(request);
+        await s3.PutObjectAsync(request);
         
         // await r2.WriteFileAsync("/test.txt", "test");
         

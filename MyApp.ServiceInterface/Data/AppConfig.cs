@@ -324,10 +324,10 @@ public class AppConfig
             models.RemoveAll(x => x is "claude-3-haiku" or "claude-3-sonnet");
         if (models.Contains("claude-3-sonnet"))
             models.RemoveAll(x => x is "claude-3-haiku");
-        if (models.Contains("gemini-pro-1.5"))
-            models.RemoveAll(x => x is "gemini-flash" or "gemini-pro");
-        if (models.Contains("gemini-flash"))
-            models.RemoveAll(x => x is "gemini-pro");
+        // if (models.Contains("gemini-pro-1.5"))
+        //     models.RemoveAll(x => x is "gemini-flash" or "gemini-pro");
+        // if (models.Contains("gemini-flash"))
+        //     models.RemoveAll(x => x is "gemini-pro");
         return models;
     }
 
