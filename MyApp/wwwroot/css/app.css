@@ -1482,16 +1482,16 @@ select{
   height: 100vh;
 }
 
-.max-h-12 {
-  max-height: 3rem;
-}
-
 .max-h-24 {
   max-height: 6rem;
 }
 
 .max-h-60 {
   max-height: 15rem;
+}
+
+.max-h-64 {
+  max-height: 16rem;
 }
 
 .max-h-\[130px\] {
@@ -1904,10 +1904,6 @@ select{
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.grid-cols-4 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
 .grid-cols-6 {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
@@ -2022,10 +2018,6 @@ select{
 .gap-x-8 {
   -moz-column-gap: 2rem;
        column-gap: 2rem;
-}
-
-.gap-y-10 {
-  row-gap: 2.5rem;
 }
 
 .gap-y-2 {
@@ -2552,11 +2544,6 @@ select{
   stroke: rgb(29 78 216 / 0.5);
 }
 
-.object-contain {
-  -o-object-fit: contain;
-     object-fit: contain;
-}
-
 .object-cover {
   -o-object-fit: cover;
      object-fit: cover;
@@ -2675,11 +2662,6 @@ select{
 .py-20 {
   padding-top: 5rem;
   padding-bottom: 5rem;
-}
-
-.py-24 {
-  padding-top: 6rem;
-  padding-bottom: 6rem;
 }
 
 .py-3 {
@@ -2949,11 +2931,6 @@ select{
   line-height: 1.75rem;
 }
 
-.text-lg\/8 {
-  font-size: 1.125rem;
-  line-height: 2rem;
-}
-
 .text-sm {
   font-size: 0.875rem;
   line-height: 1.25rem;
@@ -2967,11 +2944,6 @@ select{
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
-}
-
-.text-base\/7 {
-  font-size: 1rem;
-  line-height: 1.75rem;
 }
 
 .font-bold {
@@ -3895,11 +3867,6 @@ select{
 .hover\:text-white:hover {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-}
-
-.hover\:text-blue-600:hover {
-  --tw-text-opacity: 1;
-  color: rgb(37 99 235 / var(--tw-text-opacity, 1));
 }
 
 .hover\:underline:hover {
@@ -4962,10 +4929,6 @@ select{
     margin-top: 1rem;
   }
 
-  .sm\:ml-2 {
-    margin-left: 0.5rem;
-  }
-
   .sm\:block {
     display: block;
   }
@@ -5010,10 +4973,6 @@ select{
     height: 100vh;
   }
 
-  .sm\:h-12 {
-    height: 3rem;
-  }
-
   .sm\:w-10 {
     width: 2.5rem;
   }
@@ -5042,10 +5001,6 @@ select{
     width: 100%;
   }
 
-  .sm\:w-12 {
-    width: 3rem;
-  }
-
   .sm\:max-w-lg {
     max-width: 32rem;
   }
@@ -5056,10 +5011,6 @@ select{
 
   .sm\:max-w-prose {
     max-width: 65ch;
-  }
-
-  .sm\:max-w-xl {
-    max-width: 36rem;
   }
 
   .sm\:flex-1 {
@@ -5087,10 +5038,6 @@ select{
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .sm\:grid-cols-6 {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
   .sm\:flex-row-reverse {
     flex-direction: row-reverse;
   }
@@ -5105,11 +5052,6 @@ select{
 
   .sm\:justify-between {
     justify-content: space-between;
-  }
-
-  .sm\:gap-x-10 {
-    -moz-column-gap: 2.5rem;
-         column-gap: 2.5rem;
   }
 
   .sm\:space-x-12 > :not([hidden]) ~ :not([hidden]) {
@@ -5176,11 +5118,6 @@ select{
   .sm\:py-3 {
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
-  }
-
-  .sm\:py-32 {
-    padding-top: 8rem;
-    padding-bottom: 8rem;
   }
 
   .sm\:pb-0 {
@@ -5456,10 +5393,6 @@ select{
     z-index: 10;
   }
 
-  .lg\:col-span-1 {
-    grid-column: span 1 / span 1;
-  }
-
   .lg\:col-span-2 {
     grid-column: span 2 / span 2;
   }
@@ -5475,11 +5408,6 @@ select{
   .lg\:-mx-8 {
     margin-left: -2rem;
     margin-right: -2rem;
-  }
-
-  .lg\:mx-0 {
-    margin-left: 0px;
-    margin-right: 0px;
   }
 
   .lg\:-mr-12 {
@@ -5548,10 +5476,6 @@ select{
 
   .lg\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .lg\:grid-cols-5 {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .lg\:grid-cols-8 {
