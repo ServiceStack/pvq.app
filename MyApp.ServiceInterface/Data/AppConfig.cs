@@ -86,11 +86,11 @@ public class AppConfig
         ("llama3.1-8b", -1),
         ("gemma2-27b", -1),
         ("qwen2-72b", -1),
+        ("qwq-32b", -1),
 
         // ("mistral-nemo", 0),
         ("phi4", 0),
         ("gemini-flash", 0),
-        ("qwq-32b", 0),
         ("llama4-109b", 0),
         ("gemini-pro", 0),
         ("mixtral", 3),
