@@ -1,7 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using Amazon.S3;
+using Amazon.S3.Model;
 using NUnit.Framework;
 using ServiceStack;
+using ServiceStack.Aws;
 using ServiceStack.IO;
 using ServiceStack.Text;
 
@@ -45,5 +47,29 @@ public class R2Tests
             Console.WriteLine(x.Value);
             Console.WriteLine();
         });
+    }
+
+    [Test]
+    public async Task Can_write_to_R2()
+    {
+        var s3 = CreateS3Client();
+
+        var request = new PutObjectRequest
+        {
+            BucketName = "stackoverflow-shootout",
+            Key = "test.txt",
+            ContentBody = "test",
+            DisablePayloadSigning = true,
+        };
+
+        s3.PutObject(request);
+
+        // await s3.PutObjectAsync(request);
+        
+        // await r2.WriteFileAsync("/test.txt", "test");
+        
+        // var file = await r2.GetFileAsync("/test.txt");
+
+        // Console.WriteLine(await file.ReadAllTextAsync());
     }
 }

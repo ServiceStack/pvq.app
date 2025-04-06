@@ -6,6 +6,7 @@ using MyApp.ServiceInterface.AiServer;
 using MyApp.ServiceInterface.App;
 using ServiceStack;
 using MyApp.ServiceModel;
+using ServiceStack.Configuration;
 using ServiceStack.IO;
 using ServiceStack.Jobs;
 using ServiceStack.OrmLite;
@@ -114,9 +115,12 @@ public class QuestionServices(ILogger<QuestionServices> log,
         var dbPost = createPost();
 
         jobs.RunCommand<CreatePostCommand>(dbPost);
+        
         jobs.RunCommand<CreateAnswerTasksCommand>(new CreateAnswerTasks {
             Post = post,
-            ModelUsers = appConfig.GetAnswerModelUsersFor(userName),
+            ModelUsers = request.Model != null && Request.GetClaimsPrincipal().HasRole(RoleNames.Admin)
+                ? [request.Model]
+                : appConfig.GetAnswerModelUsersFor(userName),
         });
 
         jobs.RunCommand<DiskTasksCommand>(new DiskTasks

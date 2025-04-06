@@ -224,6 +224,9 @@ public class AskQuestion : IPost, IReturn<AskQuestionResponse>
     [ValidateNotEmpty, ValidateMinimumLength(2, Message = "At least 1 tag required"), ValidateMaximumLength(130)]
     [Input(Type = "tag", Help = "Up to 5 tags relevant to your question"), FieldCss(Field="col-span-12")]
     public required List<string> Tags { get; set; }
+
+    [Input(Type="hidden")]
+    public string? Model { get; set; }
     
     [Input(Type="hidden")]
     public string? RefId { get; set; }
