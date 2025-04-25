@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace MyApp;
@@ -41,22 +36,13 @@ public class UserAgentBlockingOptions
 /// <summary>
 /// Middleware that blocks requests from specific user agents
 /// </summary>
-public class UserAgentBlockingMiddleware
+public class UserAgentBlockingMiddleware(
+    RequestDelegate next,
+    IOptions<UserAgentBlockingOptions> options,
+    ILogger<UserAgentBlockingMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly UserAgentBlockingOptions _options;
-    private readonly ILogger<UserAgentBlockingMiddleware> _logger;
-
-    public UserAgentBlockingMiddleware(
-        RequestDelegate next,
-        IOptions<UserAgentBlockingOptions> options,
-        ILogger<UserAgentBlockingMiddleware> logger)
-    {
-        _next = next ?? throw new ArgumentNullException(nameof(next));
-        _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
+    UserAgentBlockingOptions Options => options?.Value ?? throw new ArgumentNullException(nameof(options));
+    
     public async Task InvokeAsync(HttpContext context)
     {
         if (context == null)
@@ -71,9 +57,9 @@ public class UserAgentBlockingMiddleware
         if (ShouldBlockUserAgent(userAgent))
         {
             // Log the blocked request if enabled
-            if (_options.LogBlockedRequests)
+            if (Options.LogBlockedRequests)
             {
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Request blocked from user agent: {UserAgent}, IP: {IPAddress}, Path: {Path}",
                     userAgent,
                     context.Connection.RemoteIpAddress,
@@ -81,16 +67,16 @@ public class UserAgentBlockingMiddleware
             }
 
             // Set the response status code
-            context.Response.StatusCode = _options.BlockedStatusCode;
+            context.Response.StatusCode = Options.BlockedStatusCode;
             context.Response.ContentType = "text/plain";
 
             // Write the blocked message to the response
-            await context.Response.WriteAsync(_options.BlockedMessage);
+            await context.Response.WriteAsync(Options.BlockedMessage);
             return;
         }
 
         // If not blocked, continue to the next middleware
-        await _next(context);
+        await next(context);
     }
 
     private bool ShouldBlockUserAgent(string userAgent)
@@ -102,9 +88,9 @@ public class UserAgentBlockingMiddleware
             return false;
         }
 
-        foreach (var blockedAgent in _options.BlockedUserAgents)
+        foreach (var blockedAgent in Options.BlockedUserAgents)
         {
-            var comparison = _options.IgnoreCase
+            var comparison = Options.IgnoreCase
                 ? StringComparison.OrdinalIgnoreCase
                 : StringComparison.Ordinal;
 

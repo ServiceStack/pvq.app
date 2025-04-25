@@ -62,7 +62,6 @@ services.AddScoped(c => new HttpClient { BaseAddress = new Uri(baseUrl) });
 services.AddBlazorServerIdentityApiClient(baseUrl);
 services.AddLocalStorage();
 
-// Register the options in the dependency injection container
 services.Configure<UserAgentBlockingOptions>(options =>
 {
     // Add user agents to block
