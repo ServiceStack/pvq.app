@@ -45,7 +45,7 @@ jobs:
           
           curl -X POST \
             -H "Content-Type: application/json" \
-            -d '$PAYLOAD' \
+            -d "$PAYLOAD" \
             https://okai.servicestack.com/dropbox/pvq.json
 
       # - name: test
